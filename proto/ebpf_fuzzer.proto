@@ -1,0 +1,97 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package ebpf_fuzzer;
+
+// Results from Executing the ebpf program.
+message ExecutionResult {
+  bool did_succeed = 1;
+  string error_message = 2;
+  repeated uint64 elements = 3;
+}
+
+// Results From feeding the program into a ebpf executor.
+message ValidationResult {
+  bool is_valid = 1;
+  string verifier_log = 2;
+  int64 program_fd = 3;
+  string bpf_error = 4;
+  bool did_collect_coverage = 5;
+  int64 coverage_size = 6;
+  int64 coverage_buffer = 7;
+  repeated uint64 coverage_address = 8;
+}
+
+// We define two services, one will be implemented by the "server" fuzzer and
+// the other will be implemented by the "client" fuzzers, where each client can
+// be a vm running a different version of linux.
+//
+// The clients "register" themselves to the server (a.k.a let the server know
+// that they exist) and then the server can issue rpcs to each client with a
+// program that it wants them to run, and collect each individual result.
+service FuzzerRegistry {
+  // A fuzzer binary running in client mode will send a request to the server
+  // using this method in order to make it aware of its existence, then the
+  // client will go into wait mode for ebpf program run requests.
+  rpc RegisterClient(ClientInfo) returns (RegistrationResponse) {}
+}
+
+// Basic information on what os version is this client requestion a registration
+// is running and how the server can contact it.
+message ClientInfo {
+  string fuzzer_linux_version = 1;
+  string fuzzer_client_ip = 2;
+  uint32 fuzzer_client_port = 3;
+}
+
+// Whether or not the client registration with the server was successful.
+message RegistrationResponse {
+  enum RegistrationResult {
+    REGISTRATIONRESULT_UNKNOWN = 0;
+    REGISTRATIONRESULT_SUCCESS = 1;
+    REGISTRATIONRESULT_CANNOT_CONNECT_TO_CLIENT = 2;
+    REGISTRATIONRESULT_INVALID_CLIENT_ADDRESS = 3;
+  }
+
+  RegistrationResult registration_result = 1;
+}
+
+// The server invokes this service on each client in order to send them the ebpf
+// program to run.
+service ExecutionService {
+  // A binary running in server mode will invoke this method into each one of
+  // their registered client. The clients will then run the requested program
+  // and report back the execution results.
+  rpc RunProgram(RunProgramRequest) returns (RunProgramResult) {}
+}
+
+// eBPF Program to run.
+message RunProgramRequest {
+  repeated uint64 ebpf_program = 1;
+  int64 prog_fd = 2;
+  int64 map_fd = 3;
+  int32 map_count = 4;
+}
+
+message RunProgramResult {
+  enum RunProgramStatus {
+    STATUS_UNKONWN = 0;
+    STATUS_OK = 1;
+    STATUS_ERROR = 2;
+  }
+  RunProgramStatus run_program_status = 1;
+  string verifier_log = 2;
+}

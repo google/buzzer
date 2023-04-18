@@ -1,0 +1,468 @@
+func#0 @0
+0: R1=ctx(off=0,imm=0) R10=fp0
+0: (18) r6 = 0xffff8c7e83b50000       ; R6_w=map_ptr(off=0,ks=4,vs=8,imm=0)
+2: (b7) r7 = -1775320081              ; R7_w=-1775320081
+3: (b7) r8 = 32                       ; R8_w=32
+4: (b7) r9 = 127                      ; R9_w=127
+5: (6f) r7 <<= r7                     ; R7_w=scalar()
+6: (b7) r0 = 0                        ; R0_w=0
+7: (63) *(u32 *)(r10 -4) = r0
+last_idx 7 first_idx 0
+regs=1 stack=0 before 6: (b7) r0 = 0
+8: R0_w=P0 R10=fp0 fp-8=0000????
+8: (bf) r1 = r6                       ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6_w=map_ptr(off=0,ks=4,vs=8,imm=0)
+9: (bf) r2 = r10                      ; R2_w=fp0 R10=fp0
+10: (07) r2 += -4                     ; R2_w=fp-4
+11: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=1,off=0,ks=4,vs=8,imm=0)
+12: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+13: (95) exit
+
+from 12 to 14: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=32 R9=127 R10=fp0 fp-8=mmmm????
+14: (7b) *(u64 *)(r0 +0) = r7         ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar()
+15: (5f) r7 &= r9                     ; R7_w=scalar(umax=127,var_off=(0x0; 0x7f)) R9=127
+16: (b7) r0 = 1                       ; R0_w=1
+17: (63) *(u32 *)(r10 -4) = r0        ; R0_w=1 R10=fp0 fp-8=mmmm????
+18: (bf) r1 = r6                      ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+19: (bf) r2 = r10                     ; R2_w=fp0 R10=fp0
+20: (07) r2 += -4                     ; R2_w=fp-4
+21: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=2,off=0,ks=4,vs=8,imm=0)
+22: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+23: (95) exit
+
+from 22 to 24: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=127,var_off=(0x0; 0x7f)) R8=32 R9=127 R10=fp0 fp-8=mmmm????
+24: (7b) *(u64 *)(r0 +0) = r7         ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=127,var_off=(0x0; 0x7f))
+25: (4c) w7 |= w7                     ; R7_w=scalar()
+26: (b7) r0 = 2                       ; R0_w=2
+27: (63) *(u32 *)(r10 -4) = r0        ; R0_w=2 R10=fp0 fp-8=mmmm????
+28: (bf) r1 = r6                      ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+29: (bf) r2 = r10                     ; R2_w=fp0 R10=fp0
+30: (07) r2 += -4                     ; R2_w=fp-4
+31: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=3,off=0,ks=4,vs=8,imm=0)
+32: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+33: (95) exit
+
+from 32 to 34: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=32 R9=127 R10=fp0 fp-8=mmmm????
+34: (7b) *(u64 *)(r0 +0) = r7         ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar()
+35: (af) r8 ^= r8                     ; R8_w=0
+36: (b7) r0 = 3                       ; R0_w=3
+37: (63) *(u32 *)(r10 -4) = r0        ; R0_w=3 R10=fp0 fp-8=mmmm????
+38: (bf) r1 = r6                      ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+39: (bf) r2 = r10                     ; R2_w=fp0 R10=fp0
+40: (07) r2 += -4                     ; R2_w=fp-4
+41: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=4,off=0,ks=4,vs=8,imm=0)
+42: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+43: (95) exit
+
+from 42 to 44: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=0 R9=127 R10=fp0 fp-8=mmmm????
+44: (7b) *(u64 *)(r0 +0) = r8         ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=0
+45: (af) r9 ^= r7                     ; R7=scalar() R9_w=scalar()
+46: (b7) r0 = 4                       ; R0_w=4
+47: (63) *(u32 *)(r10 -4) = r0        ; R0_w=4 R10=fp0 fp-8=mmmm????
+48: (bf) r1 = r6                      ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+49: (bf) r2 = r10                     ; R2_w=fp0 R10=fp0
+50: (07) r2 += -4                     ; R2_w=fp-4
+51: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=5,off=0,ks=4,vs=8,imm=0)
+52: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+53: (95) exit
+
+from 52 to 54: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=0 R9=scalar() R10=fp0 fp-8=mmmm????
+54: (7b) *(u64 *)(r0 +0) = r9         ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=scalar()
+55: (bf) r8 = r8                      ; R8_w=0
+56: (b7) r0 = 5                       ; R0_w=5
+57: (63) *(u32 *)(r10 -4) = r0        ; R0_w=5 R10=fp0 fp-8=mmmm????
+58: (bf) r1 = r6                      ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+59: (bf) r2 = r10                     ; R2_w=fp0 R10=fp0
+60: (07) r2 += -4                     ; R2_w=fp-4
+61: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=7,off=0,ks=4,vs=8,imm=0)
+62: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+63: (95) exit
+
+from 62 to 64: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=0 R9=scalar() R10=fp0 fp-8=mmmm????
+64: (7b) *(u64 *)(r0 +0) = r8         ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=0
+65: (6c) w9 <<= w9                    ; R9_w=scalar()
+66: (b7) r0 = 6                       ; R0_w=6
+67: (63) *(u32 *)(r10 -4) = r0        ; R0_w=6 R10=fp0 fp-8=mmmm????
+68: (bf) r1 = r6                      ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+69: (bf) r2 = r10                     ; R2_w=fp0 R10=fp0
+70: (07) r2 += -4                     ; R2_w=fp-4
+71: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=8,off=0,ks=4,vs=8,imm=0)
+72: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+73: (95) exit
+
+from 72 to 74: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=0 R9=scalar() R10=fp0 fp-8=mmmm????
+74: (7b) *(u64 *)(r0 +0) = r9         ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=scalar()
+75: (74) w9 >>= 30                    ; R9_w=scalar(umax=3,var_off=(0x0; 0x3))
+76: (b7) r0 = 7                       ; R0_w=7
+77: (63) *(u32 *)(r10 -4) = r0        ; R0_w=7 R10=fp0 fp-8=mmmm????
+78: (bf) r1 = r6                      ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+79: (bf) r2 = r10                     ; R2_w=fp0 R10=fp0
+80: (07) r2 += -4                     ; R2_w=fp-4
+81: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=9,off=0,ks=4,vs=8,imm=0)
+82: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+83: (95) exit
+
+from 82 to 84: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=0 R9=scalar(umax=3,var_off=(0x0; 0x3)) R10=fp0 fp-8=mmmm????
+84: (7b) *(u64 *)(r0 +0) = r9         ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=scalar(umax=3,var_off=(0x0; 0x3))
+85: (5c) w8 &= w7                     ; R7=scalar() R8_w=0
+86: (b7) r0 = 8                       ; R0_w=8
+87: (63) *(u32 *)(r10 -4) = r0        ; R0_w=8 R10=fp0 fp-8=mmmm????
+88: (bf) r1 = r6                      ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+89: (bf) r2 = r10                     ; R2_w=fp0 R10=fp0
+90: (07) r2 += -4                     ; R2_w=fp-4
+91: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=10,off=0,ks=4,vs=8,imm=0)
+92: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+93: (95) exit
+
+from 92 to 94: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=0 R9=scalar(umax=3,var_off=(0x0; 0x3)) R10=fp0 fp-8=mmmm????
+94: (7b) *(u64 *)(r0 +0) = r8         ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=0
+95: (2c) w9 *= w9                     ; R9_w=scalar()
+96: (b7) r0 = 9                       ; R0_w=9
+97: (63) *(u32 *)(r10 -4) = r0        ; R0_w=9 R10=fp0 fp-8=mmmm????
+98: (bf) r1 = r6                      ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+99: (bf) r2 = r10                     ; R2_w=fp0 R10=fp0
+100: (07) r2 += -4                    ; R2_w=fp-4
+101: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=11,off=0,ks=4,vs=8,imm=0)
+102: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+103: (95) exit
+
+from 102 to 104: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=0 R9=scalar() R10=fp0 fp-8=mmmm????
+104: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=scalar()
+105: (c7) r7 s>>= 35                  ; R7_w=scalar(smin=-268435456,smax=268435455)
+106: (b7) r0 = 10                     ; R0_w=10
+107: (63) *(u32 *)(r10 -4) = r0       ; R0_w=10 R10=fp0 fp-8=mmmm????
+108: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+109: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+110: (07) r2 += -4                    ; R2_w=fp-4
+111: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=12,off=0,ks=4,vs=8,imm=0)
+112: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+113: (95) exit
+
+from 112 to 114: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(smin=-268435456,smax=268435455) R8=0 R9=scalar() R10=fp0 fp-8=mmmm????
+114: (7b) *(u64 *)(r0 +0) = r7        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar(smin=-268435456,smax=268435455)
+115: (07) r9 += 1746963175            ; R9_w=scalar()
+116: (b7) r0 = 11                     ; R0_w=11
+117: (63) *(u32 *)(r10 -4) = r0       ; R0_w=11 R10=fp0 fp-8=mmmm????
+118: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+119: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+120: (07) r2 += -4                    ; R2_w=fp-4
+121: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=13,off=0,ks=4,vs=8,imm=0)
+122: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+123: (95) exit
+
+from 122 to 124: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(smin=-268435456,smax=268435455) R8=0 R9=scalar() R10=fp0 fp-8=mmmm????
+124: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=scalar()
+125: (9f) r8 %= r9                    ; R8_w=scalar() R9=scalar()
+126: (b7) r0 = 12                     ; R0_w=12
+127: (63) *(u32 *)(r10 -4) = r0       ; R0_w=12 R10=fp0 fp-8=mmmm????
+128: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+129: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+130: (07) r2 += -4                    ; R2_w=fp-4
+131: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=14,off=0,ks=4,vs=8,imm=0)
+132: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+133: (95) exit
+
+from 132 to 134: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(smin=-268435456,smax=268435455) R8=scalar() R9=scalar() R10=fp0 fp-8=mmmm????
+134: (7b) *(u64 *)(r0 +0) = r8        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=scalar()
+135: (84) w7 = -w7                    ; R7_w=scalar()
+136: (b7) r0 = 13                     ; R0_w=13
+137: (63) *(u32 *)(r10 -4) = r0       ; R0_w=13 R10=fp0 fp-8=mmmm????
+138: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+139: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+140: (07) r2 += -4                    ; R2_w=fp-4
+141: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=15,off=0,ks=4,vs=8,imm=0)
+142: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+143: (95) exit
+
+from 142 to 144: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=scalar() R9=scalar() R10=fp0 fp-8=mmmm????
+144: (7b) *(u64 *)(r0 +0) = r7        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar()
+145: (b4) w9 = -298785050             ; R9_w=3996182246
+146: (b7) r0 = 14                     ; R0_w=14
+147: (63) *(u32 *)(r10 -4) = r0       ; R0_w=14 R10=fp0 fp-8=mmmm????
+148: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+149: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+150: (07) r2 += -4                    ; R2_w=fp-4
+151: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=16,off=0,ks=4,vs=8,imm=0)
+152: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+153: (95) exit
+
+from 152 to 154: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=scalar() R9=3996182246 R10=fp0 fp-8=mmmm????
+154: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=3996182246
+155: (14) w9 -= -1231626065           ; R9_w=932841015
+156: (b7) r0 = 15                     ; R0_w=15
+157: (63) *(u32 *)(r10 -4) = r0       ; R0_w=15 R10=fp0 fp-8=mmmm????
+158: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+159: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+160: (07) r2 += -4                    ; R2_w=fp-4
+161: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=17,off=0,ks=4,vs=8,imm=0)
+162: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+163: (95) exit
+
+from 162 to 164: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=scalar() R9=932841015 R10=fp0 fp-8=mmmm????
+164: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=932841015
+165: (74) w7 >>= 9                    ; R7_w=scalar(umax=8388607,var_off=(0x0; 0x7fffff))
+166: (b7) r0 = 16                     ; R0_w=16
+167: (63) *(u32 *)(r10 -4) = r0       ; R0_w=16 R10=fp0 fp-8=mmmm????
+168: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+169: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+170: (07) r2 += -4                    ; R2_w=fp-4
+171: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=18,off=0,ks=4,vs=8,imm=0)
+172: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+173: (95) exit
+
+from 172 to 174: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=8388607,var_off=(0x0; 0x7fffff)) R8=scalar() R9=932841015 R10=fp0 fp-8=mmmm????
+174: (7b) *(u64 *)(r0 +0) = r7        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=8388607,var_off=(0x0; 0x7fffff))
+175: (94) w7 %= -688282628            ; R7_w=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+176: (b7) r0 = 17                     ; R0_w=17
+177: (63) *(u32 *)(r10 -4) = r0       ; R0_w=17 R10=fp0 fp-8=mmmm????
+178: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+179: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+180: (07) r2 += -4                    ; R2_w=fp-4
+181: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=19,off=0,ks=4,vs=8,imm=0)
+182: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+183: (95) exit
+
+from 182 to 184: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar() R9=932841015 R10=fp0 fp-8=mmmm????
+184: (7b) *(u64 *)(r0 +0) = r7        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+185: (5f) r7 &= r8                    ; R7_w=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar()
+186: (b7) r0 = 18                     ; R0_w=18
+187: (63) *(u32 *)(r10 -4) = r0       ; R0_w=18 R10=fp0 fp-8=mmmm????
+188: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+189: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+190: (07) r2 += -4                    ; R2_w=fp-4
+191: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=20,off=0,ks=4,vs=8,imm=0)
+192: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+193: (95) exit
+
+from 192 to 194: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar() R9=932841015 R10=fp0 fp-8=mmmm????
+194: (7b) *(u64 *)(r0 +0) = r7        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+195: (0c) w8 += w7                    ; R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8_w=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+196: (b7) r0 = 19                     ; R0_w=19
+197: (63) *(u32 *)(r10 -4) = r0       ; R0_w=19 R10=fp0 fp-8=mmmm????
+198: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+199: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+200: (07) r2 += -4                    ; R2_w=fp-4
+201: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=21,off=0,ks=4,vs=8,imm=0)
+202: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+203: (95) exit
+
+from 202 to 204: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=932841015 R10=fp0 fp-8=mmmm????
+204: (7b) *(u64 *)(r0 +0) = r8        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+205: (14) w8 -= -1315960572           ; R8_w=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+206: (b7) r0 = 20                     ; R0_w=20
+207: (63) *(u32 *)(r10 -4) = r0       ; R0_w=20 R10=fp0 fp-8=mmmm????
+208: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+209: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+210: (07) r2 += -4                    ; R2_w=fp-4
+211: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=22,off=0,ks=4,vs=8,imm=0)
+212: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+213: (95) exit
+
+from 212 to 214: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=932841015 R10=fp0 fp-8=mmmm????
+214: (7b) *(u64 *)(r0 +0) = r8        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+215: (a7) r9 ^= -1992593306           ; R9_w=-1096714671
+216: (b7) r0 = 21                     ; R0_w=21
+217: (63) *(u32 *)(r10 -4) = r0       ; R0_w=21 R10=fp0 fp-8=mmmm????
+218: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+219: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+220: (07) r2 += -4                    ; R2_w=fp-4
+221: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=23,off=0,ks=4,vs=8,imm=0)
+222: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+223: (95) exit
+
+from 222 to 224: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=-1096714671 R10=fp0 fp-8=mmmm????
+224: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=-1096714671
+225: (9f) r8 %= r8                    ; R8_w=scalar()
+226: (b7) r0 = 22                     ; R0_w=22
+227: (63) *(u32 *)(r10 -4) = r0       ; R0_w=22 R10=fp0 fp-8=mmmm????
+228: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+229: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+230: (07) r2 += -4                    ; R2_w=fp-4
+231: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=24,off=0,ks=4,vs=8,imm=0)
+232: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+233: (95) exit
+
+from 232 to 234: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar() R9=-1096714671 R10=fp0 fp-8=mmmm????
+234: (7b) *(u64 *)(r0 +0) = r8        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=scalar()
+235: (4f) r8 |= r7                    ; R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8_w=scalar()
+236: (b7) r0 = 23                     ; R0_w=23
+237: (63) *(u32 *)(r10 -4) = r0       ; R0_w=23 R10=fp0 fp-8=mmmm????
+238: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+239: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+240: (07) r2 += -4                    ; R2_w=fp-4
+241: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=25,off=0,ks=4,vs=8,imm=0)
+242: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+243: (95) exit
+
+from 242 to 244: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar() R9=-1096714671 R10=fp0 fp-8=mmmm????
+244: (7b) *(u64 *)(r0 +0) = r8        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=scalar()
+245: (0c) w8 += w8                    ; R8_w=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+246: (b7) r0 = 24                     ; R0_w=24
+247: (63) *(u32 *)(r10 -4) = r0       ; R0_w=24 R10=fp0 fp-8=mmmm????
+248: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+249: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+250: (07) r2 += -4                    ; R2_w=fp-4
+251: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=26,off=0,ks=4,vs=8,imm=0)
+252: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+253: (95) exit
+
+from 252 to 254: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=-1096714671 R10=fp0 fp-8=mmmm????
+254: (7b) *(u64 *)(r0 +0) = r8        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+255: (5f) r9 &= r8                    ; R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9_w=scalar(umax=3198252625,var_off=(0x0; 0xbea17651),s32_max=1050768977)
+256: (b7) r0 = 25                     ; R0_w=25
+257: (63) *(u32 *)(r10 -4) = r0       ; R0_w=25 R10=fp0 fp-8=mmmm????
+258: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+259: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+260: (07) r2 += -4                    ; R2_w=fp-4
+261: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=27,off=0,ks=4,vs=8,imm=0)
+262: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+263: (95) exit
+
+from 262 to 264: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=scalar(umax=3198252625,var_off=(0x0; 0xbea17651),s32_max=1050768977) R10=fp0 fp-8=mmmm????
+264: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=scalar(umax=3198252625,var_off=(0x0; 0xbea17651),s32_max=1050768977)
+265: (b4) w8 = -2011418023            ; R8_w=2283549273
+266: (b7) r0 = 26                     ; R0_w=26
+267: (63) *(u32 *)(r10 -4) = r0       ; R0_w=26 R10=fp0 fp-8=mmmm????
+268: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+269: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+270: (07) r2 += -4                    ; R2_w=fp-4
+271: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=28,off=0,ks=4,vs=8,imm=0)
+272: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+273: (95) exit
+
+from 272 to 274: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=2283549273 R9=scalar(umax=3198252625,var_off=(0x0; 0xbea17651),s32_max=1050768977) R10=fp0 fp-8=mmmm????
+274: (7b) *(u64 *)(r0 +0) = r8        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=2283549273
+275: (3c) w9 /= w9                    ; R9_w=scalar()
+276: (b7) r0 = 27                     ; R0_w=27
+277: (63) *(u32 *)(r10 -4) = r0       ; R0_w=27 R10=fp0 fp-8=mmmm????
+278: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+279: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+280: (07) r2 += -4                    ; R2_w=fp-4
+281: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=29,off=0,ks=4,vs=8,imm=0)
+282: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+283: (95) exit
+
+from 282 to 284: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=2283549273 R9=scalar() R10=fp0 fp-8=mmmm????
+284: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=scalar()
+285: (b7) r9 = 920305653              ; R9_w=920305653
+286: (b7) r0 = 28                     ; R0_w=28
+287: (63) *(u32 *)(r10 -4) = r0       ; R0_w=28 R10=fp0 fp-8=mmmm????
+288: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+289: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+290: (07) r2 += -4                    ; R2_w=fp-4
+291: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=30,off=0,ks=4,vs=8,imm=0)
+292: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+293: (95) exit
+
+from 292 to 294: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=2283549273 R9=920305653 R10=fp0 fp-8=mmmm????
+294: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=920305653
+295: (1c) w8 -= w7                    ; R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8_w=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+296: (b7) r0 = 29                     ; R0_w=29
+297: (63) *(u32 *)(r10 -4) = r0       ; R0_w=29 R10=fp0 fp-8=mmmm????
+298: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+299: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+300: (07) r2 += -4                    ; R2_w=fp-4
+301: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=31,off=0,ks=4,vs=8,imm=0)
+302: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+303: (95) exit
+
+from 302 to 304: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=920305653 R10=fp0 fp-8=mmmm????
+304: (7b) *(u64 *)(r0 +0) = r8        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+305: (74) w9 >>= 2                    ; R9_w=230076413
+306: (b7) r0 = 30                     ; R0_w=30
+307: (63) *(u32 *)(r10 -4) = r0       ; R0_w=30 R10=fp0 fp-8=mmmm????
+308: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+309: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+310: (07) r2 += -4                    ; R2_w=fp-4
+311: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=32,off=0,ks=4,vs=8,imm=0)
+312: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+313: (95) exit
+
+from 312 to 314: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=230076413 R10=fp0 fp-8=mmmm????
+314: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=230076413
+315: (c7) r9 s>>= 39                  ; R9_w=0
+316: (b7) r0 = 31                     ; R0_w=31
+317: (63) *(u32 *)(r10 -4) = r0       ; R0_w=31 R10=fp0 fp-8=mmmm????
+318: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+319: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+320: (07) r2 += -4                    ; R2_w=fp-4
+321: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=33,off=0,ks=4,vs=8,imm=0)
+322: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+323: (95) exit
+
+from 322 to 324: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=0 R10=fp0 fp-8=mmmm????
+324: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=0
+325: (54) w9 &= -79087550             ; R9_w=0
+326: (b7) r0 = 32                     ; R0_w=32
+327: (63) *(u32 *)(r10 -4) = r0       ; R0_w=32 R10=fp0 fp-8=mmmm????
+328: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+329: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+330: (07) r2 += -4                    ; R2_w=fp-4
+331: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=34,off=0,ks=4,vs=8,imm=0)
+332: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+333: (95) exit
+
+from 332 to 334: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=0 R10=fp0 fp-8=mmmm????
+334: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=0
+335: (4f) r7 |= r8                    ; R7_w=scalar() R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+336: (b7) r0 = 33                     ; R0_w=33
+337: (63) *(u32 *)(r10 -4) = r0       ; R0_w=33 R10=fp0 fp-8=mmmm????
+338: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+339: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+340: (07) r2 += -4                    ; R2_w=fp-4
+341: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=35,off=0,ks=4,vs=8,imm=0)
+342: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+343: (95) exit
+
+from 342 to 344: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=0 R10=fp0 fp-8=mmmm????
+344: (7b) *(u64 *)(r0 +0) = r7        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar()
+345: (47) r9 |= -210411219            ; R9_w=-210411219
+346: (b7) r0 = 34                     ; R0_w=34
+347: (63) *(u32 *)(r10 -4) = r0       ; R0_w=34 R10=fp0 fp-8=mmmm????
+348: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+349: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+350: (07) r2 += -4                    ; R2_w=fp-4
+351: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=36,off=0,ks=4,vs=8,imm=0)
+352: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+353: (95) exit
+
+from 352 to 354: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar() R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=-210411219 R10=fp0 fp-8=mmmm????
+354: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=-210411219
+355: (24) w7 *= 995835585             ; R7_w=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+356: (b7) r0 = 35                     ; R0_w=35
+357: (63) *(u32 *)(r10 -4) = r0       ; R0_w=35 R10=fp0 fp-8=mmmm????
+358: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+359: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+360: (07) r2 += -4                    ; R2_w=fp-4
+361: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=37,off=0,ks=4,vs=8,imm=0)
+362: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+363: (95) exit
+
+from 362 to 364: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=-210411219 R10=fp0 fp-8=mmmm????
+364: (7b) *(u64 *)(r0 +0) = r7        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+365: (1c) w7 -= w9                    ; R7_w=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=-210411219
+366: (b7) r0 = 36                     ; R0_w=36
+367: (63) *(u32 *)(r10 -4) = r0       ; R0_w=36 R10=fp0 fp-8=mmmm????
+368: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+369: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+370: (07) r2 += -4                    ; R2_w=fp-4
+371: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=38,off=0,ks=4,vs=8,imm=0)
+372: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+373: (95) exit
+
+from 372 to 374: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=-210411219 R10=fp0 fp-8=mmmm????
+374: (7b) *(u64 *)(r0 +0) = r7        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff))
+375: (2f) r9 *= r7                    ; R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9_w=scalar()
+376: (b7) r0 = 37                     ; R0_w=37
+377: (63) *(u32 *)(r10 -4) = r0       ; R0_w=37 R10=fp0 fp-8=mmmm????
+378: (bf) r1 = r6                     ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0)
+379: (bf) r2 = r10                    ; R2_w=fp0 R10=fp0
+380: (07) r2 += -4                    ; R2_w=fp-4
+381: (85) call bpf_map_lookup_elem#1          ; R0_w=map_value_or_null(id=39,off=0,ks=4,vs=8,imm=0)
+382: (55) if r0 != 0x0 goto pc+1      ; R0_w=0
+383: (95) exit
+
+from 382 to 384: R0=map_value(off=0,ks=4,vs=8,imm=0) R6=map_ptr(off=0,ks=4,vs=8,imm=0) R7=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R8=scalar(umax=4294967295,var_off=(0x0; 0xffffffff)) R9=scalar() R10=fp0 fp-8=mmmm????
+384: (7b) *(u64 *)(r0 +0) = r9        ; R0=map_value(off=0,ks=4,vs=8,imm=0) R9=scalar()
+385: (b7) r0 = 0                      ; R0_w=0
+386: (95) exit
+processed 386 insns (limit 1000000) max_states_per_insn 0 total_states 38 peak_states 38 mark_read 10

@@ -1,0 +1,18 @@
+func#0 @0
+0: R1=ctx(off=0,imm=0) R10=fp0
+0: (18) r6 = 0xffff8c7e83b50000       ; R6_w=map_ptr(off=0,ks=4,vs=8,imm=0)
+2: (b7) r7 = -1775320081              ; R7_w=-1775320081
+3: (b7) r8 = 32                       ; R8_w=32
+4: (b7) r9 = 127                      ; R9_w=127
+5: (6f) r7 <<= r7                     ; R7_w=scalar()
+18446744073709551616: (b7) r0 = 0                        ; R0_w=0
+7: (63) *(u32 *)(r10 -4) = r0
+last_idx 7 first_idx 0
+regs=1 stack=0 before 6: (b7) r0 = 0
+8: R0_w=P0 R10=fp0 fp-8=0000????
+8: (bf) r1 = r6                       ; R1_w=map_ptr(off=0,ks=4,vs=8,imm=0) R6_w=map_ptr(off=0,ks=4,vs=8,imm=0)
+9: (bf) r2 = r10                      ; R2_w=fp0 R10=fp0
+10: (07) r2 += -4                     ; R2_w=fp-4
+11: (85) call bpf_map_lookup_elem#1   ; R0_w=map_value_or_null(id=1,off=0,ks=4,vs=8,imm=0)
+12: (55) if r0 != 0x0 goto pc+1       ; R0_w=0
+13: (95) exit
