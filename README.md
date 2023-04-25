@@ -30,5 +30,9 @@ We'd like to collect all issues discovered with this framework under this
 section.
 
 * [CVE-2023-2163](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=71b547f561247897a0a14f3082730156c0533fed):
-  An error in the branch prunning logic of the eBPF Verifier can lead into unsafe
-  paths not being explored and, this can lead to arbitrary kernel memory R/W.
+  An error in the branch pruning logic of the eBPF verifier can cause unsafe
+  paths to not be explored. The unsafe pruned paths are the actual paths taken
+  at runtime which causes a mismatch in what the verifier thinks the values of 
+  certain registers are versus what they actually are. This mismatch can be
+  abused to read/write arbitrary memory in the kernel by using the confused
+  registers as base registers for memory operations.
