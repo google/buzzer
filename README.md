@@ -23,6 +23,10 @@ To run the fuzzer follow the next steps
     sudo setcap CAP_BPF=eip bazel-bin/buzzer_/buzzer
     ./bazel-bin/buzzer_/buzzer
     ```
+## Documents:
+
+* [Overall Architecture of Buzzer](docs/architecture/architecture.md)
+* [How to run buzzer with coverage](docs/guides/running_with_coverage.md)
 
 ## Trophies
 Did you find a cool bug using _Buzzer_? Let us know via a pull request! 
