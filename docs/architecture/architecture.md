@@ -2,7 +2,7 @@
 
 The overall architecture of buzzer is the following:
 
-![](BuzzerArchitecture.png)
+![BuzzerArchitecture](BuzzerArchitecture.png)
 
 Elements:
   * ControlUnit: Kicks off the FuzzingStrategy specified via the 
@@ -31,7 +31,7 @@ Currently, Buzzer has three possible strategies:
 Buzzer also has an integrated metrics server capable of rendering coverage
 information, the architecture of this component looks like this:
 
-![](MetricsCollectionArchitecture.png)
+![MetricsCollectionArchitecture](MetricsCollectionArchitecture.png)
 
 Every time the `ExecutorUnit` verifies a program it passes the information to the
 `MetricsUnit` the following information:

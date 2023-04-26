@@ -91,6 +91,5 @@ And then in your vm simply run buzzer:
 Then if you go to localhost:8080 in your host machine you should be able to
 see the metrics server
 
-![](MetricsCollection.png)
-
-![](coverage.png)
+![MetricsCollectionView](MetricsCollection.png)
+![CoverageView](coverage.png)
