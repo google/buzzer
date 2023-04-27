@@ -1,5 +1,8 @@
 # Buzzer - An eBPF Fuzzer toolchain
 
+![ci_status](https://github.com/thatjiaozi/buzzer/actions/workflows/ci.yml/badge.svg)
+
+
 Buzzer is a fuzzer toolchain that allows to write eBPF _fuzzing strategies_.
 
 A Fuzzing strategy is a way to generate random eBPF Programs and then validate
