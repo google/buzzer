@@ -2,7 +2,7 @@ name: Buzzer CI
 run-name: Running Buzzer tests.
 on: [push]
 jobs:
-  Explore-GitHub-Actions:
+  Buzzer-CI:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -13,3 +13,4 @@ jobs:
         path: "~/.cache/bazel"
         key: bazel
     - run: bazel build //...
+    - run: bazel test //...
