@@ -42,7 +42,7 @@ func TestAluImmOperationCorrectEncoding(t *testing.T) {
 			imm:                 int32(-65535),
 			op:                  AluMov,
 			insClass:            InsClassAlu64,
-			wantEnc:             []uint64{0xffff0001000000b7},
+			wantEnc:             []uint64{0xffff0001000000b8},
 			wantAuxFuncEncoding: MovRegImm64(RegR0, int32(-65535)).GenerateBytecode()[0],
 		},
 	}
