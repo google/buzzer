@@ -1,0 +1,28 @@
+name: Buzzer Linter
+run-name: Checking code format.
+on: [pull_request, push]
+jobs:
+  clang-linter:
+    runs-on: ubuntu-latest
+      name: Clang linter Check
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@v3
+      - name: Run clang-format style check for C/C++/Protobuf programs.
+        uses: jidicula/clang-format-action@v4.11.0
+        with:
+          clang-format-version: '13'
+          check-path: 'src'
+          fallback-style: 'Mozilla'
+  go-linter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Go Lint
+        uses: Jerome1337/gofmt-action@v1.0.5
+  bazel-buildifier:
+    name: Run buildifier check
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Run buildifier
+      uses: jbajic/buildifier@v1
