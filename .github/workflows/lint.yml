@@ -11,7 +11,7 @@ jobs:
       with:
         clang-format-version: '13'
         check-path: 'src'
-        fallback-style: 'Mozilla'
+        fallback-style: 'Google'
   go-linter:
     runs-on: ubuntu-latest
     steps:
