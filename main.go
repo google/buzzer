@@ -16,8 +16,8 @@
 package main
 
 import (
-	"log"
 	"flag"
+	"log"
 
 	"buzzer/pkg/metrics/metrics"
 	"buzzer/pkg/units/units"

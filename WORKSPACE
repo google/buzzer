@@ -9,8 +9,11 @@ http_archive(
         "https://github.com/bazelbuild/rules_go/releases/download/v0.39.0/rules_go-v0.39.0.zip",
     ],
 )
+
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+
 go_rules_dependencies()
+
 go_register_toolchains(version = "1.20.3")
 
 # Porotobuf library.
@@ -22,19 +25,23 @@ http_archive(
         "https://github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
     ],
 )
+
 load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
 rules_proto_dependencies()
+
 rules_proto_toolchains()
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
 protobuf_deps()
 
 # Absl
 http_archive(
-  name = "com_google_absl",
-  urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20230125.2.zip"],
-  sha256 = "2d40102022a01c6f3dddd23ec9ddafff49697a2e4bd09af68bccb74d26ecf64a",
-  strip_prefix = "abseil-cpp-20230125.2",
+    name = "com_google_absl",
+    sha256 = "2d40102022a01c6f3dddd23ec9ddafff49697a2e4bd09af68bccb74d26ecf64a",
+    strip_prefix = "abseil-cpp-20230125.2",
+    urls = ["https://github.com/abseil/abseil-cpp/archive/refs/tags/20230125.2.zip"],
 )
 
 # Protobuf source code.
@@ -43,7 +50,7 @@ http_archive(
     sha256 = "1ff680568f8e537bb4be9813bac0c1d87848d5be9d000ebe30f0bc2d7aabe045",
     strip_prefix = "protobuf-22.2",
     urls = [
-		"https://github.com/protocolbuffers/protobuf/releases/download/v22.2/protobuf-22.2.tar.gz"
+        "https://github.com/protocolbuffers/protobuf/releases/download/v22.2/protobuf-22.2.tar.gz",
     ],
 )
 
@@ -54,10 +61,13 @@ http_archive(
     strip_prefix = "bazel-gazelle-0.30.0",
     url = "https://github.com/bazelbuild/bazel-gazelle/archive/refs/tags/v0.30.0.zip",
 )
+
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+
 gazelle_dependencies()
 
 load("@bazel_gazelle//:deps.bzl", "go_repository")
+
 go_repository(
     name = "com_github_google_safehtml",
     build_file_proto_mode = "disable_global",
