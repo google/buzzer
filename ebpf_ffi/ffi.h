@@ -49,4 +49,4 @@ struct coverage_data {
   uint64_t coverage_size;
   uint64_t* coverage_buffer;
 };
-#endif  // SECURITY_ISE_CLOUD_PROJECTS_EBPF_FUZZER_EBPF_FFI_FFI_H_
+#endif  // EBPF_FUZZER_EBPF_FFI_FFI_H_
