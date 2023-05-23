@@ -12,5 +12,11 @@ jobs:
       with:
         path: "~/.cache/bazel"
         key: bazel
-    - run: bazel build //...
-    - run: bazel test //...
+    - run: |
+           sudo apt update
+           sudo apt install clang
+           bazel build //...
+           bazel test //...
+      env:
+       CC:   clang
+       CXX:  clang++
