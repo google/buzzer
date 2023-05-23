@@ -11,6 +11,12 @@ that they don't have unexpected behaviour.
 To run the fuzzer follow the next steps
 
 1. Install [bazel](https://bazel.build/).
+1. Install [clang](https://clang.llvm.org/)
+1. Setup the correct CC and CXX env variables
+   ```
+   export CC=clang
+   export CXX=clang++
+   ```
 1. Run 
     ```
     bazel build :buzzer
