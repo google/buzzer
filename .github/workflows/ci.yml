@@ -12,7 +12,8 @@ jobs:
       with:
         path: "~/.cache/bazel"
         key: bazel
-    - run: |
+    - name: Check Buzzer tests
+      run: |
            sudo apt update
            sudo apt install clang
            bazel build //...

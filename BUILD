@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_binary")
 
 package(
@@ -31,4 +32,9 @@ go_binary(
         "//pkg/metrics",
         "//pkg/units",
     ],
+)
+
+build_test(
+   name = "buzzer_build_test",
+   targets = ["//:buzzer"],
 )
