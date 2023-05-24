@@ -26,12 +26,12 @@ go_library(
         "generator.go",
         "pointer_arithmetic.go",
     ],
-    cgo = 1,
     cdeps = ["//ebpf_ffi"],
+    cgo = 1,
     importpath = "buzzer/pkg/strategies/pointer_arithmetic/pointerarithmetic",
     deps = [
-        "//proto:ebpf_fuzzer_go_proto",
         "//pkg/ebpf",
         "//pkg/strategies",
+        "//proto:ebpf_fuzzer_go_proto",
     ],
 )

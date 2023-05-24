@@ -26,18 +26,18 @@ go_library(
         "control_unit.go",
         "executor_unit.go",
     ],
-    cgo = 1,
     cdeps = [
         "//ebpf_ffi",
     ],
+    cgo = 1,
     importpath = "buzzer/pkg/units/units",
     deps = [
-        "//proto:ebpf_fuzzer_go_proto",
         "//pkg/metrics",
         "//pkg/strategies",
         "//pkg/strategies/parse_verifier:parseverifier",
         "//pkg/strategies/playground",
         "//pkg/strategies/pointer_arithmetic:pointerarithmetic",
+        "//proto:ebpf_fuzzer_go_proto",
         "@com_github_golang_protobuf//proto",
     ],
 )

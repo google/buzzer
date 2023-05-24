@@ -1,6 +1,6 @@
-name: Buzzer CI
+name: Buzzer-CI
 run-name: Running Buzzer tests.
-on: [push]
+on: [push, pull_request]
 jobs:
   Buzzer-CI:
     runs-on: ubuntu-latest

@@ -26,10 +26,10 @@ import (
 	"errors"
 	"fmt"
 
-	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 	"buzzer/pkg/ebpf/ebpf"
 	"buzzer/pkg/strategies/parse_verifier/oracle/oracle"
 	"buzzer/pkg/strategies/strategies"
+	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 )
 
 const (
@@ -93,7 +93,7 @@ func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface) error {
 		// Build a new execution request.
 		logMap := gr.Prog.LogMap()
 		logCount := gen.logCount
-		rpr := &fpb.RunProgramRequest {
+		rpr := &fpb.RunProgramRequest{
 			ProgFd:      gr.ProgFD,
 			MapFd:       int64(logMap),
 			MapCount:    logCount,
