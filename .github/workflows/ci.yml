@@ -1,6 +1,6 @@
-name: Buzzer CI
+name: Buzzer-CI
 run-name: Running Buzzer tests.
-on: [push]
+on: [push, pull_request]
 jobs:
   Buzzer-CI:
     runs-on: ubuntu-latest
@@ -12,5 +12,12 @@ jobs:
       with:
         path: "~/.cache/bazel"
         key: bazel
-    - run: bazel build //...
-    - run: bazel test //...
+    - name: Check Buzzer tests
+      run: |
+           sudo apt update
+           sudo apt install clang
+           bazel build //...
+           bazel test //...
+      env:
+       CC:   clang
+       CXX:  clang++

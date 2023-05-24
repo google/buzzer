@@ -17,21 +17,22 @@
 #ifndef EBPF_FUZZER_EBPF_FFI_FFI_H_
 #define EBPF_FUZZER_EBPF_FFI_FFI_H_
 
+#include <linux/bpf.h>
+
 #include <cstddef>
 #include <cstdint>
-#include <linux/bpf.h>
 
 extern "C" {
 // This struct is used to return the serialized proto containing the verify
 // results.
 struct bpf_result {
-  char* serialized_proto;
+  char *serialized_proto;
   size_t size;
 };
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
-struct bpf_result load_bpf_program(void* prog_buff, size_t size,
+struct bpf_result load_bpf_program(void *prog_buff, size_t size,
                                    int coverage_enabled,
                                    uint64_t coverage_size);
 
@@ -47,6 +48,6 @@ struct bpf_result execute_bpf_program(int prog_fd, int map_fd, int map_count);
 struct coverage_data {
   int fd;
   uint64_t coverage_size;
-  uint64_t* coverage_buffer;
+  uint64_t *coverage_buffer;
 };
 #endif  // EBPF_FUZZER_EBPF_FFI_FFI_H_

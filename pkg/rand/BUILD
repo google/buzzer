@@ -22,6 +22,6 @@ package(
 
 go_library(
     name = "rand",
-    importpath = "buzzer/pkg/rand",
     srcs = ["rand.go"],
+    importpath = "buzzer/pkg/rand",
 )

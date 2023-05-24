@@ -29,8 +29,8 @@ import (
 	"fmt"
 	"unsafe"
 
-	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 	"buzzer/pkg/metrics/metrics"
+	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 	"github.com/golang/protobuf/proto"
 )
 
