@@ -35,6 +35,6 @@ go_binary(
 )
 
 build_test(
-   name = "buzzer_build_test",
-   targets = ["//:buzzer"],
+    name = "buzzer_build_test",
+    targets = ["//:buzzer"],
 )
