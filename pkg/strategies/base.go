@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"os"
 
-	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 	"buzzer/pkg/ebpf/ebpf"
+	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 )
 
 // GeneratorResult holds the state of generated programs that have been verified.

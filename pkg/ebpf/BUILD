@@ -33,13 +33,13 @@ go_library(
         "program.go",
         "st_ld_operations.go",
     ],
+    cdeps = [
+        "//ebpf_ffi",
+    ],
     cgo = 1,
     importpath = "buzzer/pkg/ebpf/ebpf",
     deps = [
         "//pkg/rand",
-    ],
-    cdeps = [
-        "//ebpf_ffi",
     ],
 )
 
@@ -51,6 +51,6 @@ go_test(
         "program_test.go",
         "st_ld_operations_test.go",
     ],
-    importpath = "buzzer/pkg/ebpf",
     embed = [":ebpf"],
+    importpath = "buzzer/pkg/ebpf",
 )

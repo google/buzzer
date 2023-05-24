@@ -25,9 +25,9 @@ import "C"
 import (
 	"fmt"
 
-	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 	"buzzer/pkg/ebpf/ebpf"
 	"buzzer/pkg/strategies/strategies"
+	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 )
 
 const (

@@ -31,7 +31,7 @@ go_proto_library(
     name = "ebpf_fuzzer_go_proto",
     importpath = "buzzer/proto/ebpf_fuzzer_go_proto",
     protos = [":ebpf_fuzzer_proto"],
-    deps = []
+    deps = [],
 )
 
 cc_proto_library(

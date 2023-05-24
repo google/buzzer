@@ -26,12 +26,12 @@ go_library(
         "generator.go",
         "playground.go",
     ],
-    importpath = "buzzer/pkg/strategies/playground/playground",
-    cgo = 1,
     cdeps = ["//ebpf_ffi"],
+    cgo = 1,
+    importpath = "buzzer/pkg/strategies/playground/playground",
     deps = [
-        "//proto:ebpf_fuzzer_go_proto",
         "//pkg/ebpf",
         "//pkg/strategies",
+        "//proto:ebpf_fuzzer_go_proto",
     ],
 )
