@@ -35,49 +35,6 @@ message ValidationResult {
   repeated uint64 coverage_address = 8;
 }
 
-// We define two services, one will be implemented by the "server" fuzzer and
-// the other will be implemented by the "client" fuzzers, where each client can
-// be a vm running a different version of linux.
-//
-// The clients "register" themselves to the server (a.k.a let the server know
-// that they exist) and then the server can issue rpcs to each client with a
-// program that it wants them to run, and collect each individual result.
-service FuzzerRegistry {
-  // A fuzzer binary running in client mode will send a request to the server
-  // using this method in order to make it aware of its existence, then the
-  // client will go into wait mode for ebpf program run requests.
-  rpc RegisterClient(ClientInfo) returns (RegistrationResponse) {}
-}
-
-// Basic information on what os version is this client requestion a registration
-// is running and how the server can contact it.
-message ClientInfo {
-  string fuzzer_linux_version = 1;
-  string fuzzer_client_ip = 2;
-  uint32 fuzzer_client_port = 3;
-}
-
-// Whether or not the client registration with the server was successful.
-message RegistrationResponse {
-  enum RegistrationResult {
-    REGISTRATIONRESULT_UNKNOWN = 0;
-    REGISTRATIONRESULT_SUCCESS = 1;
-    REGISTRATIONRESULT_CANNOT_CONNECT_TO_CLIENT = 2;
-    REGISTRATIONRESULT_INVALID_CLIENT_ADDRESS = 3;
-  }
-
-  RegistrationResult registration_result = 1;
-}
-
-// The server invokes this service on each client in order to send them the ebpf
-// program to run.
-service ExecutionService {
-  // A binary running in server mode will invoke this method into each one of
-  // their registered client. The clients will then run the requested program
-  // and report back the execution results.
-  rpc RunProgram(RunProgramRequest) returns (RunProgramResult) {}
-}
-
 // eBPF Program to run.
 message RunProgramRequest {
   repeated uint64 ebpf_program = 1;
