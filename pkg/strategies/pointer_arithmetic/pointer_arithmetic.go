@@ -46,7 +46,7 @@ type Strategy struct {
 func (pa *Strategy) generateAndValidateProgram(e strategies.ExecutorInterface, gen *Generator) (*strategies.GeneratorResult, error) {
 	for i := 0; ; i++ {
 		gen.instructionCount = pa.InstructionCount
-		prog, err := ebpf.New(gen /*mapSize=*/, 4 /*minReg=*/, ebpf.RegR6 /*maxReg=*/, ebpf.RegR9)
+		prog, err := ebpf.New(gen /*mapSize=*/, 4 /*minReg=*/, ebpf.RegR6.RegisterNumber() /*maxReg=*/, ebpf.RegR9.RegisterNumber())
 		if err != nil {
 			return nil, err
 		}

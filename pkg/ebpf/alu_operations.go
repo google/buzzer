@@ -27,7 +27,7 @@ type AluImmOperation struct {
 	InsClass uint8
 
 	// DstReg is where the result of the operation will be stored.
-	DstReg uint8
+	DstReg *Register
 
 	// Imm is the immediate value to use as src operand
 	Imm               int32
@@ -37,7 +37,7 @@ type AluImmOperation struct {
 
 // GenerateBytecode generates the bytecode corresponding to this instruction.
 func (c *AluImmOperation) GenerateBytecode() []uint64 {
-	bytecode := []uint64{encodeImmediateAluOperation(c.Operation, c.InsClass, c.DstReg, c.Imm)}
+	bytecode := []uint64{encodeImmediateAluOperation(c.Operation, c.InsClass, c.DstReg.RegisterNumber(), c.Imm)}
 	if c.nextInstruction != nil {
 		bytecode = append(bytecode, c.nextInstruction.GenerateBytecode()...)
 	}
@@ -81,7 +81,7 @@ func (c *AluImmOperation) GeneratePoc() []string {
 		insClass = "BPF_ALU"
 	}
 	instrName := NameForAluInstruction(c.Operation)
-	regName := NameForBPFRegister(c.DstReg)
+	regName := c.DstReg.ToString()
 	macro := fmt.Sprintf("BPF_ALU_IMM(%s, /*dst=*/%s, /*imm=*/%d, /*ins_class=*/%s)", instrName, regName, c.Imm, insClass)
 	r := []string{macro}
 	if c.nextInstruction != nil {
@@ -92,15 +92,15 @@ func (c *AluImmOperation) GeneratePoc() []string {
 
 // NewAluImmOperation generates an operation structure that represents `op` with
 // the given instruction category.
-func NewAluImmOperation(op, insClass, dstReg uint8, imm int32) *AluImmOperation {
+func NewAluImmOperation(op, insClass uint8, dstReg *Register, imm int32) *AluImmOperation {
 	return &AluImmOperation{Operation: op, InsClass: insClass, DstReg: dstReg, Imm: imm}
 }
 
 // Auxiliary functions that generate specific instructions.
 
-// MovRegImm64 sets regNum to the specified value
-func MovRegImm64(regNum uint8, imm int32) *AluImmOperation {
-	return NewAluImmOperation(AluMov, InsClassAlu64, regNum, imm)
+// MovRegImm64 sets re to the specified value
+func MovRegImm64(reg *Register, imm int32) *AluImmOperation {
+	return NewAluImmOperation(AluMov, InsClassAlu64, reg, imm)
 }
 
 // AluRegOperation Represents an ALU operation with register as src value.
@@ -112,17 +112,18 @@ type AluRegOperation struct {
 	InsClass uint8
 
 	// DstReg is where the result will be stored.
-	DstReg uint8
+	DstReg *Register
 
 	// SrcReg is where to take the valuo for the second operand.
-	SrcReg            uint8
+	SrcReg *Register
+
 	instructionNumber uint32
 	nextInstruction   Operation
 }
 
 // GenerateBytecode generates the bytecode corresponding to this instruction.
 func (c *AluRegOperation) GenerateBytecode() []uint64 {
-	bytecode := []uint64{encodeRegisterAluOperation(c.Operation, c.InsClass, c.DstReg, c.SrcReg)}
+	bytecode := []uint64{encodeRegisterAluOperation(c.Operation, c.InsClass, c.DstReg.RegisterNumber(), c.SrcReg.RegisterNumber())}
 	if c.nextInstruction != nil {
 		bytecode = append(bytecode, c.nextInstruction.GenerateBytecode()...)
 	}
@@ -166,8 +167,8 @@ func (c *AluRegOperation) GeneratePoc() []string {
 		insClass = "BPF_ALU"
 	}
 	instrName := NameForAluInstruction(c.Operation)
-	dstRegName := NameForBPFRegister(c.DstReg)
-	srcRegName := NameForBPFRegister(c.SrcReg)
+	dstRegName := c.DstReg.ToString()
+	srcRegName := c.SrcReg.ToString()
 	macro := fmt.Sprintf("BPF_ALU_REG(%s, /*dst=*/%s, /*src=*/%s, /*ins_class=*/%s)", instrName, dstRegName, srcRegName, insClass)
 	r := []string{macro}
 	if c.nextInstruction != nil {
@@ -178,11 +179,11 @@ func (c *AluRegOperation) GeneratePoc() []string {
 
 // NewAluRegOperation generates an operation structure that represents `op` with
 // the given instruction category.
-func NewAluRegOperation(op, insClass, dstReg uint8, srcReg uint8) *AluRegOperation {
+func NewAluRegOperation(op, insClass uint8, dstReg *Register, srcReg *Register) *AluRegOperation {
 	return &AluRegOperation{Operation: op, InsClass: insClass, DstReg: dstReg, SrcReg: srcReg}
 }
 
 // MovRegSrc64 Represents MOV operation where the src comes from a register.
-func MovRegSrc64(srcReg, dstReg uint8) *AluRegOperation {
+func MovRegSrc64(srcReg, dstReg *Register) *AluRegOperation {
 	return NewAluRegOperation(AluMov, InsClassAlu64, dstReg, srcReg)
 }

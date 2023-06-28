@@ -24,11 +24,11 @@ go_library(
     name = "ebpf",
     srcs = [
         "alu_operations.go",
+        "base_structures.go",
         "constants.go",
         "encoding_functions.go",
         "generation_utils.go",
         "jmp_operations.go",
-        "operation.go",
         "poc_generator.go",
         "program.go",
         "st_ld_operations.go",
