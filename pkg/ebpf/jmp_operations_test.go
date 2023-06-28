@@ -22,7 +22,7 @@ import (
 func TestJmpOperationCorrectEncoding(t *testing.T) {
 	tests := []struct {
 		testName string
-		dstReg   uint8
+		dstReg   *Register
 		imm      int32
 		op       uint8
 		insClass uint8
