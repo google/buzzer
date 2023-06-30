@@ -134,7 +134,7 @@ func generateRegAluOperation(op, insClass uint8, dstReg *Register, prog *Program
 // ebpf instructions. This should make writing ebpf programs in buzzer
 // more readable and easier to achieve.
 func InstructionSequence(instructions ...Operation) (Operation, error) {
-	return  instructionSequenceImpl(instructions)
+	return instructionSequenceImpl(instructions)
 }
 
 // In order to deal with things like nested jumps, the instruction sequence
@@ -150,10 +150,10 @@ func instructionSequenceImpl(instructions []Operation) (Operation, error) {
 		instruction := instructions[i]
 
 		if jmpInstr, ok := instruction.(*IMMJMPOperation); ok {
-			if jmpInstr.FalseBranchSize == 0  && jmpInstr.Instruction != JmpExit {
+			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Instruction != JmpExit {
 				return nil, fmt.Errorf("Only Exit() and Jmp() can have an offset of 0 (%s)", jmpInstr)
 			}
-			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:len(instructions)], jmpInstr.FalseBranchSize)
+			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:], jmpInstr.FalseBranchSize)
 			if err != nil {
 				return nil, err
 			}
@@ -173,7 +173,7 @@ func instructionSequenceImpl(instructions []Operation) (Operation, error) {
 			if jmpInstr.FalseBranchSize == 0 {
 				return nil, fmt.Errorf("JmpReg instruction cannot have jump offset of 0 (%s)", jmpInstr)
 			}
-			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:len(instructions)], jmpInstr.FalseBranchSize)
+			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:], jmpInstr.FalseBranchSize)
 			if err != nil {
 				return nil, err
 			}
@@ -185,7 +185,7 @@ func instructionSequenceImpl(instructions []Operation) (Operation, error) {
 				ptr = root
 			} else {
 				ptr.SetNextInstruction(jmpInstr)
-			}			// Break here because handleJmpInstruction should have processed the rest of the ebpf program.
+			} // Break here because handleJmpInstruction should have processed the rest of the ebpf program.
 			break
 		} else {
 			if root == nil {
@@ -211,7 +211,7 @@ func handleJmpInstruction(instructions []Operation, offset int16) (Operation, Op
 
 	// instructions[0] should be the jump itself.
 	falseBranchInstrs := instructions[1:trueBranchStartIndex]
-	trueBranchInstrs := instructions[trueBranchStartIndex:len(instructions)]
+	trueBranchInstrs := instructions[trueBranchStartIndex:]
 
 	falseBranchNextInstr, err := instructionSequenceImpl(falseBranchInstrs)
 	if err != nil {

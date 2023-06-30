@@ -21,7 +21,7 @@ import (
 
 func checkOperationImpl(t *testing.T, ptr Operation, expectedOperations []Operation) error {
 	t.Logf("checking ptr: %v, expectedOperations: %v", ptr, expectedOperations)
-	for i:= 0; i < len(expectedOperations); {
+	for i := 0; i < len(expectedOperations); {
 		operation := expectedOperations[i]
 		if ptr != operation {
 			return fmt.Errorf("mismatched operation at index %d, want %v, have %v", i, operation, ptr)
@@ -53,7 +53,7 @@ func checkOperationImpl(t *testing.T, ptr Operation, expectedOperations []Operat
 		}
 
 		if jmpInstr, ok := ptr.(*IMMJMPOperation); ok {
-			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Instruction != JmpExit  {
+			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Instruction != JmpExit {
 				t.Fatalf("Jump instruction with false branch size of 0 and not an exit operation or uncodintional jump at index %d (%v)", i, jmpInstr)
 			}
 			nextInstrIndex, err := checkJmpFunction(i, int(jmpInstr.FalseBranchSize), jmpInstr, t, jmpInstr.FalseBranchNextInstr)
@@ -62,7 +62,7 @@ func checkOperationImpl(t *testing.T, ptr Operation, expectedOperations []Operat
 			}
 			i = nextInstrIndex
 		} else if jmpInstr, ok := ptr.(*RegJMPOperation); ok {
-			if jmpInstr.FalseBranchSize == 0  {
+			if jmpInstr.FalseBranchSize == 0 {
 				t.Fatalf("A jump reg instruction cannot have false branch of 0 at index %d (%v)", i, jmpInstr)
 			}
 			nextInstrIndex, err := checkJmpFunction(i, int(jmpInstr.FalseBranchSize), jmpInstr, t, jmpInstr.FalseBranchNextInstr)
@@ -81,16 +81,16 @@ func checkOperationImpl(t *testing.T, ptr Operation, expectedOperations []Operat
 
 func TestInstructionChainHelperTest(t *testing.T) {
 	tests := []struct {
-		testName string
+		testName   string
 		operations []Operation
 	}{
 		{
-			testName:            "Instruction chain no jumps",
-			operations:          []Operation{Mov64(RegR0, 0), Mul64(RegR0, 10), Mov64(RegR0, RegR1), Exit()},
+			testName:   "Instruction chain no jumps",
+			operations: []Operation{Mov64(RegR0, 0), Mul64(RegR0, 10), Mov64(RegR0, RegR1), Exit()},
 		},
 		{
-			testName:			"Instruction chain with jumps",
-			operations:			[]Operation{Mov64(RegR0, 0), JmpGT(RegR0, 0, 4), Mul64(RegR0, 10), JmpLT(RegR0, RegR1, 2), Jmp(1), Mov64(RegR0, RegR1), Exit()},
+			testName:   "Instruction chain with jumps",
+			operations: []Operation{Mov64(RegR0, 0), JmpGT(RegR0, 0, 4), Mul64(RegR0, 10), JmpLT(RegR0, RegR1, 2), Jmp(1), Mov64(RegR0, RegR1), Exit()},
 		},
 	}
 
