@@ -48,6 +48,7 @@ go_test(
     srcs = [
         "alu_operations_test.go",
         "jmp_operations_test.go",
+        "instruction_helpers_test.go",
         "program_test.go",
         "st_ld_operations_test.go",
     ],

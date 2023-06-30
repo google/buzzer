@@ -14,6 +14,10 @@
 
 package ebpf
 
+import (
+	"fmt"
+)
+
 // GenerateRandomAluOperation provides a random ALU operation with either
 // IMM or Reg src that will be applied to a random dst reg.
 func GenerateRandomAluOperation(prog *Program) Operation {
@@ -124,4 +128,133 @@ func generateRegAluOperation(op, insClass uint8, dstReg *Register, prog *Program
 	}
 
 	return NewAluRegOperation(op, insClass, dstReg, srcReg)
+}
+
+// InstructionSequence abstracts away the process of creating a sequence of
+// ebpf instructions. This should make writing ebpf programs in buzzer
+// more readable and easier to achieve.
+func InstructionSequence(instructions ...Operation) (Operation, error) {
+	return  instructionSequenceImpl(instructions)
+}
+
+// In order to deal with things like nested jumps, the instruction sequence
+// feature needs to be a recursive function, hide the actual implementation
+// from users using a non exported function.
+func instructionSequenceImpl(instructions []Operation) (Operation, error) {
+	if len(instructions) == 0 {
+		// no more instructions to process, break the recursion.
+		return nil, nil
+	}
+	var root, ptr Operation
+	for i := 0; i < len(instructions); i++ {
+		instruction := instructions[i]
+
+		if jmpInstr, ok := instruction.(*IMMJMPOperation); ok {
+			if jmpInstr.FalseBranchSize == 0  && jmpInstr.Instruction != JmpExit {
+				return nil, fmt.Errorf("Only Exit() and Jmp() can have an offset of 0 (%s)", jmpInstr)
+			}
+			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:len(instructions)], jmpInstr.FalseBranchSize)
+			if err != nil {
+				return nil, err
+			}
+
+			jmpInstr.FalseBranchNextInstr = falseBranchNextInstr
+			jmpInstr.TrueBranchNextInstr = trueBranchNextInstr
+
+			if root == nil {
+				root = jmpInstr
+				ptr = root
+			} else {
+				ptr.SetNextInstruction(jmpInstr)
+			}
+			// Break here because handleJmpInstruction should have processed the rest of the ebpf program.
+			break
+		} else if jmpInstr, ok := instruction.(*RegJMPOperation); ok {
+			if jmpInstr.FalseBranchSize == 0 {
+				return nil, fmt.Errorf("JmpReg instruction cannot have jump offset of 0 (%s)", jmpInstr)
+			}
+			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:len(instructions)], jmpInstr.FalseBranchSize)
+			if err != nil {
+				return nil, err
+			}
+			jmpInstr.FalseBranchNextInstr = falseBranchNextInstr
+			jmpInstr.TrueBranchNextInstr = trueBranchNextInstr
+
+			if root == nil {
+				root = jmpInstr
+				ptr = root
+			} else {
+				ptr.SetNextInstruction(jmpInstr)
+			}			// Break here because handleJmpInstruction should have processed the rest of the ebpf program.
+			break
+		} else {
+			if root == nil {
+				root = instruction
+				ptr = root
+			} else {
+				ptr.SetNextInstruction(instruction)
+				ptr = instruction
+			}
+		}
+	}
+	return root, nil
+}
+
+func handleJmpInstruction(instructions []Operation, offset int16) (Operation, Operation, error) {
+	if len(instructions) == 0 {
+		return nil, nil, fmt.Errorf("partitionJumpInstruction invocation should receive at least 1 instruction")
+	}
+	trueBranchStartIndex := int(offset) + 1
+	if trueBranchStartIndex > len(instructions) {
+		return nil, nil, fmt.Errorf("jmp (%v) goes out of bounds", instructions[0])
+	}
+
+	// instructions[0] should be the jump itself.
+	falseBranchInstrs := instructions[1:trueBranchStartIndex]
+	trueBranchInstrs := instructions[trueBranchStartIndex:len(instructions)]
+
+	falseBranchNextInstr, err := instructionSequenceImpl(falseBranchInstrs)
+	if err != nil {
+		return nil, nil, err
+	}
+	trueBranchNextInstr, err := instructionSequenceImpl(trueBranchInstrs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return falseBranchNextInstr, trueBranchNextInstr, nil
+}
+
+// Mov64 generates an either MOV_ALU64_IMM or MOV_ALU64_REG operation,
+// depending if the src argument is an int or a register, returns nil if
+// the supplied value is any other type.
+//
+// Why golang doesn't have function overloading?!
+func Mov64(dstReg *Register, src interface{}) Operation {
+	if srcReg, ok := src.(*Register); ok {
+		return NewAluRegOperation(AluMov, InsClassAlu64, dstReg, srcReg)
+	} else if srcImm, ok := src.(int); ok {
+		return NewAluImmOperation(AluMov, InsClassAlu64, dstReg, int32(srcImm))
+	} else {
+		return nil
+	}
+}
+
+func Mul64(dstReg *Register, imm int32) Operation {
+	return NewAluImmOperation(AluMul, InsClassAlu64, dstReg, imm)
+}
+
+func Exit() Operation {
+	return &IMMJMPOperation{Instruction: JmpExit, InsClass: InsClassJmp, Imm: UnusedField, DstReg: RegR0}
+}
+
+func JmpGT(dstReg *Register, imm int32, offset int16) Operation {
+	return &IMMJMPOperation{Instruction: JmpJGT, InsClass: InsClassJmp, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
+}
+
+func JmpLT(dstReg *Register, srcReg *Register, offset int16) Operation {
+	return &RegJMPOperation{Instruction: JmpJGT, InsClass: InsClassJmp, SrcReg: srcReg, DstReg: RegR0, FalseBranchSize: offset}
+}
+
+func Jmp(offset int16) Operation {
+	return &IMMJMPOperation{Instruction: JmpJA, InsClass: InsClassJmp, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
 }

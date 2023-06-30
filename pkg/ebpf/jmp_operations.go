@@ -114,6 +114,13 @@ func (c *IMMJMPOperation) SetNextInstruction(next Operation) {
 	}
 }
 
+// GetNextInstruction returns the next instruction, mostly used for testing
+// purposes.
+func (c *IMMJMPOperation) GetNextInstruction() Operation {
+	// For now only return the true branch next instr.
+	return c.TrueBranchNextInstr
+}
+
 // GeneratePoc generates the C macros to repro this program.
 func (c *IMMJMPOperation) GeneratePoc() []string {
 	if c.Instruction == JmpExit {
@@ -200,6 +207,12 @@ func (c *CallOperation) SetNextInstruction(next Operation) {
 	} else {
 		c.nextInstr = next
 	}
+}
+
+// GetNextInstruction returns the next instruction, mostly used for testing
+// purposes.
+func (c *CallOperation) GetNextInstruction() Operation {
+	return c.nextInstr
 }
 
 // GeneratePoc generates the C macros to repro this program.
@@ -290,6 +303,13 @@ func (c *RegJMPOperation) SetNextInstruction(next Operation) {
 	} else {
 		c.TrueBranchNextInstr = next
 	}
+}
+
+// GetNextInstruction returns the next instruction, mostly used for testing
+// purposes.
+func (c *RegJMPOperation) GetNextInstruction() Operation {
+	// For now only return the true branch next instr.
+	return c.TrueBranchNextInstr
 }
 
 // NumerateInstruction sets the instruction numbers recursively.

@@ -86,6 +86,12 @@ func (c *MemoryOperation) SetNextInstruction(next Operation) {
 	}
 }
 
+// GetNextInstruction returns the next instruction, mostly used for testing
+// purposes.
+func (c *MemoryOperation) GetNextInstruction() Operation {
+	return c.nextInstr
+}
+
 func (c *MemoryOperation) setInstructionNumber(instrNo uint32) {
 	c.instructionNumber = instrNo
 }
