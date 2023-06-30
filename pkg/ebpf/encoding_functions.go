@@ -183,37 +183,6 @@ func NameForJmpInstruction(instr uint8) string {
 	}
 }
 
-// NameForBPFRegister returns the string name of the given register.
-func NameForBPFRegister(instr uint8) string {
-	switch instr {
-	case RegR0:
-		return "BPF_REG_0"
-	case RegR1:
-		return "BPF_REG_1"
-	case RegR2:
-		return "BPF_REG_2"
-	case RegR3:
-		return "BPF_REG_3"
-	case RegR4:
-		return "BPF_REG_4"
-	case RegR5:
-		return "BPF_REG_5"
-	case RegR6:
-		return "BPF_REG_6"
-	case RegR7:
-		return "BPF_REG_7"
-	case RegR8:
-		return "BPF_REG_8"
-	case RegR9:
-		return "BPF_REG_9"
-	case RegR10:
-		return "BPF_REG_10"
-	default:
-		return fmt.Sprintf("unknown instruction: %d", instr)
-
-	}
-}
-
 // GetBpfFuncName returns the C macro name of the provided bpf helper function.
 func GetBpfFuncName(funcNumber int32) string {
 	switch funcNumber {

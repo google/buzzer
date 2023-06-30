@@ -27,7 +27,7 @@ type Generator struct {
 func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Operation {
 	var root, ptr ebpf.Operation
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
-		reg := uint8(i)
+		reg, _ := ebpf.GetRegisterFromNumber(uint8(i))
 		regVal := int32(prog.GetRNG().RandInt())
 		nextInstr := ebpf.MovRegImm64(reg, regVal)
 		if ptr != nil {
@@ -37,7 +37,7 @@ func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Operation {
 			root = nextInstr
 		}
 		ptr = nextInstr
-		prog.MarkRegisterInitialized(reg)
+		prog.MarkRegisterInitialized(reg.RegisterNumber())
 	}
 	return root
 }
@@ -142,7 +142,7 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 	ptr.SetNextInstruction(guard)
 
 	// Choose random register.
-	chosenReg := prog.GetRandomRegister()
+	chosenReg, _ := ebpf.GetRegisterFromNumber(prog.GetRandomRegister())
 
 	// Perform pointer arithmetic with the chosen register.
 	next = ebpf.NewAluRegOperation(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR0, chosenReg)

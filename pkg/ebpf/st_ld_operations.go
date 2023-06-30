@@ -32,7 +32,7 @@ type MemoryOperation struct {
 	InsClass uint8
 
 	// DstReg represents the destination register.
-	DstReg uint8
+	DstReg *Register
 
 	// Even if this is an imm operation, it seems that ebpf uses the
 	// src register to point at what type of value we are loading from
@@ -40,7 +40,7 @@ type MemoryOperation struct {
 	// a map fd. (http://shortn/_cHoySHsuW2)
 
 	// SrcReg is the source register.
-	SrcReg uint8
+	SrcReg *Register
 
 	// Imm value to use.
 	Imm int32
@@ -53,7 +53,7 @@ type MemoryOperation struct {
 
 // GenerateBytecode generates the bytecode associated with this instruction.
 func (c *MemoryOperation) GenerateBytecode() []uint64 {
-	bytecode := []uint64{encodeImmediateStOrLdOperation(c.InsClass, c.Size, c.Mode, c.DstReg, c.SrcReg, c.Imm, c.Offset)}
+	bytecode := []uint64{encodeImmediateStOrLdOperation(c.InsClass, c.Size, c.Mode, c.DstReg.RegisterNumber(), c.SrcReg.RegisterNumber(), c.Imm, c.Offset)}
 
 	// It seems that the ld_imm64 instructions need a "pseudo instruction"
 	// after them, the documentation is not clear about it but

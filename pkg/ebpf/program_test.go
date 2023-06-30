@@ -32,7 +32,7 @@ func (g *MockGenerator) GenerateNextInstruction(a *Program) Operation {
 	g.generateNextInstructionInvoked = true
 	reg0 := MovRegImm64(RegR0, 0)
 	reg0.SetNextInstruction(ExitOperation())
-	a.MarkRegisterInitialized(RegR0)
+	a.MarkRegisterInitialized(RegR0.RegisterNumber())
 	return reg0
 }
 
@@ -41,8 +41,8 @@ func NewTestProgram(gen *MockGenerator) *Program {
 		logMap:      0,
 		Gen:         gen,
 		MapSize:     0,
-		MinRegister: RegR0,
-		MaxRegister: RegR10,
+		MinRegister: RegR0.RegisterNumber(),
+		MaxRegister: RegR10.RegisterNumber(),
 	}
 	prog.construct()
 	return prog
@@ -61,7 +61,7 @@ func TestProgramGeneration(t *testing.T) {
 	if !gen.generateNextInstructionInvoked {
 		t.Errorf("Expected GenerateNextInstruction to be invoked")
 	}
-	if !a.IsRegisterInitialized(RegR0) {
+	if !a.IsRegisterInitialized(RegR0.RegisterNumber()) {
 		t.Errorf("expected R0 to be marked as initialized\n")
 	}
 	expectedBytecode := []uint64{0x000000000000b7, 0x00000000000095}

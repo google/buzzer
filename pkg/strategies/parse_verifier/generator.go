@@ -51,19 +51,19 @@ func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Operation {
 		SrcReg:   ebpf.PseudoMapFD,
 		Imm:      int32(prog.LogMap()),
 	}
-	prog.MarkRegisterInitialized(ebpf.RegR6)
+	prog.MarkRegisterInitialized(ebpf.RegR6.RegisterNumber())
 	ptr = root
 	// Initializing R6 to a pointer value via a 8-byte immediate
 	// generates a wide instruction. So, two 8-byte values.
 	hSize := int32(2)
 
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
-		reg := uint8(i)
+		reg, _ := ebpf.GetRegisterFromNumber(uint8(i))
 		regVal := int32(prog.GetRNG().RandInt())
 		nextInstr := ebpf.MovRegImm64(reg, regVal)
 		ptr.SetNextInstruction(nextInstr)
 		ptr = nextInstr
-		prog.MarkRegisterInitialized(reg)
+		prog.MarkRegisterInitialized(reg.RegisterNumber())
 		hSize++
 	}
 	g.headerSize = hSize
@@ -80,7 +80,7 @@ func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Operation {
 
 	instr := ebpf.GenerateRandomAluOperation(prog)
 
-	var dstReg uint8
+	var dstReg *ebpf.Register
 
 	if alui, ok := instr.(*ebpf.AluImmOperation); ok {
 		dstReg = alui.DstReg
@@ -102,7 +102,7 @@ func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Operation {
 	}
 
 	g.offsetMap[g.logCount] = instrOffset
-	g.regMap[g.logCount] = dstReg
+	g.regMap[g.logCount] = dstReg.RegisterNumber()
 	g.sizeMap[g.logCount] = instrLen
 	g.logCount++
 
@@ -123,7 +123,7 @@ func (g *Generator) Generate(prog *ebpf.Program) ebpf.Operation {
 	return root
 }
 
-func (g *Generator) generateStateStoringSnippet(dstReg uint8, prog *ebpf.Program) (ebpf.Operation, ebpf.Operation) {
+func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebpf.Program) (ebpf.Operation, ebpf.Operation) {
 	var instr, next, ptr ebpf.Operation
 
 	// The storing snippet looks something like this:

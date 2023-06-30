@@ -25,8 +25,8 @@ func TestMemoryOperationCorrectEncoding(t *testing.T) {
 		imm      int32
 		size     uint8
 		mode     uint8
-		srcReg   uint8
-		dstReg   uint8
+		srcReg   *Register
+		dstReg   *Register
 		insClass uint8
 		offset   int16
 

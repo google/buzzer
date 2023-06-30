@@ -25,6 +25,7 @@ func GenerateRandomAluOperation(prog *Program) Operation {
 	} else {
 		dstReg = prog.GetRandomRegister()
 	}
+	dReg, _ := GetRegisterFromNumber(dstReg)
 
 	var insClass uint8
 	if prog.GetRNG().RandRange(0, 1) == 0 {
@@ -37,9 +38,9 @@ func GenerateRandomAluOperation(prog *Program) Operation {
 	// operation or one that uses a src register.
 	var instr Operation
 	if prog.GetRNG().RandRange(0, 1) == 0 {
-		instr = generateImmAluOperation(op, insClass, dstReg, prog)
+		instr = generateImmAluOperation(op, insClass, dReg, prog)
 	} else {
-		instr = generateRegAluOperation(op, insClass, dstReg, prog)
+		instr = generateRegAluOperation(op, insClass, dReg, prog)
 	}
 
 	return instr
@@ -74,10 +75,10 @@ func GenerateRandomJmpRegOperation(prog *Program, trueBranchGenerator func(prog 
 		}
 	}
 
-	dstReg := prog.GetRandomRegister()
-	srcReg := prog.GetRandomRegister()
+	dstReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
+	srcReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
 	for srcReg == dstReg {
-		srcReg = prog.GetRandomRegister()
+		srcReg, _ = GetRegisterFromNumber(prog.GetRandomRegister())
 	}
 
 	return &RegJMPOperation{
@@ -91,7 +92,7 @@ func GenerateRandomJmpRegOperation(prog *Program, trueBranchGenerator func(prog 
 
 }
 
-func generateImmAluOperation(op, insClass, dstReg uint8, prog *Program) Operation {
+func generateImmAluOperation(op, insClass uint8, dstReg *Register, prog *Program) Operation {
 	value := int32(prog.GetRNG().RandRange(0, 0xFFFFFFFF))
 	switch op {
 	case AluRsh, AluLsh, AluArsh:
@@ -103,23 +104,23 @@ func generateImmAluOperation(op, insClass, dstReg uint8, prog *Program) Operatio
 	case AluNeg:
 		value = 0
 	case AluMov:
-		if !prog.IsRegisterInitialized(dstReg) {
-			prog.MarkRegisterInitialized(dstReg)
+		if !prog.IsRegisterInitialized(dstReg.RegisterNumber()) {
+			prog.MarkRegisterInitialized(dstReg.RegisterNumber())
 		}
 	}
 
 	return NewAluImmOperation(op, insClass, dstReg, value)
 }
 
-func generateRegAluOperation(op, insClass, dstReg uint8, prog *Program) Operation {
-	srcReg := prog.GetRandomRegister()
+func generateRegAluOperation(op, insClass uint8, dstReg *Register, prog *Program) Operation {
+	srcReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
 	// Negation is not supported with Register as src.
 	for op == AluNeg {
 		op = uint8(prog.GetRNG().RandRange(0x00, 0x0c)) << 4
 	}
 
-	if op == AluMov && !prog.IsRegisterInitialized(dstReg) {
-		prog.MarkRegisterInitialized(dstReg)
+	if op == AluMov && !prog.IsRegisterInitialized(dstReg.RegisterNumber()) {
+		prog.MarkRegisterInitialized(dstReg.RegisterNumber())
 	}
 
 	return NewAluRegOperation(op, insClass, dstReg, srcReg)

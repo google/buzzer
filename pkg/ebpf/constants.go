@@ -118,32 +118,25 @@ const (
 	StLdSizeDW = 0x18
 )
 
+// Values for the eBPF Registers
+var RegR0 = &Register{registerNumber: 0}
+var RegR1 = &Register{registerNumber: 1}
+var RegR2 = &Register{registerNumber: 2}
+var RegR3 = &Register{registerNumber: 3}
+var RegR4 = &Register{registerNumber: 4}
+var RegR5 = &Register{registerNumber: 5}
+var RegR6 = &Register{registerNumber: 6}
+var RegR7 = &Register{registerNumber: 7}
+var RegR8 = &Register{registerNumber: 8}
+var RegR9 = &Register{registerNumber: 9}
+var RegR10 = &Register{registerNumber: 10}
+
+// This gets used when specifying a file descriptor with pseudo instructions.
+// The value gets specified in the src reg therefore we need to declare it as
+// a register object... the value is 1 so a reference to RegR1 will do the job.
+var PseudoMapFD = RegR1
+
 const (
-	// Values for the eBPF Registers
-
-	// RegR0 R0 register.
-	RegR0 = 0x00
-	// RegR1 R1 register.
-	RegR1 = 0x01
-	// RegR2 R2 register.
-	RegR2 = 0x02
-	// RegR3 R3 register.
-	RegR3 = 0x03
-	// RegR4 R4 register.
-	RegR4 = 0x04
-	// RegR5 R5 register.
-	RegR5 = 0x05
-	// RegR6 R6 register.
-	RegR6 = 0x06
-	// RegR7 R7 register.
-	RegR7 = 0x07
-	// RegR8 R8 register.
-	RegR8 = 0x08
-	// RegR9 R9 register.
-	RegR9 = 0x09
-	// RegR10 R10 register 10.
-	RegR10 = 0x0A
-
 	// RegisterCount is the number of registers available
 	RegisterCount = 10
 )
@@ -156,8 +149,6 @@ const (
 	SrcImm = 0x00
 	// SrcReg take src as a reg value.
 	SrcReg = 0x08
-	// PseudoMapFD pseudo map fd for map operations.
-	PseudoMapFD = 0x01
 )
 
 const (
