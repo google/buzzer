@@ -72,6 +72,12 @@ func (c *AluImmOperation) SetNextInstruction(next Operation) {
 	}
 }
 
+// GetNextInstruction returns the next instruction, mostly used for testing
+// purposes.
+func (c *AluImmOperation) GetNextInstruction() Operation {
+	return c.nextInstruction
+}
+
 // GeneratePoc Generates the C macro that represents this instruction.
 func (c *AluImmOperation) GeneratePoc() []string {
 	var insClass string
@@ -156,6 +162,12 @@ func (c *AluRegOperation) SetNextInstruction(next Operation) {
 	} else {
 		c.nextInstruction = next
 	}
+}
+
+// GetNextInstruction returns the next instruction, mostly used for testing
+// purposes.
+func (c *AluRegOperation) GetNextInstruction() Operation {
+	return c.nextInstruction
 }
 
 // GeneratePoc Generates the C macro that represents this instruction.

@@ -25,6 +25,7 @@ type Operation interface {
 	GenerateBytecode() []uint64
 	GenerateNextInstruction(prog *Program)
 	SetNextInstruction(next Operation)
+	GetNextInstruction() Operation
 	NumerateInstruction(instrNo uint32) int
 	GeneratePoc() []string
 }
