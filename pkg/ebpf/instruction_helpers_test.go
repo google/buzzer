@@ -81,16 +81,34 @@ func checkOperationImpl(t *testing.T, ptr Operation, expectedOperations []Operat
 
 func TestInstructionChainHelperTest(t *testing.T) {
 	tests := []struct {
-		testName   string
-		operations []Operation
+		testName      string
+		operations    []Operation
+		expectedError error
 	}{
 		{
-			testName:   "Instruction chain no jumps",
-			operations: []Operation{Mov64(RegR0, 0), Mul64(RegR0, 10), Mov64(RegR0, RegR1), Exit()},
+			testName:      "Instruction chain no jumps",
+			operations:    []Operation{Mov64(RegR0, 0), Mul64(RegR0, 10), Mov64(RegR0, RegR1), Exit()},
+			expectedError: nil,
 		},
 		{
-			testName:   "Instruction chain with jumps",
-			operations: []Operation{Mov64(RegR0, 0), JmpGT(RegR0, 0, 4), Mul64(RegR0, 10), JmpLT(RegR0, RegR1, 2), Jmp(1), Mov64(RegR0, RegR1), Exit()},
+			testName:      "Instruction chain with jumps",
+			operations:    []Operation{Mov64(RegR0, 0), JmpGT(RegR0, 0, 4), Mul64(RegR0, 10), JmpLT(RegR0, RegR1, 2), Jmp(1), Mov64(RegR0, RegR1), Exit()},
+			expectedError: nil,
+		},
+		{
+			testName:      "Jump imm With offset of 0",
+			operations:    []Operation{Mov64(RegR0, 0), JmpGT(RegR0, 0, 0), Exit()},
+			expectedError: fmt.Errorf("Only Exit() and Jmp() can have an offset of 0"),
+		},
+		{
+			testName:      "Jump reg With offset of 0",
+			operations:    []Operation{Mov64(RegR0, 0), JmpLT(RegR0, RegR1, 0), Exit()},
+			expectedError: fmt.Errorf("JmpReg instruction cannot have jump offset of 0"),
+		},
+		{
+			testName:      "Jump goes out of bounds",
+			operations:    []Operation{Mov64(RegR0, 0), JmpGT(RegR0, 0, 2), Exit()},
+			expectedError: fmt.Errorf("Jmp goes out of bounds"),
 		},
 	}
 
@@ -98,8 +116,11 @@ func TestInstructionChainHelperTest(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Logf("Running test case %s", tc.testName)
 			root, err := InstructionSequence(tc.operations...)
-			if err != nil {
-				t.Fatalf("InstructionSequence returned error: %v", err)
+			if tc.expectedError != nil {
+				if err.Error() != tc.expectedError.Error() {
+					t.Fatalf("Want error %v, got %v", tc.expectedError, err)
+				}
+				return
 			}
 			result := checkOperationImpl(t, root, tc.operations)
 			if result != nil {

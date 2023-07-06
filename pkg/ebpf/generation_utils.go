@@ -151,7 +151,7 @@ func instructionSequenceImpl(instructions []Operation) (Operation, error) {
 
 		if jmpInstr, ok := instruction.(*IMMJMPOperation); ok {
 			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Instruction != JmpExit {
-				return nil, fmt.Errorf("Only Exit() and Jmp() can have an offset of 0 (%s)", jmpInstr)
+				return nil, fmt.Errorf("Only Exit() and Jmp() can have an offset of 0")
 			}
 			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:], jmpInstr.FalseBranchSize)
 			if err != nil {
@@ -171,7 +171,7 @@ func instructionSequenceImpl(instructions []Operation) (Operation, error) {
 			break
 		} else if jmpInstr, ok := instruction.(*RegJMPOperation); ok {
 			if jmpInstr.FalseBranchSize == 0 {
-				return nil, fmt.Errorf("JmpReg instruction cannot have jump offset of 0 (%s)", jmpInstr)
+				return nil, fmt.Errorf("JmpReg instruction cannot have jump offset of 0")
 			}
 			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:], jmpInstr.FalseBranchSize)
 			if err != nil {
@@ -202,11 +202,19 @@ func instructionSequenceImpl(instructions []Operation) (Operation, error) {
 
 func handleJmpInstruction(instructions []Operation, offset int16) (Operation, Operation, error) {
 	if len(instructions) == 0 {
-		return nil, nil, fmt.Errorf("partitionJumpInstruction invocation should receive at least 1 instruction")
+		// TODO: here and below, to improve testing lets define the possible
+		// errors in a list somewhere else so we can compare directly that we
+		// got the error we expect.
+		return nil, nil, fmt.Errorf("handleJmpInstruction invocation should receive at least 1 instruction")
 	}
 	trueBranchStartIndex := int(offset) + 1
 	if trueBranchStartIndex > len(instructions) {
-		return nil, nil, fmt.Errorf("jmp (%v) goes out of bounds", instructions[0])
+		// TODO: For this error message and others, it would make debugging
+		// easier if we could put the offending instruction.
+		// For that we would need a way to convert an instruction to a
+		// readable string, this is easy to do but let's do it in a follow
+		// up patch.
+		return nil, nil, fmt.Errorf("Jmp goes out of bounds")
 	}
 
 	// instructions[0] should be the jump itself.
