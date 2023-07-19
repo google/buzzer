@@ -18,75 +18,37 @@ import (
 	"fmt"
 )
 
-// AluImmOperation represents an ALU operation with an immediate value
-type AluImmOperation struct {
-	// Operation that this instruction represents.
-	Operation uint8
+// AluImmInstruction represents an ALU operation with an immediate value
+type AluImmInstruction struct {
 
-	// InsClass is the instruction class.
-	InsClass uint8
+	// Add all the basic things all instructions have.
+	BaseInstruction
 
 	// DstReg is where the result of the operation will be stored.
 	DstReg *Register
 
 	// Imm is the immediate value to use as src operand
-	Imm               int32
-	instructionNumber uint32
-	nextInstruction   Operation
+	Imm int32
 }
 
 // GenerateBytecode generates the bytecode corresponding to this instruction.
-func (c *AluImmOperation) GenerateBytecode() []uint64 {
-	bytecode := []uint64{encodeImmediateAluOperation(c.Operation, c.InsClass, c.DstReg.RegisterNumber(), c.Imm)}
+func (c *AluImmInstruction) GenerateBytecode() []uint64 {
+	bytecode := []uint64{encodeImmediateAluInstruction(c.Opcode, c.InstructionClass, c.DstReg.RegisterNumber(), c.Imm)}
 	if c.nextInstruction != nil {
 		bytecode = append(bytecode, c.nextInstruction.GenerateBytecode()...)
 	}
 	return bytecode
 }
 
-// GenerateNextInstruction generates the next instruction.
-func (c *AluImmOperation) GenerateNextInstruction(ast *Program) {
-	if c.nextInstruction != nil {
-		c.nextInstruction.GenerateNextInstruction(ast)
-	} else {
-		c.nextInstruction = ast.Gen.GenerateNextInstruction(ast)
-	}
-}
-
-// NumerateInstruction sets the current instruction number.
-func (c *AluImmOperation) NumerateInstruction(instrNo uint32) int {
-	c.instructionNumber = instrNo
-	instrNo++
-	if c.nextInstruction != nil {
-		return 1 + c.nextInstruction.NumerateInstruction(instrNo)
-	}
-	return 1
-}
-
-// SetNextInstruction manually sets the next instruction.
-func (c *AluImmOperation) SetNextInstruction(next Operation) {
-	if c.nextInstruction != nil {
-		c.nextInstruction.SetNextInstruction(next)
-	} else {
-		c.nextInstruction = next
-	}
-}
-
-// GetNextInstruction returns the next instruction, mostly used for testing
-// purposes.
-func (c *AluImmOperation) GetNextInstruction() Operation {
-	return c.nextInstruction
-}
-
 // GeneratePoc Generates the C macro that represents this instruction.
-func (c *AluImmOperation) GeneratePoc() []string {
+func (c *AluImmInstruction) GeneratePoc() []string {
 	var insClass string
-	if c.InsClass == InsClassAlu64 {
+	if c.InstructionClass == InsClassAlu64 {
 		insClass = "BPF_ALU64"
 	} else {
 		insClass = "BPF_ALU"
 	}
-	instrName := NameForAluInstruction(c.Operation)
+	instrName := NameForAluInstruction(c.Opcode)
 	regName := c.DstReg.ToString()
 	macro := fmt.Sprintf("BPF_ALU_IMM(%s, /*dst=*/%s, /*imm=*/%d, /*ins_class=*/%s)", instrName, regName, c.Imm, insClass)
 	r := []string{macro}
@@ -96,89 +58,54 @@ func (c *AluImmOperation) GeneratePoc() []string {
 	return r
 }
 
-// NewAluImmOperation generates an operation structure that represents `op` with
+// NewAluImmInstruction generates an operation structure that represents `op` with
 // the given instruction category.
-func NewAluImmOperation(op, insClass uint8, dstReg *Register, imm int32) *AluImmOperation {
-	return &AluImmOperation{Operation: op, InsClass: insClass, DstReg: dstReg, Imm: imm}
+func NewAluImmInstruction(op, insClass uint8, dstReg *Register, imm int32) *AluImmInstruction {
+	return &AluImmInstruction{
+		BaseInstruction: BaseInstruction{Opcode: op, InstructionClass: insClass},
+		DstReg:          dstReg,
+		Imm:             imm,
+	}
 }
 
 // Auxiliary functions that generate specific instructions.
 
 // MovRegImm64 sets re to the specified value
-func MovRegImm64(reg *Register, imm int32) *AluImmOperation {
-	return NewAluImmOperation(AluMov, InsClassAlu64, reg, imm)
+func MovRegImm64(reg *Register, imm int32) *AluImmInstruction {
+	return NewAluImmInstruction(AluMov, InsClassAlu64, reg, imm)
 }
 
-// AluRegOperation Represents an ALU operation with register as src value.
-type AluRegOperation struct {
-	// Operation that this instruction represents.
-	Operation uint8
+// AluRegInstruction Represents an ALU operation with register as src value.
+type AluRegInstruction struct {
 
-	// InsClass instruction class of this operation.
-	InsClass uint8
+	// Add all the basic things all instructions have.
+	BaseInstruction
 
 	// DstReg is where the result will be stored.
 	DstReg *Register
 
 	// SrcReg is where to take the valuo for the second operand.
 	SrcReg *Register
-
-	instructionNumber uint32
-	nextInstruction   Operation
 }
 
 // GenerateBytecode generates the bytecode corresponding to this instruction.
-func (c *AluRegOperation) GenerateBytecode() []uint64 {
-	bytecode := []uint64{encodeRegisterAluOperation(c.Operation, c.InsClass, c.DstReg.RegisterNumber(), c.SrcReg.RegisterNumber())}
+func (c *AluRegInstruction) GenerateBytecode() []uint64 {
+	bytecode := []uint64{encodeRegisterAluInstruction(c.Opcode, c.InstructionClass, c.DstReg.RegisterNumber(), c.SrcReg.RegisterNumber())}
 	if c.nextInstruction != nil {
 		bytecode = append(bytecode, c.nextInstruction.GenerateBytecode()...)
 	}
 	return bytecode
 }
 
-// GenerateNextInstruction generates the next instruction.
-func (c *AluRegOperation) GenerateNextInstruction(ast *Program) {
-	if c.nextInstruction != nil {
-		c.nextInstruction.GenerateNextInstruction(ast)
-	} else {
-		c.nextInstruction = ast.Gen.GenerateNextInstruction(ast)
-	}
-}
-
-// NumerateInstruction sets the current instruction number.
-func (c *AluRegOperation) NumerateInstruction(instrNo uint32) int {
-	c.instructionNumber = instrNo
-	instrNo++
-	if c.nextInstruction != nil {
-		return 1 + c.nextInstruction.NumerateInstruction(instrNo)
-	}
-	return 1
-}
-
-// SetNextInstruction manually sets the next instruction.
-func (c *AluRegOperation) SetNextInstruction(next Operation) {
-	if c.nextInstruction != nil {
-		c.nextInstruction.SetNextInstruction(next)
-	} else {
-		c.nextInstruction = next
-	}
-}
-
-// GetNextInstruction returns the next instruction, mostly used for testing
-// purposes.
-func (c *AluRegOperation) GetNextInstruction() Operation {
-	return c.nextInstruction
-}
-
 // GeneratePoc Generates the C macro that represents this instruction.
-func (c *AluRegOperation) GeneratePoc() []string {
+func (c *AluRegInstruction) GeneratePoc() []string {
 	var insClass string
-	if c.InsClass == InsClassAlu64 {
+	if c.InstructionClass == InsClassAlu64 {
 		insClass = "BPF_ALU64"
 	} else {
 		insClass = "BPF_ALU"
 	}
-	instrName := NameForAluInstruction(c.Operation)
+	instrName := NameForAluInstruction(c.Opcode)
 	dstRegName := c.DstReg.ToString()
 	srcRegName := c.SrcReg.ToString()
 	macro := fmt.Sprintf("BPF_ALU_REG(%s, /*dst=*/%s, /*src=*/%s, /*ins_class=*/%s)", instrName, dstRegName, srcRegName, insClass)
@@ -189,13 +116,17 @@ func (c *AluRegOperation) GeneratePoc() []string {
 	return r
 }
 
-// NewAluRegOperation generates an operation structure that represents `op` with
+// NewAluRegInstruction generates an operation structure that represents `op` with
 // the given instruction category.
-func NewAluRegOperation(op, insClass uint8, dstReg *Register, srcReg *Register) *AluRegOperation {
-	return &AluRegOperation{Operation: op, InsClass: insClass, DstReg: dstReg, SrcReg: srcReg}
+func NewAluRegInstruction(op, insClass uint8, dstReg *Register, srcReg *Register) *AluRegInstruction {
+	return &AluRegInstruction{
+		BaseInstruction: BaseInstruction{Opcode: op, InstructionClass: insClass},
+		DstReg:          dstReg,
+		SrcReg:          srcReg,
+	}
 }
 
 // MovRegSrc64 Represents MOV operation where the src comes from a register.
-func MovRegSrc64(srcReg, dstReg *Register) *AluRegOperation {
-	return NewAluRegOperation(AluMov, InsClassAlu64, dstReg, srcReg)
+func MovRegSrc64(srcReg, dstReg *Register) *AluRegInstruction {
+	return NewAluRegInstruction(AluMov, InsClassAlu64, dstReg, srcReg)
 }
