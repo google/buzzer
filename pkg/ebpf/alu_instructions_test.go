@@ -19,7 +19,7 @@ import (
 	"testing"
 )
 
-func TestAluImmOperationCorrectEncoding(t *testing.T) {
+func TestAluImmInstructionCorrectEncoding(t *testing.T) {
 	tests := []struct {
 		testName string
 		dstReg   *Register
@@ -50,17 +50,17 @@ func TestAluImmOperationCorrectEncoding(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Logf("Running test case %s", tc.testName)
-			operation := NewAluImmOperation(AluMov, InsClassAlu64, tc.dstReg, tc.imm)
+			operation := NewAluImmInstruction(AluMov, InsClassAlu64, tc.dstReg, tc.imm)
 			if operation.DstReg != tc.dstReg {
 				t.Fatalf("operation.dstReg = %d, want %d", operation.DstReg, tc.dstReg)
 			}
 
-			if operation.Operation != tc.op {
-				t.Fatalf("operation.operation = %d, want %d", operation.Operation, tc.op)
+			if operation.Opcode != tc.op {
+				t.Fatalf("operation.operation = %d, want %d", operation.Opcode, tc.op)
 			}
 
-			if operation.InsClass != tc.insClass {
-				t.Fatalf("operation.insClass = %d, want %d", operation.InsClass, tc.insClass)
+			if operation.InstructionClass != tc.insClass {
+				t.Fatalf("operation.insClass = %d, want %d", operation.InstructionClass, tc.insClass)
 			}
 
 			if operation.Imm != tc.imm {
@@ -118,17 +118,17 @@ func TestAluRegOperationCorrectEncoding(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Logf("Running test case %s", tc.testName)
-			operation := NewAluRegOperation(AluMov, InsClassAlu64, tc.dstReg, tc.srcReg)
+			operation := NewAluRegInstruction(AluMov, InsClassAlu64, tc.dstReg, tc.srcReg)
 			if operation.DstReg != tc.dstReg {
 				t.Fatalf("operation.dstReg = %d, want %d", operation.DstReg, tc.dstReg)
 			}
 
-			if operation.Operation != tc.op {
-				t.Fatalf("operation.operation = %d, want %d", operation.Operation, tc.op)
+			if operation.Opcode != tc.op {
+				t.Fatalf("operation.operation = %d, want %d", operation.Opcode, tc.op)
 			}
 
-			if operation.InsClass != tc.insClass {
-				t.Fatalf("operation.insClass = %d, want %d", operation.InsClass, tc.insClass)
+			if operation.InstructionClass != tc.insClass {
+				t.Fatalf("operation.insClass = %d, want %d", operation.InstructionClass, tc.insClass)
 			}
 
 			if operation.SrcReg != tc.srcReg {

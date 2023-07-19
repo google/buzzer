@@ -23,15 +23,15 @@ type MockGenerator struct {
 	generateNextInstructionInvoked bool
 }
 
-func (g *MockGenerator) Generate(a *Program) Operation {
+func (g *MockGenerator) Generate(a *Program) Instruction {
 	g.generateInvoked = true
 	return g.GenerateNextInstruction(a)
 }
 
-func (g *MockGenerator) GenerateNextInstruction(a *Program) Operation {
+func (g *MockGenerator) GenerateNextInstruction(a *Program) Instruction {
 	g.generateNextInstructionInvoked = true
 	reg0 := MovRegImm64(RegR0, 0)
-	reg0.SetNextInstruction(ExitOperation())
+	reg0.SetNextInstruction(ExitInstruction())
 	a.MarkRegisterInitialized(RegR0.RegisterNumber())
 	return reg0
 }

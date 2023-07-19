@@ -55,12 +55,12 @@ func TestJmpOperationCorrectEncoding(t *testing.T) {
 				t.Errorf("operation.dstReg = %d, want %d", operation.DstReg, tc.dstReg)
 			}
 
-			if operation.Instruction != tc.op {
-				t.Errorf("operation.operation = %d, want %d", operation.Instruction, tc.op)
+			if operation.Opcode != tc.op {
+				t.Errorf("operation.operation = %d, want %d", operation.Opcode, tc.op)
 			}
 
-			if operation.InsClass != tc.insClass {
-				t.Errorf("operation.insClass = %d, want %d", operation.InsClass, tc.insClass)
+			if operation.InstructionClass != tc.insClass {
+				t.Errorf("operation.insClass = %d, want %d", operation.InstructionClass, tc.insClass)
 			}
 
 			if operation.Imm != tc.imm {

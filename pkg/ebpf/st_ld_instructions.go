@@ -18,18 +18,17 @@ import (
 	"fmt"
 )
 
-// MemoryOperation Represents an eBPF load/store operation with an immediate value.
-type MemoryOperation struct {
-	instructionNumber uint32
+// MemoryInstruction Represents an eBPF load/store operation with an immediate value.
+type MemoryInstruction struct {
+
+	// Add all the basic things all instructions have.
+	BaseInstruction
 
 	// Size of the operation to make.
 	Size uint8
 
 	// Mode of the operation.
 	Mode uint8
-
-	// InsClass represents the instruction class.
-	InsClass uint8
 
 	// DstReg represents the destination register.
 	DstReg *Register
@@ -47,73 +46,33 @@ type MemoryOperation struct {
 
 	// Offset of memory region to operate.
 	Offset int16
-
-	nextInstr Operation
 }
 
 // GenerateBytecode generates the bytecode associated with this instruction.
-func (c *MemoryOperation) GenerateBytecode() []uint64 {
-	bytecode := []uint64{encodeImmediateStOrLdOperation(c.InsClass, c.Size, c.Mode, c.DstReg.RegisterNumber(), c.SrcReg.RegisterNumber(), c.Imm, c.Offset)}
+func (c *MemoryInstruction) GenerateBytecode() []uint64 {
+	bytecode := []uint64{encodeImmediateStOrLdInstruction(c.InstructionClass, c.Size, c.Mode, c.DstReg.RegisterNumber(), c.SrcReg.RegisterNumber(), c.Imm, c.Offset)}
 
 	// It seems that the ld_imm64 instructions need a "pseudo instruction"
 	// after them, the documentation is not clear about it but
 	// we can find references to insn[1] (which refers to it) in the
 	// verifier code: http://shortn/_cHoySHsuW2
-	if c.InsClass == InsClassLd && c.Mode == StLdModeIMM {
+	if c.InstructionClass == InsClassLd && c.Mode == StLdModeIMM {
 		bytecode = append(bytecode, uint64(0))
 	}
-	if c.nextInstr != nil {
-		bytecode = append(bytecode, c.nextInstr.GenerateBytecode()...)
+	if c.nextInstruction != nil {
+		bytecode = append(bytecode, c.nextInstruction.GenerateBytecode()...)
 	}
 	return bytecode
 }
 
-// GenerateNextInstruction uses the ast generator to generate the next instruction.
-func (c *MemoryOperation) GenerateNextInstruction(ast *Program) {
-	if c.nextInstr != nil {
-		c.nextInstr.GenerateNextInstruction(ast)
-	} else {
-		c.nextInstr = ast.Gen.GenerateNextInstruction(ast)
-	}
-}
-
-// SetNextInstruction sets the next instruction manually.
-func (c *MemoryOperation) SetNextInstruction(next Operation) {
-	if c.nextInstr != nil {
-		c.nextInstr.SetNextInstruction(next)
-	} else {
-		c.nextInstr = next
-	}
-}
-
-// GetNextInstruction returns the next instruction, mostly used for testing
-// purposes.
-func (c *MemoryOperation) GetNextInstruction() Operation {
-	return c.nextInstr
-}
-
-func (c *MemoryOperation) setInstructionNumber(instrNo uint32) {
-	c.instructionNumber = instrNo
-}
-
-// NumerateInstruction numerates the instruction.
-func (c *MemoryOperation) NumerateInstruction(instrNo uint32) int {
-	c.instructionNumber = instrNo
-	instrNo++
-	if c.nextInstr != nil {
-		return 1 + c.nextInstr.NumerateInstruction(instrNo)
-	}
-	return 1
-}
-
 // GeneratePoc generates the C macros to repro this program.
-func (c *MemoryOperation) GeneratePoc() []string {
+func (c *MemoryInstruction) GeneratePoc() []string {
 	var macro string
-	if c.InsClass == InsClassLd && c.Mode == StLdModeIMM {
+	if c.InstructionClass == InsClassLd && c.Mode == StLdModeIMM {
 		macro = fmt.Sprintf("BPF_LD_MAP_FD(/*dst=*/%d, map_fd)", c.DstReg)
 	} else {
 		var insClass string
-		if c.InsClass == InsClassStx {
+		if c.InstructionClass == InsClassStx {
 			insClass = "BPF_STX"
 		} else {
 			insClass = "BPF_LDX"
@@ -135,8 +94,8 @@ func (c *MemoryOperation) GeneratePoc() []string {
 	}
 
 	r := []string{macro}
-	if c.nextInstr != nil {
-		r = append(r, c.nextInstr.GeneratePoc()...)
+	if c.nextInstruction != nil {
+		r = append(r, c.nextInstruction.GeneratePoc()...)
 	}
 	return r
 }

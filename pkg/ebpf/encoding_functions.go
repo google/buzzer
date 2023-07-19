@@ -29,27 +29,27 @@ import (
 // `op` = `EbpfAluAdd`, `aluInstructionClass`, `dstReg` = `EBPF_REGISTER_3`, `immediate` = `1337`
 // maps to the encoded eBPF operation:
 // dst_reg += int32(immediate)
-func encodeImmediateAluOperation(op, instructionClass uint8, dstReg uint8, immediate int32) uint64 {
+func encodeImmediateAluInstruction(op, instructionClass uint8, dstReg uint8, immediate int32) uint64 {
 	opcode := encodeAluOrJmpOpcode(instructionClass, SrcImm, op)
 	return encodeEbpfInstruction(opcode, UnusedField, dstReg, UnusedField, immediate)
 }
 
-func encodeRegisterAluOperation(op, instructionClass uint8, dstReg, srcReg uint8) uint64 {
+func encodeRegisterAluInstruction(op, instructionClass uint8, dstReg, srcReg uint8) uint64 {
 	opcode := encodeAluOrJmpOpcode(instructionClass, SrcReg, op)
 	return encodeEbpfInstruction(opcode, srcReg, dstReg, UnusedField, UnusedField)
 }
 
-func encodeImmediateJmpOperation(op, instructionClass, dstReg uint8, immediate int32, offset int16) uint64 {
+func encodeImmediateJmpInstruction(op, instructionClass, dstReg uint8, immediate int32, offset int16) uint64 {
 	opcode := encodeAluOrJmpOpcode(instructionClass, SrcImm, op)
 	return encodeEbpfInstruction(opcode, UnusedField, dstReg, offset, immediate)
 }
 
-func encodeRegisterJmpOperation(op, instructionClass, dstReg, srcReg uint8, offset int16) uint64 {
+func encodeRegisterJmpInstruction(op, instructionClass, dstReg, srcReg uint8, offset int16) uint64 {
 	opcode := encodeAluOrJmpOpcode(instructionClass, SrcReg, op)
 	return encodeEbpfInstruction(opcode, srcReg, dstReg, offset, UnusedField)
 }
 
-func encodeImmediateStOrLdOperation(instrClass, size, mode, dstReg, srcReg uint8, immediate int32, offset int16) uint64 {
+func encodeImmediateStOrLdInstruction(instrClass, size, mode, dstReg, srcReg uint8, immediate int32, offset int16) uint64 {
 	opcode := encodeStoreOrLoadOpcode(instrClass, size, mode)
 	return encodeEbpfInstruction(opcode, srcReg, dstReg, offset, immediate)
 }

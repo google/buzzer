@@ -18,9 +18,9 @@ import (
 	"fmt"
 )
 
-// GenerateRandomAluOperation provides a random ALU operation with either
+// GenerateRandomAluInstruction provides a random ALU operation with either
 // IMM or Reg src that will be applied to a random dst reg.
-func GenerateRandomAluOperation(prog *Program) Operation {
+func GenerateRandomAluInstruction(prog *Program) Instruction {
 	op := uint8(prog.GetRNG().RandRange(0x00, 0x0c)) << 4
 
 	var dstReg uint8
@@ -40,11 +40,11 @@ func GenerateRandomAluOperation(prog *Program) Operation {
 
 	// Toss another coin to decide if we are going to do an imm alu
 	// operation or one that uses a src register.
-	var instr Operation
+	var instr Instruction
 	if prog.GetRNG().RandRange(0, 1) == 0 {
-		instr = generateImmAluOperation(op, insClass, dReg, prog)
+		instr = generateImmAluInstruction(op, insClass, dReg, prog)
 	} else {
-		instr = generateRegAluOperation(op, insClass, dReg, prog)
+		instr = generateRegAluInstruction(op, insClass, dReg, prog)
 	}
 
 	return instr
@@ -62,10 +62,10 @@ func IsConditional(op uint8) bool {
 	return !(op == JmpExit || op == JmpCALL || op == JmpJA)
 }
 
-// GenerateRandomJmpRegOperation generates a random jump operation where
+// GenerateRandomJmpRegInstruction generates a random jump operation where
 // the src operand is a random register. The generator functions tell the
 // instruction how to generate the true/false branches.
-func GenerateRandomJmpRegOperation(prog *Program, trueBranchGenerator func(prog *Program) Operation, falseBranchGenerator func(prog *Program) (Operation, int16)) Operation {
+func GenerateRandomJmpRegInstruction(prog *Program, trueBranchGenerator func(prog *Program) Instruction, falseBranchGenerator func(prog *Program) (Instruction, int16)) Instruction {
 
 	var op uint8
 
@@ -85,9 +85,11 @@ func GenerateRandomJmpRegOperation(prog *Program, trueBranchGenerator func(prog 
 		srcReg, _ = GetRegisterFromNumber(prog.GetRandomRegister())
 	}
 
-	return &RegJMPOperation{
-		Instruction:          op,
-		InsClass:             InsClassJmp,
+	return &RegJMPInstruction{
+		BaseInstruction: BaseInstruction{
+			Opcode:           op,
+			InstructionClass: InsClassJmp,
+		},
 		DstReg:               dstReg,
 		SrcReg:               srcReg,
 		trueBranchGenerator:  trueBranchGenerator,
@@ -96,7 +98,7 @@ func GenerateRandomJmpRegOperation(prog *Program, trueBranchGenerator func(prog 
 
 }
 
-func generateImmAluOperation(op, insClass uint8, dstReg *Register, prog *Program) Operation {
+func generateImmAluInstruction(op, insClass uint8, dstReg *Register, prog *Program) Instruction {
 	value := int32(prog.GetRNG().RandRange(0, 0xFFFFFFFF))
 	switch op {
 	case AluRsh, AluLsh, AluArsh:
@@ -113,10 +115,10 @@ func generateImmAluOperation(op, insClass uint8, dstReg *Register, prog *Program
 		}
 	}
 
-	return NewAluImmOperation(op, insClass, dstReg, value)
+	return NewAluImmInstruction(op, insClass, dstReg, value)
 }
 
-func generateRegAluOperation(op, insClass uint8, dstReg *Register, prog *Program) Operation {
+func generateRegAluInstruction(op, insClass uint8, dstReg *Register, prog *Program) Instruction {
 	srcReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
 	// Negation is not supported with Register as src.
 	for op == AluNeg {
@@ -127,30 +129,30 @@ func generateRegAluOperation(op, insClass uint8, dstReg *Register, prog *Program
 		prog.MarkRegisterInitialized(dstReg.RegisterNumber())
 	}
 
-	return NewAluRegOperation(op, insClass, dstReg, srcReg)
+	return NewAluRegInstruction(op, insClass, dstReg, srcReg)
 }
 
 // InstructionSequence abstracts away the process of creating a sequence of
 // ebpf instructions. This should make writing ebpf programs in buzzer
 // more readable and easier to achieve.
-func InstructionSequence(instructions ...Operation) (Operation, error) {
+func InstructionSequence(instructions ...Instruction) (Instruction, error) {
 	return instructionSequenceImpl(instructions)
 }
 
 // In order to deal with things like nested jumps, the instruction sequence
 // feature needs to be a recursive function, hide the actual implementation
 // from users using a non exported function.
-func instructionSequenceImpl(instructions []Operation) (Operation, error) {
+func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
 	if len(instructions) == 0 {
 		// no more instructions to process, break the recursion.
 		return nil, nil
 	}
-	var root, ptr Operation
+	var root, ptr Instruction
 	for i := 0; i < len(instructions); i++ {
 		instruction := instructions[i]
 
-		if jmpInstr, ok := instruction.(*IMMJMPOperation); ok {
-			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Instruction != JmpExit {
+		if jmpInstr, ok := instruction.(*IMMJMPInstruction); ok {
+			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Opcode != JmpExit {
 				return nil, fmt.Errorf("Only Exit() and Jmp() can have an offset of 0")
 			}
 			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:], jmpInstr.FalseBranchSize)
@@ -169,7 +171,7 @@ func instructionSequenceImpl(instructions []Operation) (Operation, error) {
 			}
 			// Break here because handleJmpInstruction should have processed the rest of the ebpf program.
 			break
-		} else if jmpInstr, ok := instruction.(*RegJMPOperation); ok {
+		} else if jmpInstr, ok := instruction.(*RegJMPInstruction); ok {
 			if jmpInstr.FalseBranchSize == 0 {
 				return nil, fmt.Errorf("JmpReg instruction cannot have jump offset of 0")
 			}
@@ -200,7 +202,7 @@ func instructionSequenceImpl(instructions []Operation) (Operation, error) {
 	return root, nil
 }
 
-func handleJmpInstruction(instructions []Operation, offset int16) (Operation, Operation, error) {
+func handleJmpInstruction(instructions []Instruction, offset int16) (Instruction, Instruction, error) {
 	if len(instructions) == 0 {
 		// TODO: here and below, to improve testing lets define the possible
 		// errors in a list somewhere else so we can compare directly that we
@@ -237,32 +239,33 @@ func handleJmpInstruction(instructions []Operation, offset int16) (Operation, Op
 // the supplied value is any other type.
 //
 // Why golang doesn't have function overloading?!
-func Mov64(dstReg *Register, src interface{}) Operation {
+func Mov64(dstReg *Register, src interface{}) Instruction {
 	if srcReg, ok := src.(*Register); ok {
-		return NewAluRegOperation(AluMov, InsClassAlu64, dstReg, srcReg)
+		return NewAluRegInstruction(AluMov, InsClassAlu64, dstReg, srcReg)
 	} else if srcImm, ok := src.(int); ok {
-		return NewAluImmOperation(AluMov, InsClassAlu64, dstReg, int32(srcImm))
+		return NewAluImmInstruction(AluMov, InsClassAlu64, dstReg, int32(srcImm))
 	} else {
 		return nil
 	}
 }
 
-func Mul64(dstReg *Register, imm int32) Operation {
-	return NewAluImmOperation(AluMul, InsClassAlu64, dstReg, imm)
+func Mul64(dstReg *Register, imm int32) Instruction {
+	return NewAluImmInstruction(AluMul, InsClassAlu64, dstReg, imm)
 }
 
-func Exit() Operation {
-	return &IMMJMPOperation{Instruction: JmpExit, InsClass: InsClassJmp, Imm: UnusedField, DstReg: RegR0}
+func Exit() Instruction {
+	return &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpExit, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0}
 }
 
-func JmpGT(dstReg *Register, imm int32, offset int16) Operation {
-	return &IMMJMPOperation{Instruction: JmpJGT, InsClass: InsClassJmp, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
+func JmpGT(dstReg *Register, imm int32, offset int16) Instruction {
+	return &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpJGT, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
 }
 
-func JmpLT(dstReg *Register, srcReg *Register, offset int16) Operation {
-	return &RegJMPOperation{Instruction: JmpJGT, InsClass: InsClassJmp, SrcReg: srcReg, DstReg: RegR0, FalseBranchSize: offset}
+func JmpLT(dstReg *Register, srcReg *Register, offset int16) Instruction {
+	return &RegJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpJGT, InstructionClass: InsClassJmp}, SrcReg: srcReg, DstReg: RegR0, FalseBranchSize: offset}
 }
 
-func Jmp(offset int16) Operation {
-	return &IMMJMPOperation{Instruction: JmpJA, InsClass: InsClassJmp, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
+func Jmp(offset int16) Instruction {
+	return &IMMJMPInstruction{
+		BaseInstruction: BaseInstruction{Opcode: JmpJA, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
 }

@@ -19,15 +19,57 @@ import (
 	"strconv"
 )
 
-// EBPFOperation represents a single, high-level EBPF operation such as an ALU operation,
+// Instruction represents a single, high-level EBPF instruction such as an ALU instruction,
 // a conditional or function call
-type Operation interface {
+type Instruction interface {
 	GenerateBytecode() []uint64
 	GenerateNextInstruction(prog *Program)
-	SetNextInstruction(next Operation)
-	GetNextInstruction() Operation
+	SetNextInstruction(next Instruction)
+	GetNextInstruction() Instruction
 	NumerateInstruction(instrNo uint32) int
 	GeneratePoc() []string
+}
+
+// BaseInstruction groups together logic that is common to all eBPF instruction
+// representations.
+type BaseInstruction struct {
+	instructionNumber uint32
+	Opcode            uint8
+	InstructionClass  uint8
+	nextInstruction   Instruction
+}
+
+// GenerateNextInstruction generates the next instruction.
+func (i *BaseInstruction) GenerateNextInstruction(ast *Program) {
+	if i.nextInstruction != nil {
+		i.nextInstruction.GenerateNextInstruction(ast)
+	} else {
+		i.nextInstruction = ast.Gen.GenerateNextInstruction(ast)
+	}
+}
+
+// NumerateInstruction sets the current instruction number.
+func (i *BaseInstruction) NumerateInstruction(instrNo uint32) int {
+	i.instructionNumber = instrNo
+	if i.nextInstruction != nil {
+		return 1 + i.nextInstruction.NumerateInstruction(instrNo+1)
+	}
+	return 1
+}
+
+// SetNextInstruction manually sets the next instruction.
+func (i *BaseInstruction) SetNextInstruction(next Instruction) {
+	if i.nextInstruction != nil {
+		i.nextInstruction.SetNextInstruction(next)
+	} else {
+		i.nextInstruction = next
+	}
+}
+
+// GetNextInstruction returns the next instruction, mostly used for testing
+// purposes.
+func (i *BaseInstruction) GetNextInstruction() Instruction {
+	return i.nextInstruction
 }
 
 // Register represents an eBPF register, declared as a struct to differentiate
