@@ -136,21 +136,22 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
 	ptr = next
 
 	// Load pointer to map element.
-	next = ebpf.CallFunction(ebpf.MapLookup)
+	next = ebpf.Call(ebpf.MapLookup)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	guard := ebpf.GuardJump(ebpf.JmpJNE, ebpf.InsClassJmp, ebpf.RegR0, 0)
-	guard.FalseBranchNextInstr = ebpf.ExitInstruction()
-	guard.FalseBranchSize = 1
-	ptr.SetNextInstruction(guard)
+	next = ebpf.JmpNE(ebpf.RegR0, 0, 1)
+	nextAsJmp := next.(*ebpf.JmpImmInstruction)
+	nextAsJmp.FalseBranchNextInstr = ebpf.Exit()
+	ptr.SetNextInstruction(next)
+	ptr = next
 
 	// Choose random register.
 	chosenReg, _ := ebpf.GetRegisterFromNumber(prog.GetRandomRegister())
 
 	// Perform pointer arithmetic with the chosen register.
 	next = ebpf.NewAluRegInstruction(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR0, chosenReg)
-	guard.TrueBranchNextInstr = next
+	ptr.SetNextInstruction(next)
 	ptr = next
 
 	next = ebpf.MovRegImm64(ebpf.RegR3, g.magicNumber)
@@ -215,17 +216,18 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.CallFunction(ebpf.MapLookup)
+	next = ebpf.Call(ebpf.MapLookup)
 	ptr.SetNextInstruction(next)
 	ptr = next
-
-	guard = ebpf.GuardJump(ebpf.JmpJNE, ebpf.InsClassJmp, ebpf.RegR0, 0)
-	guard.FalseBranchNextInstr = ebpf.ExitInstruction()
-	guard.FalseBranchSize = 1
-	ptr.SetNextInstruction(guard)
-
+	
+	next = ebpf.JmpNE(ebpf.RegR0, 0, 1)
+	nextAsJmp = next.(*ebpf.JmpImmInstruction)
+	nextAsJmp.FalseBranchNextInstr = ebpf.Exit()
+	ptr.SetNextInstruction(next)
+	ptr = next
+	
 	next = ebpf.MovRegImm64(ebpf.RegR3, g.magicNumber)
-	guard.TrueBranchNextInstr = next
+	ptr.SetNextInstruction(next)
 	ptr = next
 
 	next = &ebpf.MemoryInstruction{
@@ -245,7 +247,7 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
 	next = ebpf.MovRegImm64(ebpf.RegR0, 0)
 	ptr.SetNextInstruction(next)
 	ptr = next
-	ptr.SetNextInstruction(ebpf.ExitInstruction())
+	ptr.SetNextInstruction(ebpf.Exit())
 
 	return root
 }

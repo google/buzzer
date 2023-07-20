@@ -29,6 +29,6 @@ func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Instruction
 // Generate is the main function that builds the ast for this strategy.
 func (g *Generator) Generate(a *ebpf.Program) ebpf.Instruction {
 	root := ebpf.MovRegImm64(ebpf.RegR0, 0)
-	root.SetNextInstruction(ebpf.ExitInstruction())
+	root.SetNextInstruction(ebpf.Exit())
 	return root
 }

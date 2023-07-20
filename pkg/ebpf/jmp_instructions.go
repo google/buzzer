@@ -291,13 +291,13 @@ func (c *JmpRegInstruction) GeneratePoc() []string {
 }
 
 func newJmpInstruction(opcode, insclass uint8, dstReg *Register, src interface{}, offset int16) Instruction {
-	if srcReg, ok := src.(*Register); ok {
+	isInt, srcInt := isIntType(src)
+	if isInt {
+		return &JmpImmInstruction{BaseInstruction: BaseInstruction{Opcode: opcode, InstructionClass: insclass}, Imm: int32(srcInt), DstReg: dstReg, FalseBranchSize: offset}
+	} else if srcReg, ok := src.(*Register); ok {
 		return &JmpRegInstruction{BaseInstruction: BaseInstruction{Opcode: opcode, InstructionClass: insclass}, SrcReg: srcReg, DstReg: dstReg, FalseBranchSize: offset}
-	} else if srcImm, ok := src.(int); ok {
-		return &JmpImmInstruction{BaseInstruction: BaseInstruction{Opcode: opcode, InstructionClass: insclass}, Imm: int32(srcImm), DstReg: dstReg, FalseBranchSize: offset}
-	} else {
-		return nil
-	}
+	} 
+	return nil
 }
 
 // Jmp represents an inconditional jump of `offset` instructions.
