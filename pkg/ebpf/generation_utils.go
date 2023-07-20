@@ -234,6 +234,32 @@ func handleJmpInstruction(instructions []Instruction, offset int16) (Instruction
 	return falseBranchNextInstr, trueBranchNextInstr, nil
 }
 
+// This function is meant to be used by all the Instruction Helper functions,
+// to test if the supplied src parameter is of type int. Callers of the helper
+// functions might provide an int, int64, int32, int16, int8, int as src
+// parameter and it makes sense to centralize the logic to check for a data
+// type here.
+//
+// If the passed data is indeed of an int data type, bool is true and
+// the value casted to int() is returned.
+//
+// If it is not, it returns false and an arbitrary int()
+func isIntType(src interface{}) (bool, int) {
+	if srcInt, ok := src.(int); ok {
+		return true, srcInt
+	} else if srcInt64, ok := src.(int64); ok {
+		return true, int(srcInt64)
+	} else if srcInt32, ok := src.(int32); ok {
+		return true, int(srcInt32)
+	} else if srcInt16, ok := src.(int16); ok {
+		return true, int(srcInt16)
+	} else if srcInt8, ok := src.(int8); ok {
+		return true, int(srcInt8)
+	}
+
+	return false, int(0)
+}
+
 func Exit() Instruction {
 	return &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpExit, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0}
 }

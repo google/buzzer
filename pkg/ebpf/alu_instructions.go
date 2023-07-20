@@ -127,13 +127,13 @@ func NewAluRegInstruction(op, insClass uint8, dstReg *Register, srcReg *Register
 }
 
 func newAluInstruction(opcode, insclass uint8, dstReg *Register, src interface{}) Instruction {
-	if srcReg, ok := src.(*Register); ok {
+	isInt, srcInt := isIntType(src)
+	if isInt {
+		return NewAluImmInstruction(opcode, insclass, dstReg, int32(srcInt))
+	} else if srcReg, ok := src.(*Register); ok {
 		return NewAluRegInstruction(opcode, insclass, dstReg, srcReg)
-	} else if srcImm, ok := src.(int); ok {
-		return NewAluImmInstruction(opcode, insclass, dstReg, int32(srcImm))
-	} else {
-		return nil
 	}
+	return nil
 }
 
 // Add64 Creates a new 64 bit Add instruction that is either imm or reg depending
