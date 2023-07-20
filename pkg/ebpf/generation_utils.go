@@ -234,25 +234,6 @@ func handleJmpInstruction(instructions []Instruction, offset int16) (Instruction
 	return falseBranchNextInstr, trueBranchNextInstr, nil
 }
 
-// Mov64 generates an either MOV_ALU64_IMM or MOV_ALU64_REG operation,
-// depending if the src argument is an int or a register, returns nil if
-// the supplied value is any other type.
-//
-// Why golang doesn't have function overloading?!
-func Mov64(dstReg *Register, src interface{}) Instruction {
-	if srcReg, ok := src.(*Register); ok {
-		return NewAluRegInstruction(AluMov, InsClassAlu64, dstReg, srcReg)
-	} else if srcImm, ok := src.(int); ok {
-		return NewAluImmInstruction(AluMov, InsClassAlu64, dstReg, int32(srcImm))
-	} else {
-		return nil
-	}
-}
-
-func Mul64(dstReg *Register, imm int32) Instruction {
-	return NewAluImmInstruction(AluMul, InsClassAlu64, dstReg, imm)
-}
-
 func Exit() Instruction {
 	return &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpExit, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0}
 }
