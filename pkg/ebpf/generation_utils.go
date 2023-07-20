@@ -85,7 +85,7 @@ func GenerateRandomJmpRegInstruction(prog *Program, trueBranchGenerator func(pro
 		srcReg, _ = GetRegisterFromNumber(prog.GetRandomRegister())
 	}
 
-	return &RegJMPInstruction{
+	return &JmpRegInstruction{
 		BaseInstruction: BaseInstruction{
 			Opcode:           op,
 			InstructionClass: InsClassJmp,
@@ -151,7 +151,7 @@ func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
 	for i := 0; i < len(instructions); i++ {
 		instruction := instructions[i]
 
-		if jmpInstr, ok := instruction.(*IMMJMPInstruction); ok {
+		if jmpInstr, ok := instruction.(*JmpImmInstruction); ok {
 			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Opcode != JmpExit {
 				return nil, fmt.Errorf("Only Exit() and Jmp() can have an offset of 0")
 			}
@@ -171,7 +171,7 @@ func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
 			}
 			// Break here because handleJmpInstruction should have processed the rest of the ebpf program.
 			break
-		} else if jmpInstr, ok := instruction.(*RegJMPInstruction); ok {
+		} else if jmpInstr, ok := instruction.(*JmpRegInstruction); ok {
 			if jmpInstr.FalseBranchSize == 0 {
 				return nil, fmt.Errorf("JmpReg instruction cannot have jump offset of 0")
 			}
@@ -258,21 +258,4 @@ func isIntType(src interface{}) (bool, int) {
 	}
 
 	return false, int(0)
-}
-
-func Exit() Instruction {
-	return &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpExit, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0}
-}
-
-func JmpGT(dstReg *Register, imm int32, offset int16) Instruction {
-	return &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpJGT, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
-}
-
-func JmpLT(dstReg *Register, srcReg *Register, offset int16) Instruction {
-	return &RegJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpJGT, InstructionClass: InsClassJmp}, SrcReg: srcReg, DstReg: RegR0, FalseBranchSize: offset}
-}
-
-func Jmp(offset int16) Instruction {
-	return &IMMJMPInstruction{
-		BaseInstruction: BaseInstruction{Opcode: JmpJA, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
 }

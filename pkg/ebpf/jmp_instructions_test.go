@@ -19,69 +19,90 @@ import (
 	"testing"
 )
 
-func TestJmpOperationCorrectEncoding(t *testing.T) {
+func TestImmJmpOperationCorrectEncoding(t *testing.T) {
+	testDstReg := RegR9
+	testImm := int32(42)
+	testOffset := int16(10)
 	tests := []struct {
-		testName string
-		dstReg   *Register
-		imm      int32
-		op       uint8
-		insClass uint8
-		instrNo  uint32
+		testName    string
+		instruction Instruction
 
-		// The values for expected encoding are calculated manually by
-		// following: http://shortn/_YhGoFtsPl9
-		wantEnc []uint64
+		wantOpcode uint8
+		wantClass  uint8
+		wantDstReg *Register
+		wantImm    int32
+		wantOffset	  int16
 
-		// Check that the auxiliar functions that return the bytecode
-		// directly have the values we expect.
-		wantAuxFuncEncoding uint64
+		// The values for expected encoding are calculated manually
+		wantEncoding []uint64
 	}{
 		{
-			testName:            "Imm jump operation",
-			dstReg:              RegR0,
-			imm:                 int32(1),
-			op:                  JmpJA,
-			insClass:            InsClassAlu64,
-			wantEnc:             []uint64{0x100000007},
-			wantAuxFuncEncoding: GuardJump(JmpJA, InsClassAlu64, RegR0, 1).GenerateBytecode()[0],
+			testName:     "Encoding Jmp",
+			instruction:  Jmp(42),
+			wantDstReg:   RegR0,
+			wantImm:      UnusedField,
+			wantOpcode:   JmpJA,
+			wantClass:    InsClassJmp,
+			wantOffset:	  42,
+			wantEncoding: []uint64{0x2a0005},
+		},
+		{
+			testName:     "Encoding Exit",
+			instruction:  Exit(),
+			wantDstReg:   RegR0,
+			wantImm:      UnusedField,
+			wantOpcode:   JmpExit,
+			wantClass:    InsClassJmp,
+			wantOffset:	  UnusedField,
+			wantEncoding: []uint64{0x95},
+		},
+		{
+			testName:     "Encoding JEQ",
+			instruction:  JmpEQ(testDstReg, testImm, testOffset),
+			wantDstReg:   testDstReg,
+			wantImm:      testImm,
+			wantOpcode:   JmpJEQ,
+			wantClass:    InsClassJmp,
+			wantOffset:	  testOffset,
+			wantEncoding: []uint64{0x95},
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.testName, func(t *testing.T) {
+			instruction, ok := tc.instruction.(*JmpImmInstruction)
+			if !ok {
+				t.Fatalf("Could not cas instruction to JmpImm %v", tc.instruction)
+			}
 			t.Logf("Running test case %s", tc.testName)
-			operation := GuardJump(tc.op, tc.insClass, tc.dstReg, tc.imm)
-			if operation.DstReg != tc.dstReg {
-				t.Errorf("operation.dstReg = %d, want %d", operation.DstReg, tc.dstReg)
+			if instruction.DstReg != tc.wantDstReg {
+				t.Fatalf("instruction.dstReg = %d, want %d", instruction.DstReg, tc.wantDstReg)
 			}
 
-			if operation.Opcode != tc.op {
-				t.Errorf("operation.operation = %d, want %d", operation.Opcode, tc.op)
+			if instruction.Opcode != tc.wantOpcode {
+				t.Fatalf("instruction.operation = %d, want %d", instruction.Opcode, tc.wantOpcode)
 			}
 
-			if operation.InstructionClass != tc.insClass {
-				t.Errorf("operation.insClass = %d, want %d", operation.InstructionClass, tc.insClass)
+			if instruction.InstructionClass != tc.wantClass {
+				t.Fatalf("instruction.insClass = %d, want %d", instruction.InstructionClass, tc.wantClass)
 			}
 
-			if operation.Imm != tc.imm {
-				t.Errorf("operation.imm = %d, want %d", operation.Imm, tc.imm)
+			if instruction.Imm != tc.wantImm {
+				t.Fatalf("instruction.imm = %d, want %d", instruction.Imm, tc.wantImm)
 			}
 
-			encodingArray := operation.GenerateBytecode()
-			if !reflect.DeepEqual(encodingArray, tc.wantEnc) {
-				t.Fatalf("operation.generateBytecode() = %v, want %v", encodingArray, tc.wantEnc)
+			if instruction.FalseBranchSize != tc.wantOffset {
+				t.Fatalf("instruction.FalseBranchSize = %d, want %d", instruction.FalseBranchSize, tc.wantOffset)
 			}
 
-			// Maybe not all opcodes have an auxiliary function.
-			if tc.wantAuxFuncEncoding != 0 {
-				if encodingArray[0] != tc.wantAuxFuncEncoding {
-					t.Errorf("tc.wantAuxFuncEncoding =  %02x, want %02x", tc.wantAuxFuncEncoding, encodingArray[0])
-				}
+			encodingArray := instruction.GenerateBytecode()
+			if !reflect.DeepEqual(encodingArray, tc.wantEncoding) {
+				t.Fatalf("instruction.generateBytecode() = %x, want %x", encodingArray, tc.wantEncoding)
 			}
 
-			operation.NumerateInstruction(99)
-			if operation.instructionNumber != 99 {
-				t.Errorf("operation.instructionNumber = %d, want 99", operation.instructionNumber)
+			instruction.NumerateInstruction(99)
+			if instruction.instructionNumber != 99 {
+				t.Fatalf("instruction.instructionNumber = %d, want 99", instruction.instructionNumber)
 			}
 		})
 	}

@@ -52,7 +52,7 @@ func checkInstructionImpl(t *testing.T, ptr Instruction, expectedInstructions []
 			return end, nil
 		}
 
-		if jmpInstr, ok := ptr.(*IMMJMPInstruction); ok {
+		if jmpInstr, ok := ptr.(*JmpImmInstruction); ok {
 			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Opcode != JmpExit {
 				t.Fatalf("Jump instruction with false branch size of 0 and not an exit operation or uncodintional jump at index %d (%v)", i, jmpInstr)
 			}
@@ -61,7 +61,7 @@ func checkInstructionImpl(t *testing.T, ptr Instruction, expectedInstructions []
 				return err
 			}
 			i = nextInstrIndex
-		} else if jmpInstr, ok := ptr.(*RegJMPInstruction); ok {
+		} else if jmpInstr, ok := ptr.(*JmpRegInstruction); ok {
 			if jmpInstr.FalseBranchSize == 0 {
 				t.Fatalf("A jump reg instruction cannot have false branch of 0 at index %d (%v)", i, jmpInstr)
 			}
