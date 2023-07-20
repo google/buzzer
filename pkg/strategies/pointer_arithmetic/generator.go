@@ -121,11 +121,11 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.MovRegSrc64(ebpf.RegR4, ebpf.RegR1)
+	next = ebpf.Mov64(ebpf.RegR4, ebpf.RegR1)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.MovRegSrc64(ebpf.RegR10, ebpf.RegR2)
+	next = ebpf.Mov64(ebpf.RegR10, ebpf.RegR2)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
@@ -203,11 +203,11 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.MovRegSrc64(ebpf.RegR4, ebpf.RegR1)
+	next = ebpf.Mov64(ebpf.RegR4, ebpf.RegR1)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.MovRegSrc64(ebpf.RegR10, ebpf.RegR2)
+	next = ebpf.Mov64(ebpf.RegR10, ebpf.RegR2)
 	ptr.SetNextInstruction(next)
 	ptr = next
 

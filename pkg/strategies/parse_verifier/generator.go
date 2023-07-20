@@ -158,11 +158,11 @@ func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebp
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.MovRegSrc64(ebpf.RegR6, ebpf.RegR1)
+	next = ebpf.Mov64(ebpf.RegR6, ebpf.RegR1)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.MovRegSrc64(ebpf.RegR10, ebpf.RegR2)
+	next = ebpf.Mov64(ebpf.RegR10, ebpf.RegR2)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
