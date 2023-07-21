@@ -41,7 +41,7 @@ func TestMemoryInstructionCorrectEncoding(t *testing.T) {
 	}{
 		{
 			testName:            "Encoding StxDW Instruction",
-			instruction: StDw(testDstReg, testSrcReg, testOffset),
+			instruction: StDW(testDstReg, testSrcReg, testOffset),
 			wantMode: StLdModeMEM,
 			wantSize: StLdSizeDW,
 			wantClass: InsClassStx,
@@ -54,7 +54,7 @@ func TestMemoryInstructionCorrectEncoding(t *testing.T) {
 		},
 		{
 			testName:            "Encoding StDW Instruction",
-			instruction: StDw(testDstReg, testImm, testOffset),
+			instruction: StDW(testDstReg, testImm, testOffset),
 			wantMode: StLdModeMEM,
 			wantSize: StLdSizeDW,
 			wantClass: InsClassSt,
@@ -138,7 +138,7 @@ func TestMemoryInstructionCorrectEncoding(t *testing.T) {
 		},
 		{
 			testName:            "Encoding LdxDW Instruction",
-			instruction: LdDw(testDstReg, testSrcReg, testOffset),
+			instruction: LdDW(testDstReg, testSrcReg, testOffset),
 			wantMode: StLdModeMEM,
 			wantSize: StLdSizeDW,
 			wantClass: InsClassLdx,

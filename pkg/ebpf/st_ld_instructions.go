@@ -134,12 +134,12 @@ func newStoreOperation(size uint8, dstReg *Register, src interface{}, offset int
 		}
 }
 
-// StDw Stores 8 byte data from `src` into `dst`
-func StDw(dst *Register, src interface{}, offset int16) Instruction {
+// StDW Stores 8 byte data from `src` into `dst`
+func StDW(dst *Register, src interface{}, offset int16) Instruction {
 	return newStoreOperation(StLdSizeDW, dst, src, offset)
 }
 
-// StDw Stores 4 byte data from `src` into `dst`
+// StDW Stores 4 byte data from `src` into `dst`
 func StW(dst *Register, src interface{}, offset int16) Instruction {
 	return newStoreOperation(StLdSizeW, dst, src, offset)
 }
@@ -169,12 +169,12 @@ func newLoadToRegisterOperation(size uint8, dstReg *Register, src *Register, off
 		}
 }
 
-// LdDw Stores 8 byte data from `src` into `dst`
-func LdDw(dst *Register, src *Register, offset int16) Instruction {
+// LdDW Stores 8 byte data from `src` into `dst`
+func LdDW(dst *Register, src *Register, offset int16) Instruction {
 	return newLoadToRegisterOperation(StLdSizeDW, dst, src, offset)
 }
 
-// LdDw Stores 4 byte data from `src` into `dst`
+// LdW Stores 4 byte data from `src` into `dst`
 func LdW(dst *Register, src *Register, offset int16) Instruction {
 	return newLoadToRegisterOperation(StLdSizeW, dst, src, offset)
 }
