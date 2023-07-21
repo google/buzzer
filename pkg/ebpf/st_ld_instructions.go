@@ -119,19 +119,19 @@ func newStoreOperation(size uint8, dstReg *Register, src interface{}, offset int
 		return nil
 	}
 
-	return &MemoryInstruction {
-			BaseInstruction: BaseInstruction {
-				InstructionClass: insClass,
-			},
-			Mode: StLdModeMEM,
-			Size: size,
-			DstReg: dstReg,
-			// SrcReg is unused, put it here because otherwise it will be nil
-			// and it will cause problems somewhere else.
-			SrcReg: srcReg,
-			Offset: offset,
-			Imm: imm,
-		}
+	return &MemoryInstruction{
+		BaseInstruction: BaseInstruction{
+			InstructionClass: insClass,
+		},
+		Mode:   StLdModeMEM,
+		Size:   size,
+		DstReg: dstReg,
+		// SrcReg is unused, put it here because otherwise it will be nil
+		// and it will cause problems somewhere else.
+		SrcReg: srcReg,
+		Offset: offset,
+		Imm:    imm,
+	}
 }
 
 // StDW Stores 8 byte data from `src` into `dst`
@@ -155,18 +155,18 @@ func StB(dst *Register, src interface{}, offset int16) Instruction {
 }
 
 func newLoadToRegisterOperation(size uint8, dstReg *Register, src *Register, offset int16) Instruction {
-	return &MemoryInstruction {
-			BaseInstruction: BaseInstruction {
-				InstructionClass: InsClassLdx,
-			},
-			Mode: StLdModeMEM,
-			Size: size,
-			DstReg: dstReg,
-			// SrcReg is unused, put it here because otherwise it will be nil
-			// and it will cause problems somewhere else.
-			SrcReg: src,
-			Offset: offset,
-		}
+	return &MemoryInstruction{
+		BaseInstruction: BaseInstruction{
+			InstructionClass: InsClassLdx,
+		},
+		Mode:   StLdModeMEM,
+		Size:   size,
+		DstReg: dstReg,
+		// SrcReg is unused, put it here because otherwise it will be nil
+		// and it will cause problems somewhere else.
+		SrcReg: src,
+		Offset: offset,
+	}
 }
 
 // LdDW Stores 8 byte data from `src` into `dst`
@@ -190,16 +190,16 @@ func LdB(dst *Register, src *Register, offset int16) Instruction {
 }
 
 func LdMapByFd(dst *Register, fd int) Instruction {
-	return &MemoryInstruction {
-			BaseInstruction: BaseInstruction {
-				InstructionClass: InsClassLd,
-			},
-			Size:   StLdSizeDW,
-			Mode: StLdModeIMM,
-			DstReg: dst,
-			// SrcReg is unused, put it here because otherwise it will be nil
-			// and it will cause problems somewhere else.
-			SrcReg: PseudoMapFD,
-			Imm: int32(fd),
-		}
+	return &MemoryInstruction{
+		BaseInstruction: BaseInstruction{
+			InstructionClass: InsClassLd,
+		},
+		Size:   StLdSizeDW,
+		Mode:   StLdModeIMM,
+		DstReg: dst,
+		// SrcReg is unused, put it here because otherwise it will be nil
+		// and it will cause problems somewhere else.
+		SrcReg: PseudoMapFD,
+		Imm:    int32(fd),
+	}
 }

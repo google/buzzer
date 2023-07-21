@@ -99,7 +99,7 @@ func (g *Generator) generateProgramFooter(prog *Program) Instruction {
 		Exit(),
 		Add64(RegR0, chosenReg),
 		StDW(RegR0, g.magicNumber, 0),
-		
+
 		// Repeat, no ptr arithmetic.
 		Mov64(RegR0, 1),
 		StW(RegR10, RegR0, -4),
