@@ -20,69 +20,236 @@ import (
 )
 
 func TestMemoryInstructionCorrectEncoding(t *testing.T) {
+	testDstReg := RegR9
+	testSrcReg := RegR0
+	testImm := int32(1337)
+	testOffset := int16(-8)
 	tests := []struct {
-		testName string
-		imm      int32
-		size     uint8
-		mode     uint8
-		srcReg   *Register
-		dstReg   *Register
-		insClass uint8
-		offset   int16
+		testName    string
+		instruction Instruction
 
-		// The values for expected encoding are calculated manually by
-		// following: http://shortn/_YhGoFtsPl9
-		wantEnc []uint64
+		wantMode uint8
+		wantSize uint8
+		wantClass  uint8
+		wantOffset int16
+		wantDstReg *Register
+		wantSrcReg *Register
+		wantImm    int32
 
-		// Check that the auxiliar functions that return the bytecode
-		// directly have the values we expect.
-		wantAuxFuncEncoding uint64
+		// The values for expected encoding are calculated manually
+		wantEncoding []uint64
 	}{
 		{
-			testName:            "Encoding Store Instruction",
-			size:                StLdSizeW,
-			imm:                 int32(-65535),
-			mode:                StLdModeMEM,
-			srcReg:              RegR0,
-			dstReg:              RegR1,
-			insClass:            InsClassStx,
-			offset:              4,
-			wantEnc:             []uint64{0xffff000100040163},
-			wantAuxFuncEncoding: 0,
+			testName:            "Encoding StxDW Instruction",
+			instruction: StDw(testDstReg, testSrcReg, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeDW,
+			wantClass: InsClassStx,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: testSrcReg,
+			wantImm:	0,
+			wantEncoding: []uint64{0xfff8097b}, 
+			
 		},
+		{
+			testName:            "Encoding StDW Instruction",
+			instruction: StDw(testDstReg, testImm, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeDW,
+			wantClass: InsClassSt,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: RegR0,
+			wantImm:	testImm,
+			wantEncoding: []uint64{0x539fff8097a}, 
+		},
+		{
+			testName:            "Encoding StxW Instruction",
+			instruction: StW(testDstReg, testSrcReg, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeW,
+			wantClass: InsClassStx,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: testSrcReg,
+			wantImm:	0,
+			wantEncoding: []uint64{0xfff80963}, 
+		},
+		{
+			testName:            "Encoding StW Instruction",
+			instruction: StW(testDstReg, testImm, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeW,
+			wantClass: InsClassSt,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: RegR0,
+			wantImm:	testImm,
+			wantEncoding: []uint64{0x539fff80962}, 
+		},
+		{
+			testName:            "Encoding StxH Instruction",
+			instruction: StH(testDstReg, testSrcReg, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeH,
+			wantClass: InsClassStx,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: testSrcReg,
+			wantImm:	0,
+			wantEncoding: []uint64{0xfff8096b}, 
+		},
+		{
+			testName:            "Encoding StH Instruction",
+			instruction: StH(testDstReg, testImm, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeH,
+			wantClass: InsClassSt,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: RegR0,
+			wantImm:	testImm,
+			wantEncoding: []uint64{0x539fff8096a}, 
+		},
+		{
+			testName:            "Encoding StxB Instruction",
+			instruction: StB(testDstReg, testSrcReg, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeB,
+			wantClass: InsClassStx,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: testSrcReg,
+			wantImm:	0,
+			wantEncoding: []uint64{0xfff80973}, 
+		},
+		{
+			testName:            "Encoding StB Instruction",
+			instruction: StB(testDstReg, testImm, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeB,
+			wantClass: InsClassSt,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: RegR0,
+			wantImm:	testImm,
+			wantEncoding: []uint64{0x539fff80972}, 
+		},
+		{
+			testName:            "Encoding LdxDW Instruction",
+			instruction: LdDw(testDstReg, testSrcReg, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeDW,
+			wantClass: InsClassLdx,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: testSrcReg,
+			wantImm:	0,
+			wantEncoding: []uint64{0xfff80979}, 
+		},
+		{
+			testName:            "Encoding LdxW Instruction",
+			instruction: LdW(testDstReg, testSrcReg, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeW,
+			wantClass: InsClassLdx,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: testSrcReg,
+			wantImm:	0,
+			wantEncoding: []uint64{0xfff80961}, 
+		},
+		{
+			testName:            "Encoding LdxH Instruction",
+			instruction: LdH(testDstReg, testSrcReg, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeH,
+			wantClass: InsClassLdx,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: testSrcReg,
+			wantImm:	0,
+			wantEncoding: []uint64{0xfff80969}, 
+		},
+		{
+			testName:            "Encoding LdxB Instruction",
+			instruction: LdB(testDstReg, testSrcReg, testOffset),
+			wantMode: StLdModeMEM,
+			wantSize: StLdSizeB,
+			wantClass: InsClassLdx,
+			wantOffset: testOffset,
+			wantDstReg: testDstReg,
+			wantSrcReg: testSrcReg,
+			wantImm:	0,
+			wantEncoding: []uint64{0xfff80971}, 
+		},
+		{
+			testName:            "Encoding LdMapByFd Instruction",
+			instruction: LdMapByFd(testDstReg, 42),
+			wantMode: StLdModeIMM,
+			wantSize: StLdSizeDW,
+			wantClass: InsClassLd,
+			wantOffset: 0,
+			wantDstReg: testDstReg,
+			wantSrcReg: PseudoMapFD,
+			wantImm:	42,
+			wantEncoding: []uint64{0x2a00001918,0}, 
+		},
+
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Logf("Running test case %s", tc.testName)
-			operation := MemoryInstruction{
-				BaseInstruction: BaseInstruction{
-					InstructionClass: tc.insClass,
-				},
-				Size:   tc.size,
-				Mode:   tc.mode,
-				DstReg: tc.dstReg,
-				SrcReg: tc.srcReg,
-				Offset: tc.offset,
-				Imm:    tc.imm,
+		
+			instruction, ok := tc.instruction.(*MemoryInstruction)
+
+			if !ok {
+				t.Fatal("could not cast instruction to MemoryInstruction")
 			}
 
-			encodingArray := operation.GenerateBytecode()
-
-			if !reflect.DeepEqual(encodingArray, tc.wantEnc) {
-				t.Fatalf("operation.generateBytecode() = %x, want %x", encodingArray, tc.wantEnc)
+			if instruction.Mode != tc.wantMode {
+				t.Errorf("instruction.mode = %d, want = %d", instruction.Mode, tc.wantMode)
 			}
 
-			// Maybe not all opcodes have an auxiliary function.
-			if tc.wantAuxFuncEncoding != 0 {
-				if encodingArray[0] != tc.wantAuxFuncEncoding {
-					t.Errorf("tc.wantAuxFuncEncoding =  %02x, want %02x", tc.wantAuxFuncEncoding, encodingArray[0])
-				}
+			if instruction.Size != tc.wantSize {
+				t.Errorf("instruction.Size = %d, want = %d", instruction.Size, tc.wantSize)
 			}
 
-			operation.NumerateInstruction(99)
-			if operation.instructionNumber != 99 {
-				t.Errorf("operation.instructionNumber = %d, want 99", operation.instructionNumber)
+			if instruction.InstructionClass != tc.wantClass {
+				t.Errorf("instruction.InstructionClass = %d, want = %d", instruction.InstructionClass, tc.wantClass)
+			}
+
+			if instruction.Offset != tc.wantOffset {
+				t.Errorf("instruction.InstructionClass = %d, want = %d", instruction.InstructionClass, tc.wantClass)
+			}
+
+			if instruction.Offset != tc.wantOffset {
+				t.Errorf("instruction.Offset = %d, want = %d", instruction.Offset, tc.wantOffset)
+			}
+
+			if instruction.DstReg != tc.wantDstReg {
+				t.Errorf("instruction.DstReg = %v, want = %v", instruction.DstReg, tc.wantDstReg)
+			}
+			
+			if instruction.SrcReg != tc.wantSrcReg {
+				t.Errorf("instruction.SrcReg = %v, want = %v", instruction.SrcReg, tc.wantSrcReg)
+			}
+
+			if instruction.Imm != tc.wantImm {
+				t.Errorf("instruction.Imm = %d, want = %d", instruction.Imm, tc.wantImm)
+			}
+
+			encodingArray := instruction.GenerateBytecode()
+
+			if !reflect.DeepEqual(encodingArray, tc.wantEncoding) {
+				t.Errorf("operation.generateBytecode() = %x, want %x", encodingArray, tc.wantEncoding)
+			}
+
+			instruction.NumerateInstruction(99)
+			if instruction.instructionNumber != 99 {
+				t.Errorf("instruction.instructionNumber = %d, want 99", instruction.instructionNumber)
 			}
 		})
 	}
