@@ -85,7 +85,7 @@ func GenerateRandomJmpRegInstruction(prog *Program, trueBranchGenerator func(pro
 		srcReg, _ = GetRegisterFromNumber(prog.GetRandomRegister())
 	}
 
-	return &RegJMPInstruction{
+	return &JmpRegInstruction{
 		BaseInstruction: BaseInstruction{
 			Opcode:           op,
 			InstructionClass: InsClassJmp,
@@ -151,7 +151,7 @@ func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
 	for i := 0; i < len(instructions); i++ {
 		instruction := instructions[i]
 
-		if jmpInstr, ok := instruction.(*IMMJMPInstruction); ok {
+		if jmpInstr, ok := instruction.(*JmpImmInstruction); ok {
 			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Opcode != JmpExit {
 				return nil, fmt.Errorf("Only Exit() and Jmp() can have an offset of 0")
 			}
@@ -171,7 +171,7 @@ func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
 			}
 			// Break here because handleJmpInstruction should have processed the rest of the ebpf program.
 			break
-		} else if jmpInstr, ok := instruction.(*RegJMPInstruction); ok {
+		} else if jmpInstr, ok := instruction.(*JmpRegInstruction); ok {
 			if jmpInstr.FalseBranchSize == 0 {
 				return nil, fmt.Errorf("JmpReg instruction cannot have jump offset of 0")
 			}
@@ -234,38 +234,28 @@ func handleJmpInstruction(instructions []Instruction, offset int16) (Instruction
 	return falseBranchNextInstr, trueBranchNextInstr, nil
 }
 
-// Mov64 generates an either MOV_ALU64_IMM or MOV_ALU64_REG operation,
-// depending if the src argument is an int or a register, returns nil if
-// the supplied value is any other type.
+// This function is meant to be used by all the Instruction Helper functions,
+// to test if the supplied src parameter is of type int. Callers of the helper
+// functions might provide an int, int64, int32, int16, int8, int as src
+// parameter and it makes sense to centralize the logic to check for a data
+// type here.
 //
-// Why golang doesn't have function overloading?!
-func Mov64(dstReg *Register, src interface{}) Instruction {
-	if srcReg, ok := src.(*Register); ok {
-		return NewAluRegInstruction(AluMov, InsClassAlu64, dstReg, srcReg)
-	} else if srcImm, ok := src.(int); ok {
-		return NewAluImmInstruction(AluMov, InsClassAlu64, dstReg, int32(srcImm))
-	} else {
-		return nil
+// If the passed data is indeed of an int data type, bool is true and
+// the value casted to int() is returned.
+//
+// If it is not, it returns false and an arbitrary int()
+func isIntType(src interface{}) (bool, int) {
+	if srcInt, ok := src.(int); ok {
+		return true, srcInt
+	} else if srcInt64, ok := src.(int64); ok {
+		return true, int(srcInt64)
+	} else if srcInt32, ok := src.(int32); ok {
+		return true, int(srcInt32)
+	} else if srcInt16, ok := src.(int16); ok {
+		return true, int(srcInt16)
+	} else if srcInt8, ok := src.(int8); ok {
+		return true, int(srcInt8)
 	}
-}
 
-func Mul64(dstReg *Register, imm int32) Instruction {
-	return NewAluImmInstruction(AluMul, InsClassAlu64, dstReg, imm)
-}
-
-func Exit() Instruction {
-	return &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpExit, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0}
-}
-
-func JmpGT(dstReg *Register, imm int32, offset int16) Instruction {
-	return &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpJGT, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
-}
-
-func JmpLT(dstReg *Register, srcReg *Register, offset int16) Instruction {
-	return &RegJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpJGT, InstructionClass: InsClassJmp}, SrcReg: srcReg, DstReg: RegR0, FalseBranchSize: offset}
-}
-
-func Jmp(offset int16) Instruction {
-	return &IMMJMPInstruction{
-		BaseInstruction: BaseInstruction{Opcode: JmpJA, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0, FalseBranchSize: offset}
+	return false, int(0)
 }

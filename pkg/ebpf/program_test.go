@@ -31,7 +31,7 @@ func (g *MockGenerator) Generate(a *Program) Instruction {
 func (g *MockGenerator) GenerateNextInstruction(a *Program) Instruction {
 	g.generateNextInstructionInvoked = true
 	reg0 := MovRegImm64(RegR0, 0)
-	reg0.SetNextInstruction(ExitInstruction())
+	reg0.SetNextInstruction(Exit())
 	a.MarkRegisterInitialized(RegR0.RegisterNumber())
 	return reg0
 }

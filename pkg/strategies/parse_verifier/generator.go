@@ -114,7 +114,7 @@ func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Instruction
 
 func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
 	reg0 := ebpf.MovRegImm64(ebpf.RegR0, 0)
-	reg0.SetNextInstruction(ebpf.ExitInstruction())
+	reg0.SetNextInstruction(ebpf.Exit())
 	return reg0
 }
 
@@ -158,11 +158,11 @@ func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebp
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.MovRegSrc64(ebpf.RegR6, ebpf.RegR1)
+	next = ebpf.Mov64(ebpf.RegR6, ebpf.RegR1)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.MovRegSrc64(ebpf.RegR10, ebpf.RegR2)
+	next = ebpf.Mov64(ebpf.RegR10, ebpf.RegR2)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
@@ -172,12 +172,15 @@ func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebp
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.CallFunction(ebpf.MapLookup)
+	next = ebpf.Call(ebpf.MapLookup)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	guard := ebpf.GuardJump(ebpf.JmpJNE, ebpf.InsClassJmp, ebpf.RegR0, 0)
-	ptr.SetNextInstruction(guard)
+	next = ebpf.JmpNE(ebpf.RegR0, 0, 1)
+	nextAsJmp := next.(*ebpf.JmpImmInstruction)
+	nextAsJmp.FalseBranchNextInstr = ebpf.Exit()
+	ptr.SetNextInstruction(next)
+	ptr = next
 
 	next = &ebpf.MemoryInstruction{
 		BaseInstruction: ebpf.BaseInstruction{
@@ -190,9 +193,7 @@ func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebp
 		Offset: ebpf.UnusedField,
 		Imm:    ebpf.UnusedField,
 	}
-	guard.FalseBranchNextInstr = ebpf.ExitInstruction()
-	guard.FalseBranchSize = 1
-	guard.TrueBranchNextInstr = next
+	ptr.SetNextInstruction(next)
 	ptr = next
 
 	return instr, ptr

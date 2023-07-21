@@ -18,8 +18,8 @@ import (
 	"fmt"
 )
 
-// IMMJMPInstruction Represents an eBPF jump (branching) operation.
-type IMMJMPInstruction struct {
+// JmpImmInstruction Represents an eBPF jump (branching) operation.
+type JmpImmInstruction struct {
 
 	// Add all the basic things all instructions have.
 	BaseInstruction
@@ -47,7 +47,7 @@ type IMMJMPInstruction struct {
 }
 
 // GenerateBytecode generates the bytecode associated with this instruction.
-func (c *IMMJMPInstruction) GenerateBytecode() []uint64 {
+func (c *JmpImmInstruction) GenerateBytecode() []uint64 {
 	bytecode := []uint64{encodeImmediateJmpInstruction(c.Opcode, c.InstructionClass, c.DstReg.RegisterNumber(), c.Imm, c.FalseBranchSize)}
 	if c.FalseBranchNextInstr != nil {
 		// Only take the `c.FalseBranchSize` number of opcodes of the
@@ -62,7 +62,7 @@ func (c *IMMJMPInstruction) GenerateBytecode() []uint64 {
 }
 
 // GenerateNextInstruction uses the prog generator to create the rest of the tree.
-func (c *IMMJMPInstruction) GenerateNextInstruction(prog *Program) {
+func (c *JmpImmInstruction) GenerateNextInstruction(prog *Program) {
 	if c.FalseBranchNextInstr != nil {
 		c.FalseBranchNextInstr.GenerateNextInstruction(prog)
 	} else if c.falseBranchGenerator != nil {
@@ -79,7 +79,7 @@ func (c *IMMJMPInstruction) GenerateNextInstruction(prog *Program) {
 }
 
 // NumerateInstruction sets the instruction number recursively
-func (c *IMMJMPInstruction) NumerateInstruction(instrNo uint32) int {
+func (c *JmpImmInstruction) NumerateInstruction(instrNo uint32) int {
 	c.instructionNumber = instrNo
 	instrNo++
 
@@ -101,7 +101,7 @@ func (c *IMMJMPInstruction) NumerateInstruction(instrNo uint32) int {
 }
 
 // SetNextInstruction manually sets the next instruction.
-func (c *IMMJMPInstruction) SetNextInstruction(next Instruction) {
+func (c *JmpImmInstruction) SetNextInstruction(next Instruction) {
 	// For now, always pass the next instruction to the true branch.
 	if c.TrueBranchNextInstr != nil {
 		c.TrueBranchNextInstr.SetNextInstruction(next)
@@ -112,13 +112,13 @@ func (c *IMMJMPInstruction) SetNextInstruction(next Instruction) {
 
 // GetNextInstruction returns the next instruction, mostly used for testing
 // purposes.
-func (c *IMMJMPInstruction) GetNextInstruction() Instruction {
+func (c *JmpImmInstruction) GetNextInstruction() Instruction {
 	// For now only return the true branch next instr.
 	return c.TrueBranchNextInstr
 }
 
 // GeneratePoc generates the C macros to repro this program.
-func (c *IMMJMPInstruction) GeneratePoc() []string {
+func (c *JmpImmInstruction) GeneratePoc() []string {
 	if c.Opcode == JmpExit {
 		return []string{"BPF_EXIT_INSN()"}
 	}
@@ -139,25 +139,6 @@ func (c *IMMJMPInstruction) GeneratePoc() []string {
 		r = append(r, c.TrueBranchNextInstr.GeneratePoc()...)
 	}
 	return r
-}
-
-// ExitInstruction Terminates the execution of a given program.
-func ExitInstruction() Instruction {
-	return &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: JmpExit, InstructionClass: InsClassJmp}, Imm: UnusedField, DstReg: RegR0}
-}
-
-// GuardJump Generates a jmp instruction where false branch of the jump will
-// terminate the program.
-func GuardJump(ins, insClass uint8, dstReg *Register, imm int32) *IMMJMPInstruction {
-	jmp := &IMMJMPInstruction{BaseInstruction: BaseInstruction{Opcode: ins, InstructionClass: insClass}, Imm: imm, DstReg: dstReg}
-	jmp.falseBranchGenerator = func(prog *Program) (Instruction, int16) {
-		// We return 1 because an Exit Instruction has 1 opcode.
-		return ExitInstruction(), 1
-	}
-	jmp.trueBranchGenerator = func(prog *Program) Instruction {
-		return prog.Gen.GenerateNextInstruction(prog)
-	}
-	return jmp
 }
 
 // CallInstruction represents a call to an ebpf auxiliary function.
@@ -188,14 +169,8 @@ func (c *CallInstruction) GeneratePoc() []string {
 	return r
 }
 
-// CallFunction is an auxiliary function that returns an EBPFCallInstruction
-// structure.
-func CallFunction(functionValue int32) Instruction {
-	return &CallInstruction{fnNumber: functionValue}
-}
-
-// RegJMPInstruction Represents an eBPF jump (branching) operation.
-type RegJMPInstruction struct {
+// JmpRegInstruction Represents an eBPF jump (branching) operation.
+type JmpRegInstruction struct {
 
 	// Add all the basic things all instructions have.
 	BaseInstruction
@@ -223,7 +198,7 @@ type RegJMPInstruction struct {
 }
 
 // GenerateBytecode generates the bytecode for this instruction.
-func (c *RegJMPInstruction) GenerateBytecode() []uint64 {
+func (c *JmpRegInstruction) GenerateBytecode() []uint64 {
 	bytecode := []uint64{encodeRegisterJmpInstruction(c.Opcode, c.InstructionClass, c.DstReg.RegisterNumber(), c.SrcReg.RegisterNumber(), c.FalseBranchSize)}
 	if c.FalseBranchNextInstr != nil {
 		// Only take the `c.FalseBranchSize` number of opcodes of the
@@ -238,7 +213,7 @@ func (c *RegJMPInstruction) GenerateBytecode() []uint64 {
 }
 
 // GenerateNextInstruction builds the next instruction for this operation.
-func (c *RegJMPInstruction) GenerateNextInstruction(prog *Program) {
+func (c *JmpRegInstruction) GenerateNextInstruction(prog *Program) {
 	if c.FalseBranchNextInstr != nil {
 		c.FalseBranchNextInstr.GenerateNextInstruction(prog)
 	} else if c.falseBranchGenerator != nil {
@@ -255,7 +230,7 @@ func (c *RegJMPInstruction) GenerateNextInstruction(prog *Program) {
 }
 
 // SetNextInstruction sets the next instruction for this operation.
-func (c *RegJMPInstruction) SetNextInstruction(next Instruction) {
+func (c *JmpRegInstruction) SetNextInstruction(next Instruction) {
 	// For now, always pass the next instruction to the true branch.
 	if c.TrueBranchNextInstr != nil {
 		c.TrueBranchNextInstr.SetNextInstruction(next)
@@ -266,13 +241,13 @@ func (c *RegJMPInstruction) SetNextInstruction(next Instruction) {
 
 // GetNextInstruction returns the next instruction, mostly used for testing
 // purposes.
-func (c *RegJMPInstruction) GetNextInstruction() Instruction {
+func (c *JmpRegInstruction) GetNextInstruction() Instruction {
 	// For now only return the true branch next instr.
 	return c.TrueBranchNextInstr
 }
 
 // NumerateInstruction sets the instruction numbers recursively.
-func (c *RegJMPInstruction) NumerateInstruction(instrNo uint32) int {
+func (c *JmpRegInstruction) NumerateInstruction(instrNo uint32) int {
 	c.instructionNumber = instrNo
 	instrNo++
 
@@ -294,7 +269,7 @@ func (c *RegJMPInstruction) NumerateInstruction(instrNo uint32) int {
 }
 
 // GeneratePoc generates the C macros to repro this program.
-func (c *RegJMPInstruction) GeneratePoc() []string {
+func (c *JmpRegInstruction) GeneratePoc() []string {
 	var insClass string
 	if c.InstructionClass == InsClassJmp {
 		insClass = "BPF_JMP"
@@ -313,4 +288,127 @@ func (c *RegJMPInstruction) GeneratePoc() []string {
 		r = append(r, c.TrueBranchNextInstr.GeneratePoc()...)
 	}
 	return r
+}
+
+func newJmpInstruction(opcode, insclass uint8, dstReg *Register, src interface{}, offset int16) Instruction {
+	isInt, srcInt := isIntType(src)
+	if isInt {
+		return &JmpImmInstruction{BaseInstruction: BaseInstruction{Opcode: opcode, InstructionClass: insclass}, Imm: int32(srcInt), DstReg: dstReg, FalseBranchSize: offset}
+	} else if srcReg, ok := src.(*Register); ok {
+		return &JmpRegInstruction{BaseInstruction: BaseInstruction{Opcode: opcode, InstructionClass: insclass}, SrcReg: srcReg, DstReg: dstReg, FalseBranchSize: offset}
+	}
+	return nil
+}
+
+// Jmp represents an inconditional jump of `offset` instructions.
+func Jmp(offset int16) Instruction {
+	return newJmpInstruction(JmpJA, InsClassJmp, RegR0, UnusedField, offset)
+}
+
+func JmpEQ(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJEQ, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpEQ32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJEQ, InsClassJmp32, dstReg, src, offset)
+}
+
+func JmpGT(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJGT, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpGT32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJGT, InsClassJmp32, dstReg, src, offset)
+}
+
+func JmpGE(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJGE, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpGE32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJGE, InsClassJmp32, dstReg, src, offset)
+}
+
+func JmpSET(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSET, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpSET32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSET, InsClassJmp32, dstReg, src, offset)
+}
+
+func JmpNE(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJNE, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpNE32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJNE, InsClassJmp32, dstReg, src, offset)
+}
+
+func JmpSGT(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSGT, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpSGT32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSGT, InsClassJmp32, dstReg, src, offset)
+}
+
+func JmpSGE(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSGE, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpSGE32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSGE, InsClassJmp32, dstReg, src, offset)
+}
+
+// TODO: It would be nice if we can create wrappers for each call function
+// something like:
+// ```
+// bpf_map_lookup_elemen(ptr_to_map, key)
+// ```
+// These functions would, ideally, set up the correct registers behind the
+// scenes, for the example above it would be the equivalent of doing:
+// ```
+// Mov64(R1, ptr_to_map)
+// Mov64(R2, key)
+// CallFunction(map_lookup_element)
+// ```
+func Call(functionValue int32) Instruction {
+	return &CallInstruction{fnNumber: functionValue}
+}
+
+func Exit() Instruction {
+	return newJmpInstruction(JmpExit, InsClassJmp, RegR0, UnusedField, UnusedField)
+}
+
+func JmpLT(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJLT, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpLT32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJLT, InsClassJmp32, dstReg, src, offset)
+}
+
+func JmpLE(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJLE, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpLE32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJLE, InsClassJmp32, dstReg, src, offset)
+}
+
+func JmpSLT(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSLT, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpSLT32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSLT, InsClassJmp32, dstReg, src, offset)
+}
+
+func JmpSLE(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSLE, InsClassJmp, dstReg, src, offset)
+}
+
+func JmpSLE32(dstReg *Register, src interface{}, offset int16) Instruction {
+	return newJmpInstruction(JmpJSLE, InsClassJmp32, dstReg, src, offset)
 }
