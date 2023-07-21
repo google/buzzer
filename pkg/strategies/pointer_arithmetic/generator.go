@@ -24,8 +24,8 @@ type Generator struct {
 	magicNumber      int32
 }
 
-func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Operation {
-	var root, ptr ebpf.Operation
+func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Instruction {
+	var root, ptr ebpf.Instruction
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
 		reg, _ := ebpf.GetRegisterFromNumber(uint8(i))
 		regVal := int32(prog.GetRNG().RandInt())
@@ -43,38 +43,38 @@ func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Operation {
 }
 
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree.
-func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Operation {
+func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Instruction {
 	// We reached the number of instructions we were told to generate.
 	if g.instructionCount == 0 {
 		return g.generateProgramFooter(prog)
 	}
 	g.instructionCount--
 
-	var instr ebpf.Operation
+	var instr ebpf.Instruction
 
 	// Generate about 40% of instructions as jumps.
 	if prog.GetRNG().RandRange(1, 100) <= 60 {
-		instr = ebpf.GenerateRandomAluOperation(prog)
+		instr = ebpf.GenerateRandomAluInstruction(prog)
 	} else {
-		falseBranchGenerator := func(a *ebpf.Program) (ebpf.Operation, int16) {
+		falseBranchGenerator := func(a *ebpf.Program) (ebpf.Instruction, int16) {
 			// 20 is an arbitrary number here.
 			operationQuantity := int16(20)
-			root := ebpf.GenerateRandomAluOperation(prog)
+			root := ebpf.GenerateRandomAluInstruction(prog)
 			ptr := root
 			for i := int16(1); i < operationQuantity; i++ {
-				next := ebpf.GenerateRandomAluOperation(prog)
+				next := ebpf.GenerateRandomAluInstruction(prog)
 				ptr.SetNextInstruction(next)
 				ptr = next
 			}
 			return root, operationQuantity
 		}
-		instr = ebpf.GenerateRandomJmpRegOperation(prog, g.GenerateNextInstruction, falseBranchGenerator)
+		instr = ebpf.GenerateRandomJmpRegInstruction(prog, g.GenerateNextInstruction, falseBranchGenerator)
 	}
 	instr.GenerateNextInstruction(prog)
 	return instr
 }
 
-func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
+func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
 	// The generated footer does the following:
 	// 1) Loads a register with a pointer to a map.
 	// 2) Chooses a random register.
@@ -86,33 +86,37 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 	// If control flow makes it to (5) *and* the map element written in (5)
 	// is non-zero, then the generated program was verified correct and
 	// executed.
-	var root, ptr, next ebpf.Operation
+	var root, ptr, next ebpf.Instruction
 
 	root = ebpf.MovRegImm64(ebpf.RegR0, 0)
 	ptr = root
 
 	offset := int16(-4)
 
-	next = &ebpf.MemoryOperation{
-		Size:     ebpf.StLdSizeW,
-		Mode:     ebpf.StLdModeMEM,
-		InsClass: ebpf.InsClassStx,
-		DstReg:   ebpf.RegR10,
-		SrcReg:   ebpf.RegR0,
-		Offset:   offset,
-		Imm:      ebpf.UnusedField,
+	next = &ebpf.MemoryInstruction{
+		BaseInstruction: ebpf.BaseInstruction{
+			InstructionClass: ebpf.InsClassStx,
+		},
+		Size:   ebpf.StLdSizeW,
+		Mode:   ebpf.StLdModeMEM,
+		DstReg: ebpf.RegR10,
+		SrcReg: ebpf.RegR0,
+		Offset: offset,
+		Imm:    ebpf.UnusedField,
 	}
 	ptr.SetNextInstruction(next)
 	ptr = next
 
 	// Load the map file descriptor to Register 4.
-	next = &ebpf.MemoryOperation{
-		Size:     ebpf.StLdSizeDW,
-		Mode:     ebpf.StLdModeIMM,
-		InsClass: ebpf.InsClassLd,
-		DstReg:   ebpf.RegR4,
-		SrcReg:   ebpf.PseudoMapFD,
-		Imm:      int32(prog.LogMap()),
+	next = &ebpf.MemoryInstruction{
+		BaseInstruction: ebpf.BaseInstruction{
+			InstructionClass: ebpf.InsClassLd,
+		},
+		Size:   ebpf.StLdSizeDW,
+		Mode:   ebpf.StLdModeIMM,
+		DstReg: ebpf.RegR4,
+		SrcReg: ebpf.PseudoMapFD,
+		Imm:    int32(prog.LogMap()),
 	}
 	ptr.SetNextInstruction(next)
 	ptr = next
@@ -127,7 +131,7 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 
 	subs := int32(-4)
 
-	next = ebpf.NewAluImmOperation(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR2, subs)
+	next = ebpf.NewAluImmInstruction(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR2, subs)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
@@ -137,7 +141,7 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 	ptr = next
 
 	guard := ebpf.GuardJump(ebpf.JmpJNE, ebpf.InsClassJmp, ebpf.RegR0, 0)
-	guard.FalseBranchNextInstr = ebpf.ExitOperation()
+	guard.FalseBranchNextInstr = ebpf.ExitInstruction()
 	guard.FalseBranchSize = 1
 	ptr.SetNextInstruction(guard)
 
@@ -145,7 +149,7 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 	chosenReg, _ := ebpf.GetRegisterFromNumber(prog.GetRandomRegister())
 
 	// Perform pointer arithmetic with the chosen register.
-	next = ebpf.NewAluRegOperation(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR0, chosenReg)
+	next = ebpf.NewAluRegInstruction(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR0, chosenReg)
 	guard.TrueBranchNextInstr = next
 	ptr = next
 
@@ -155,14 +159,16 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 
 	// Store the magic number, if we get here then the verifier thinks
 	// the random register is 0.
-	next = &ebpf.MemoryOperation{
-		Size:     ebpf.StLdSizeDW,
-		Mode:     ebpf.StLdModeMEM,
-		InsClass: ebpf.InsClassStx,
-		DstReg:   ebpf.RegR0,
-		SrcReg:   ebpf.RegR3,
-		Offset:   ebpf.UnusedField,
-		Imm:      ebpf.UnusedField,
+	next = &ebpf.MemoryInstruction{
+		Size: ebpf.StLdSizeDW,
+		Mode: ebpf.StLdModeMEM,
+		BaseInstruction: ebpf.BaseInstruction{
+			InstructionClass: ebpf.InsClassStx,
+		},
+		DstReg: ebpf.RegR0,
+		SrcReg: ebpf.RegR3,
+		Offset: ebpf.UnusedField,
+		Imm:    ebpf.UnusedField,
 	}
 	ptr.SetNextInstruction(next)
 	ptr = next
@@ -173,25 +179,26 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = &ebpf.MemoryOperation{
-		Size:     ebpf.StLdSizeW,
-		Mode:     ebpf.StLdModeMEM,
-		InsClass: ebpf.InsClassStx,
-		DstReg:   ebpf.RegR10,
-		SrcReg:   ebpf.RegR0,
-		Offset:   offset,
-		Imm:      ebpf.UnusedField,
+	next = &ebpf.MemoryInstruction{
+		Size:   ebpf.StLdSizeW,
+		Mode:   ebpf.StLdModeMEM,
+		DstReg: ebpf.RegR10,
+		SrcReg: ebpf.RegR0,
+		Offset: offset,
+		Imm:    ebpf.UnusedField,
 	}
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = &ebpf.MemoryOperation{
-		Size:     ebpf.StLdSizeDW,
-		Mode:     ebpf.StLdModeIMM,
-		InsClass: ebpf.InsClassLd,
-		DstReg:   ebpf.RegR4,
-		SrcReg:   ebpf.PseudoMapFD,
-		Imm:      int32(prog.LogMap()),
+	next = &ebpf.MemoryInstruction{
+		BaseInstruction: ebpf.BaseInstruction{
+			InstructionClass: ebpf.InsClassLd,
+		},
+		Size:   ebpf.StLdSizeDW,
+		Mode:   ebpf.StLdModeIMM,
+		DstReg: ebpf.RegR4,
+		SrcReg: ebpf.PseudoMapFD,
+		Imm:    int32(prog.LogMap()),
 	}
 	ptr.SetNextInstruction(next)
 	ptr = next
@@ -204,7 +211,7 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 	ptr.SetNextInstruction(next)
 	ptr = next
 
-	next = ebpf.NewAluImmOperation(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR2, subs)
+	next = ebpf.NewAluImmInstruction(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR2, subs)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
@@ -213,7 +220,7 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 	ptr = next
 
 	guard = ebpf.GuardJump(ebpf.JmpJNE, ebpf.InsClassJmp, ebpf.RegR0, 0)
-	guard.FalseBranchNextInstr = ebpf.ExitOperation()
+	guard.FalseBranchNextInstr = ebpf.ExitInstruction()
 	guard.FalseBranchSize = 1
 	ptr.SetNextInstruction(guard)
 
@@ -221,14 +228,16 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 	guard.TrueBranchNextInstr = next
 	ptr = next
 
-	next = &ebpf.MemoryOperation{
-		Size:     ebpf.StLdSizeDW,
-		Mode:     ebpf.StLdModeMEM,
-		InsClass: ebpf.InsClassStx,
-		DstReg:   ebpf.RegR0,
-		SrcReg:   ebpf.RegR3,
-		Offset:   ebpf.UnusedField,
-		Imm:      ebpf.UnusedField,
+	next = &ebpf.MemoryInstruction{
+		BaseInstruction: ebpf.BaseInstruction{
+			InstructionClass: ebpf.InsClassStx,
+		},
+		Size:   ebpf.StLdSizeDW,
+		Mode:   ebpf.StLdModeMEM,
+		DstReg: ebpf.RegR0,
+		SrcReg: ebpf.RegR3,
+		Offset: ebpf.UnusedField,
+		Imm:    ebpf.UnusedField,
 	}
 	ptr.SetNextInstruction(next)
 	ptr = next
@@ -236,13 +245,13 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
 	next = ebpf.MovRegImm64(ebpf.RegR0, 0)
 	ptr.SetNextInstruction(next)
 	ptr = next
-	ptr.SetNextInstruction(ebpf.ExitOperation())
+	ptr.SetNextInstruction(ebpf.ExitInstruction())
 
 	return root
 }
 
 // Generate is the main function that builds the ebpf for this strategy.
-func (g *Generator) Generate(prog *ebpf.Program) ebpf.Operation {
+func (g *Generator) Generate(prog *ebpf.Program) ebpf.Instruction {
 	root := g.generateHeader(prog)
 	root.SetNextInstruction(g.GenerateNextInstruction(prog))
 	return root

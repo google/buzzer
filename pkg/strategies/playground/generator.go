@@ -22,13 +22,13 @@ import (
 type Generator struct{}
 
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree
-func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Operation {
+func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Instruction {
 	return nil
 }
 
 // Generate is the main function that builds the ast for this strategy.
-func (g *Generator) Generate(a *ebpf.Program) ebpf.Operation {
+func (g *Generator) Generate(a *ebpf.Program) ebpf.Instruction {
 	root := ebpf.MovRegImm64(ebpf.RegR0, 0)
-	root.SetNextInstruction(ebpf.ExitOperation())
+	root.SetNextInstruction(ebpf.ExitInstruction())
 	return root
 }

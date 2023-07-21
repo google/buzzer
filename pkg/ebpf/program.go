@@ -36,20 +36,20 @@ import (
 type GeneratorInterface interface {
 	// Generate is the general top level function that will be invoked to
 	// kick off the generation of the program.
-	Generate(prog *Program) Operation
+	Generate(prog *Program) Instruction
 
 	// GenerateNextInstruction gets invoked by every instruction's GenerateNextInstruction
 	// you can view it as returning the control of the construction back
 	// to the generator to decide what to do next, generate more instructions
 	// or finish the construction.
-	GenerateNextInstruction(prog *Program) Operation
+	GenerateNextInstruction(prog *Program) Instruction
 }
 
 // Program represents a generated instance of an eBPF Program. This data structure
 // exists mostly to keep track of the state of an eBPF program and to export methods
 // that the generator can use to interact with the program.
 type Program struct {
-	root Operation
+	root Instruction
 	size uint32
 
 	// Keep track of which registers have been initialized so we can use

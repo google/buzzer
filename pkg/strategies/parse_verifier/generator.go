@@ -41,15 +41,17 @@ type Generator struct {
 	regMap map[int32]uint8
 }
 
-func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Operation {
-	var root, ptr ebpf.Operation
-	root = &ebpf.MemoryOperation{
-		Size:     ebpf.StLdSizeDW,
-		Mode:     ebpf.StLdModeIMM,
-		InsClass: ebpf.InsClassLd,
-		DstReg:   ebpf.RegR6,
-		SrcReg:   ebpf.PseudoMapFD,
-		Imm:      int32(prog.LogMap()),
+func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Instruction {
+	var root, ptr ebpf.Instruction
+	root = &ebpf.MemoryInstruction{
+		BaseInstruction: ebpf.BaseInstruction{
+			InstructionClass: ebpf.InsClassLd,
+		},
+		Size:   ebpf.StLdSizeDW,
+		Mode:   ebpf.StLdModeIMM,
+		DstReg: ebpf.RegR6,
+		SrcReg: ebpf.PseudoMapFD,
+		Imm:    int32(prog.LogMap()),
 	}
 	prog.MarkRegisterInitialized(ebpf.RegR6.RegisterNumber())
 	ptr = root
@@ -71,20 +73,20 @@ func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Operation {
 }
 
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree
-func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Operation {
+func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Instruction {
 	// We reached the number of instructions we were told to generate.
 	if g.instructionCount == 0 {
 		return g.generateProgramFooter(prog)
 	}
 	g.instructionCount--
 
-	instr := ebpf.GenerateRandomAluOperation(prog)
+	instr := ebpf.GenerateRandomAluInstruction(prog)
 
 	var dstReg *ebpf.Register
 
-	if alui, ok := instr.(*ebpf.AluImmOperation); ok {
+	if alui, ok := instr.(*ebpf.AluImmInstruction); ok {
 		dstReg = alui.DstReg
-	} else if alui, ok := instr.(*ebpf.AluRegOperation); ok {
+	} else if alui, ok := instr.(*ebpf.AluRegInstruction); ok {
 		dstReg = alui.DstReg
 	} else {
 		fmt.Printf("Could not get dst reg for operation %v", instr)
@@ -110,21 +112,21 @@ func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Operation {
 	return instr
 }
 
-func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Operation {
+func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
 	reg0 := ebpf.MovRegImm64(ebpf.RegR0, 0)
-	reg0.SetNextInstruction(ebpf.ExitOperation())
+	reg0.SetNextInstruction(ebpf.ExitInstruction())
 	return reg0
 }
 
 // Generate is the main function that builds the ebpf for this strategy.
-func (g *Generator) Generate(prog *ebpf.Program) ebpf.Operation {
+func (g *Generator) Generate(prog *ebpf.Program) ebpf.Instruction {
 	root := g.generateHeader(prog)
 	root.SetNextInstruction(g.GenerateNextInstruction(prog))
 	return root
 }
 
-func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebpf.Program) (ebpf.Operation, ebpf.Operation) {
-	var instr, next, ptr ebpf.Operation
+func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebpf.Program) (ebpf.Instruction, ebpf.Instruction) {
+	var instr, next, ptr ebpf.Instruction
 
 	// The storing snippet looks something like this:
 	// - r0 = ebpf.logCount
@@ -142,14 +144,16 @@ func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebp
 
 	offset := int16(-4)
 
-	next = &ebpf.MemoryOperation{
-		Size:     ebpf.StLdSizeW,
-		Mode:     ebpf.StLdModeMEM,
-		InsClass: ebpf.InsClassStx,
-		DstReg:   ebpf.RegR10,
-		SrcReg:   ebpf.RegR0,
-		Offset:   offset,
-		Imm:      ebpf.UnusedField,
+	next = &ebpf.MemoryInstruction{
+		BaseInstruction: ebpf.BaseInstruction{
+			InstructionClass: ebpf.InsClassStx,
+		},
+		Size:   ebpf.StLdSizeW,
+		Mode:   ebpf.StLdModeMEM,
+		DstReg: ebpf.RegR10,
+		SrcReg: ebpf.RegR0,
+		Offset: offset,
+		Imm:    ebpf.UnusedField,
 	}
 	ptr.SetNextInstruction(next)
 	ptr = next
@@ -164,7 +168,7 @@ func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebp
 
 	subs := int32(-4)
 
-	next = ebpf.NewAluImmOperation(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR2, subs)
+	next = ebpf.NewAluImmInstruction(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR2, subs)
 	ptr.SetNextInstruction(next)
 	ptr = next
 
@@ -175,16 +179,18 @@ func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebp
 	guard := ebpf.GuardJump(ebpf.JmpJNE, ebpf.InsClassJmp, ebpf.RegR0, 0)
 	ptr.SetNextInstruction(guard)
 
-	next = &ebpf.MemoryOperation{
-		Size:     ebpf.StLdSizeDW,
-		Mode:     ebpf.StLdModeMEM,
-		InsClass: ebpf.InsClassStx,
-		DstReg:   ebpf.RegR0,
-		SrcReg:   dstReg,
-		Offset:   ebpf.UnusedField,
-		Imm:      ebpf.UnusedField,
+	next = &ebpf.MemoryInstruction{
+		BaseInstruction: ebpf.BaseInstruction{
+			InstructionClass: ebpf.InsClassStx,
+		},
+		Size:   ebpf.StLdSizeDW,
+		Mode:   ebpf.StLdModeMEM,
+		DstReg: ebpf.RegR0,
+		SrcReg: dstReg,
+		Offset: ebpf.UnusedField,
+		Imm:    ebpf.UnusedField,
 	}
-	guard.FalseBranchNextInstr = ebpf.ExitOperation()
+	guard.FalseBranchNextInstr = ebpf.ExitInstruction()
 	guard.FalseBranchSize = 1
 	guard.TrueBranchNextInstr = next
 	ptr = next

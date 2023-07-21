@@ -23,15 +23,15 @@ package(
 go_library(
     name = "ebpf",
     srcs = [
-        "alu_operations.go",
+        "alu_instructions.go",
         "base_structures.go",
         "constants.go",
         "encoding_functions.go",
         "generation_utils.go",
-        "jmp_operations.go",
+        "jmp_instructions.go",
         "poc_generator.go",
         "program.go",
-        "st_ld_operations.go",
+        "st_ld_instructions.go",
     ],
     cdeps = [
         "//ebpf_ffi",
@@ -46,11 +46,11 @@ go_library(
 go_test(
     name = "ebpf_test",
     srcs = [
-        "alu_operations_test.go",
+        "alu_instructions_test.go",
         "instruction_helpers_test.go",
-        "jmp_operations_test.go",
+        "jmp_instructions_test.go",
         "program_test.go",
-        "st_ld_operations_test.go",
+        "st_ld_instructions_test.go",
     ],
     embed = [":ebpf"],
     importpath = "buzzer/pkg/ebpf",

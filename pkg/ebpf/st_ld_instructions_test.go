@@ -19,7 +19,7 @@ import (
 	"testing"
 )
 
-func TestMemoryOperationCorrectEncoding(t *testing.T) {
+func TestMemoryInstructionCorrectEncoding(t *testing.T) {
 	tests := []struct {
 		testName string
 		imm      int32
@@ -39,7 +39,7 @@ func TestMemoryOperationCorrectEncoding(t *testing.T) {
 		wantAuxFuncEncoding uint64
 	}{
 		{
-			testName:            "Encoding Store Operation",
+			testName:            "Encoding Store Instruction",
 			size:                StLdSizeW,
 			imm:                 int32(-65535),
 			mode:                StLdModeMEM,
@@ -55,14 +55,16 @@ func TestMemoryOperationCorrectEncoding(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Logf("Running test case %s", tc.testName)
-			operation := MemoryOperation{
-				Size:     tc.size,
-				Mode:     tc.mode,
-				InsClass: tc.insClass,
-				DstReg:   tc.dstReg,
-				SrcReg:   tc.srcReg,
-				Offset:   tc.offset,
-				Imm:      tc.imm,
+			operation := MemoryInstruction{
+				BaseInstruction: BaseInstruction{
+					InstructionClass: tc.insClass,
+				},
+				Size:   tc.size,
+				Mode:   tc.mode,
+				DstReg: tc.dstReg,
+				SrcReg: tc.srcReg,
+				Offset: tc.offset,
+				Imm:    tc.imm,
 			}
 
 			encodingArray := operation.GenerateBytecode()
