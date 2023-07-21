@@ -219,13 +219,13 @@ func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
 	next = ebpf.Call(ebpf.MapLookup)
 	ptr.SetNextInstruction(next)
 	ptr = next
-	
+
 	next = ebpf.JmpNE(ebpf.RegR0, 0, 1)
 	nextAsJmp = next.(*ebpf.JmpImmInstruction)
 	nextAsJmp.FalseBranchNextInstr = ebpf.Exit()
 	ptr.SetNextInstruction(next)
 	ptr = next
-	
+
 	next = ebpf.MovRegImm64(ebpf.RegR3, g.magicNumber)
 	ptr.SetNextInstruction(next)
 	ptr = next

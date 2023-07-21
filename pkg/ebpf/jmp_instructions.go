@@ -296,7 +296,7 @@ func newJmpInstruction(opcode, insclass uint8, dstReg *Register, src interface{}
 		return &JmpImmInstruction{BaseInstruction: BaseInstruction{Opcode: opcode, InstructionClass: insclass}, Imm: int32(srcInt), DstReg: dstReg, FalseBranchSize: offset}
 	} else if srcReg, ok := src.(*Register); ok {
 		return &JmpRegInstruction{BaseInstruction: BaseInstruction{Opcode: opcode, InstructionClass: insclass}, SrcReg: srcReg, DstReg: dstReg, FalseBranchSize: offset}
-	} 
+	}
 	return nil
 }
 
@@ -373,7 +373,6 @@ func JmpSGE32(dstReg *Register, src interface{}, offset int16) Instruction {
 // Mov64(R2, key)
 // CallFunction(map_lookup_element)
 // ```
-//
 func Call(functionValue int32) Instruction {
 	return &CallInstruction{fnNumber: functionValue}
 }
@@ -413,5 +412,3 @@ func JmpSLE(dstReg *Register, src interface{}, offset int16) Instruction {
 func JmpSLE32(dstReg *Register, src interface{}, offset int16) Instruction {
 	return newJmpInstruction(JmpJSLE, InsClassJmp32, dstReg, src, offset)
 }
-
-

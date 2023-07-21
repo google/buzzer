@@ -31,7 +31,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 		wantClass  uint8
 		wantDstReg *Register
 		wantImm    int32
-		wantOffset	  int16
+		wantOffset int16
 
 		// The values for expected encoding are calculated manually
 		wantEncoding []uint64
@@ -43,7 +43,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      UnusedField,
 			wantOpcode:   JmpJA,
 			wantClass:    InsClassJmp,
-			wantOffset:	  42,
+			wantOffset:   42,
 			wantEncoding: []uint64{0x2a0005},
 		},
 		{
@@ -53,7 +53,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      UnusedField,
 			wantOpcode:   JmpExit,
 			wantClass:    InsClassJmp,
-			wantOffset:	  UnusedField,
+			wantOffset:   UnusedField,
 			wantEncoding: []uint64{0x95},
 		},
 		{
@@ -63,7 +63,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJEQ,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a0915},
 		},
 		{
@@ -73,7 +73,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJGE,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a0935},
 		},
 		{
@@ -83,7 +83,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJNE,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a0955},
 		},
 		{
@@ -93,7 +93,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJSGE,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a0975},
 		},
 		{
@@ -103,7 +103,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJLE,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a09b5},
 		},
 		{
@@ -113,7 +113,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJSLE,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a09d5},
 		},
 		{
@@ -123,7 +123,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJGT,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a0925},
 		},
 		{
@@ -133,7 +133,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJSET,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a0945},
 		},
 		{
@@ -143,7 +143,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJSGT,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a0965},
 		},
 		{
@@ -153,7 +153,7 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJLT,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a09a5},
 		},
 		{
@@ -163,10 +163,9 @@ func TestImmJmpOperationCorrectEncoding(t *testing.T) {
 			wantImm:      testImm,
 			wantOpcode:   JmpJSLT,
 			wantClass:    InsClassJmp,
-			wantOffset:	  testOffset,
+			wantOffset:   testOffset,
 			wantEncoding: []uint64{0x2a000a09c5},
 		},
-
 	}
 
 	for _, tc := range tests {
