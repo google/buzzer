@@ -29,13 +29,7 @@ func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
 // Generate is the main function that builds the ast for this strategy.
 func (g *Generator) Generate(a *Program) Instruction {
 	root, _ := InstructionSequence(
-		CallSkbLoadBytesRelative(RegR1, 0, RegR10, -8, 8, 1),
-		LdMapByFd(RegR0, a.LogMap()),
-		LdMapElement(RegR0, 0, RegR10, -4),
-		JmpNE(RegR0, 0, 1),
-		Exit(),
-		LdDW(RegR1, RegR10, -8),
-		StDW(RegR0, RegR1, 0),
+		Mov64(RegR0, 0),
 		Exit(),
 	)
 	return root

@@ -69,34 +69,22 @@ func (pg *Strategy) Fuzz(e strategies.ExecutorInterface) error {
 	if !res.GetIsValid() {
 		return fmt.Errorf("generated invalid program")
 	}
-	
-	mapDescription := &fpb.ExecutionRequest_MapDescription {
-		MapFd:       int64(prog.LogMap()),
-		MapSize:    uint64(pg.mapSize),
-	}
-	executionRequest := &fpb.ExecutionRequest{
+
+	rpr := &fpb.RunProgramRequest{
 		ProgFd:      res.GetProgramFd(),
-		Maps:        []*fpb.ExecutionRequest_MapDescription{mapDescription},
-		InputData: []byte{0xBB, 0xBB, 0xBB, 0xBB,0xBB, 0xBB, 0xBB, 0xBB},
+		MapFd:       int64(prog.LogMap()),
+		MapCount:    int32(pg.mapSize),
+		EbpfProgram: byteCode,
 	}
 
 	defer func() {
-		C.close_fd(C.int(executionRequest.GetProgFd()))
+		C.close_fd(C.int(rpr.GetProgFd()))
 	}()
 
-	executionResponse, err := e.RunProgram(executionRequest)
+	_, err = e.RunProgram(rpr)
 	if err != nil {
 		return err
 	}
-
-	mapElements := executionResponse.GetMapElements()
-	for _, element := range mapElements {
-		fmt.Printf("map fd: %d\n", element.GetMapFd())
-		for i, member := range element.GetElements() {
-			fmt.Printf("%d: %02x\n", i, member)
-		}
-	}
-
 	err = prog.GeneratePoc()
 	if err != nil {
 		fmt.Printf("could not generate poc %v", err)
