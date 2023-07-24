@@ -38,7 +38,7 @@ type GeneratorResult struct {
 // ExecutorInterface is defined for mocking purposes.
 type ExecutorInterface interface {
 	ValidateProgram(prog []uint64) (*fpb.ValidationResult, error)
-	RunProgram(rpr *fpb.RunProgramRequest) (*fpb.ExecutionResult, error)
+	RunProgram(rpr *fpb.ExecutionRequest) (*fpb.ExecutionResult, error)
 }
 
 // WriteLogFile writes the verifier log `data` to a temporary file.

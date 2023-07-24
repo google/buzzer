@@ -21,7 +21,7 @@ package units
 //  size_t size;
 //};
 //struct bpf_result load_bpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
-//struct bpf_result execute_bpf_program(int prog_fd, int map_fd, int map_count);
+//struct bpf_result execute_bpf_program(void* serialized_proto, size_t length);
 import "C"
 
 import (
@@ -110,8 +110,12 @@ func (e *Executor) ValidateProgram(prog []uint64) (*fpb.ValidationResult, error)
 }
 
 // RunProgram Runs the ebpf program and returns the execution results.
-func (e *Executor) RunProgram(runProgramRequest *fpb.RunProgramRequest) (*fpb.ExecutionResult, error) {
-	res := C.execute_bpf_program(C.int(runProgramRequest.GetProgFd()), C.int(runProgramRequest.GetMapFd()), C.int(runProgramRequest.GetMapCount()))
+func (e *Executor) RunProgram(executionRequest *fpb.ExecutionRequest) (*fpb.ExecutionResult, error) {
+	serializedProto, err := proto.Marshal(executionRequest)
+	if err != nil {
+		return nil, err
+	}
+	res := C.execute_bpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
 	exRes, err := executionProtoFromStruct(&res)
 	if err != nil {
 		return nil, err

@@ -42,7 +42,7 @@ int create_bpf_map(size_t size);
 // Closes the given file descriptor, this is to free up resources.
 void close_fd(int fd);
 
-struct bpf_result execute_bpf_program(int prog_fd, int map_fd, int map_count);
+struct bpf_result execute_bpf_program(void *serialized_proto, size_t length);
 }
 
 struct coverage_data {
