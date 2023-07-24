@@ -203,3 +203,51 @@ func LdMapByFd(dst *Register, fd int) Instruction {
 		Imm:    int32(fd),
 	}
 }
+
+func newAtomicInstruction(dst, src *Register, size, class uint8, offset int16, operation int32) Instruction {
+	return &MemoryInstruction{
+		BaseInstruction: BaseInstruction{
+			InstructionClass: class,
+		},
+		Size:   size,
+		Mode:   StLdModeATOMIC,
+		DstReg: dst,
+		// SrcReg is unused, put it here because otherwise it will be nil
+		// and it will cause problems somewhere else.
+		SrcReg: src,
+		Offset: offset,
+		Imm:    operation,
+	}
+}
+
+func MemAdd64(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeDW, InsClassStx, offset, int32(AluAdd))
+}
+
+func MemAdd(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeW, InsClassStx, offset, int32(AluAdd))
+}
+
+func MemOr64(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeDW, InsClassStx, offset, int32(AluOr))
+}
+
+func MemOr(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeW, InsClassStx, offset, int32(AluOr))
+}
+
+func MemAnd64(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeDW, InsClassStx, offset, int32(AluAnd))
+}
+
+func MemAnd(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeW, InsClassStx, offset, int32(AluAnd))
+}
+
+func MemXor64(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeDW, InsClassStx, offset, int32(AluXor))
+}
+
+func MemXor(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeW, InsClassStx, offset, int32(AluXor))
+}
