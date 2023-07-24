@@ -51,7 +51,7 @@ const int kPort = 1337;
 
 // This constant was determined arbitrarily, the number of 0's has incremented
 // when the size was no longer enough for the verifier logs.
-constexpr size_t kLogBuffSize = 1000000;
+constexpr size_t kLogBuffSize = 100000000;
 }  // namespace ebpf_ffi
 
 bpf_result serialize_proto(const google::protobuf::Message &proto) {
@@ -132,18 +132,18 @@ struct bpf_result load_bpf_program(void *prog_buff, size_t size,
   struct bpf_insn *insn;
   union bpf_attr attr = {};
 
-  // For the verifier log.
-  unsigned char log_buf[ebpf_ffi::kLogBuffSize] = {};
-  memset(log_buf, 0, ebpf_ffi::kLogBuffSize);
+    // For the verifier log.
+    unsigned char* log_buf = (unsigned char*)malloc(ebpf_ffi::kLogBuffSize);
+    memset(log_buf, 0, ebpf_ffi::kLogBuffSize);
 
-  insn = (struct bpf_insn *)prog_buff;
-  attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;
-  attr.insns = (uint64_t)insn;
-  attr.insn_cnt = (size * sizeof(uint64_t)) / (sizeof(struct bpf_insn));
-  attr.license = (uint64_t) "GPL";
-  attr.log_size = sizeof(log_buf);
-  attr.log_buf = (uint64_t)log_buf;
-  attr.log_level = 3;
+    insn = (struct bpf_insn *)prog_buff;
+    attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;
+    attr.insns = (uint64_t)insn;
+    attr.insn_cnt = (size * sizeof(uint64_t)) / (sizeof(struct bpf_insn));
+    attr.license = (uint64_t) "GPL";
+    attr.log_size = ebpf_ffi::kLogBuffSize;
+    attr.log_buf = (uint64_t)log_buf;
+    attr.log_level = 1;
 
   struct coverage_data cover;
   memset(&cover, 0, sizeof(struct coverage_data));
@@ -177,7 +177,9 @@ struct bpf_result load_bpf_program(void *prog_buff, size_t size,
     vres.set_is_valid(true);
   }
 
-  return serialize_proto(vres);
+    free(log_buf);
+
+    return serialize_proto(vres);
 }
 
 int bpf_create_map(enum bpf_map_type map_type, unsigned int key_size,

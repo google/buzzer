@@ -63,9 +63,7 @@ func (c *JmpImmInstruction) GenerateBytecode() []uint64 {
 
 // GenerateNextInstruction uses the prog generator to create the rest of the tree.
 func (c *JmpImmInstruction) GenerateNextInstruction(prog *Program) {
-	if c.FalseBranchNextInstr != nil {
-		c.FalseBranchNextInstr.GenerateNextInstruction(prog)
-	} else if c.falseBranchGenerator != nil {
+	if c.falseBranchGenerator != nil {
 		nextInstruction, bSize := c.falseBranchGenerator(prog)
 		c.FalseBranchNextInstr = nextInstruction
 		c.FalseBranchSize = bSize

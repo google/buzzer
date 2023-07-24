@@ -21,32 +21,17 @@ package(
 )
 
 go_library(
-    name = "units",
+    name = "stackcorruption",
     srcs = [
-        "control_unit.go",
-        "executor_unit.go",
+        "generator.go",
+        "stack_corruption.go",
     ],
-    cdeps = [
-        "//ebpf_ffi",
-    ],
+    cdeps = ["//ebpf_ffi"],
     cgo = 1,
-    importpath = "buzzer/pkg/units/units",
+    importpath = "buzzer/pkg/strategies/stack_corruption/stackcorruption",
     deps = [
-        "//pkg/metrics",
+        "//pkg/ebpf",
         "//pkg/strategies",
-        "//pkg/strategies/parse_verifier:parseverifier",
-        "//pkg/strategies/playground",
-        "//pkg/strategies/pointer_arithmetic:pointerarithmetic",
-        "//pkg/strategies/stack_corruption:stackcorruption",
         "//proto:ebpf_fuzzer_go_proto",
-        "@com_github_golang_protobuf//proto",
     ],
-)
-
-go_test(
-    name = "units_test",
-    srcs = [
-        "control_unit_test.go",
-    ],
-    embed = [":units"],
 )
