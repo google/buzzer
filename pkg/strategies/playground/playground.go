@@ -70,18 +70,22 @@ func (pg *Strategy) Fuzz(e strategies.ExecutorInterface) error {
 		return fmt.Errorf("generated invalid program")
 	}
 
-	rpr := &fpb.RunProgramRequest{
+	mapDescriptor := &fpb.ExecutionRequest_MapDescription {
+		MapFd: int64(prog.LogMap()),
+		MapSize: uint64(pg.mapSize),
+	}
+
+	executionRequest := &fpb.ExecutionRequest{
 		ProgFd:      res.GetProgramFd(),
-		MapFd:       int64(prog.LogMap()),
-		MapCount:    int32(pg.mapSize),
-		EbpfProgram: byteCode,
+		Maps: []*fpb.ExecutionRequest_MapDescription{mapDescriptor},
 	}
 
 	defer func() {
-		C.close_fd(C.int(rpr.GetProgFd()))
+		C.close_fd(C.int(executionRequest.GetProgFd()))
+		C.close_fd(C.int(mapDescriptor.GetMapSize()))
 	}()
 
-	_, err = e.RunProgram(rpr)
+	_, err = e.RunProgram(executionRequest)
 	if err != nil {
 		return err
 	}
