@@ -377,6 +377,43 @@ func Call(functionValue int32) Instruction {
 	return &CallInstruction{fnNumber: functionValue}
 }
 
+// LdMapElement loads a map element ptr to R0.
+// It does the following operations:
+// - Set R1 to the pointer of the target map.
+// - Stores `element` at keyPtr + offset: *(u32 *)(keyPtr + offset) = element
+// - Sets R2 to hold (keyPtr + offset)
+// - Calls map_lookup_element
+func LdMapElement(mapPtr *Register, element int, keyPtr *Register, offset int16) Instruction {
+	root, _ := InstructionSequence(
+		Mov64(RegR1, mapPtr),
+		StW(keyPtr, element, offset),
+		Mov64(RegR2, keyPtr),
+		Add64(RegR2, offset),
+		Call(MapLookup),
+	)
+	return root
+}
+
+// CallSkbLoadBytesRelative sets up the state of the registers to invoke the
+// skb_load_bytes_relative helper function.
+//
+// The invocation of this function would look more or less like this:
+// skb_load_bytes_relative(skb, skb_offset, dstAddress + dstAddressOffset, length, start_header).
+//
+// All the interface{} parameters can be either integers or Registers.
+func CallSkbLoadBytesRelative(skb *Register, skb_offset interface{}, dstAddress *Register, dstAddressOffset interface{}, length interface{}, start_header interface{}) Instruction {
+	root, _ := InstructionSequence(
+		Mov64(RegR1, skb), 
+		Mov64(RegR2, skb_offset),
+		Mov64(RegR3, dstAddress),
+		Add64(RegR3, dstAddressOffset),
+		Mov64(RegR4, length),
+		Mov64(RegR5, start_header),
+		Call(SkbLoadBytesRelative),
+	)
+	return root
+}
+
 func Exit() Instruction {
 	return newJmpInstruction(JmpExit, InsClassJmp, RegR0, UnusedField, UnusedField)
 }

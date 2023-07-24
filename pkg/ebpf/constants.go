@@ -155,4 +155,5 @@ const (
 	// ebpf helper function codes
 	// MapLookup Map Lookup helper function.
 	MapLookup = 0x01
+	SkbLoadBytesRelative = 0x44
 )
