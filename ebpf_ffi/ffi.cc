@@ -193,6 +193,16 @@ int create_bpf_map(size_t size) {
                           size);
 }
 
+struct bpf_result return_error(std::string error_message, ExecutionResult* result, int *sockets) {
+    if (sockets != nullptr) {
+        close(sockets[0]);
+        close(sockets[1]);
+    }
+    result->set_did_succeed(false);
+    result->set_error_message(error_message);
+    return serialize_proto(*result);
+}
+
 
 struct bpf_result execute_bpf_program(void *serialized_proto, size_t length) {
     ExecutionResult execution_result;
@@ -200,22 +210,17 @@ struct bpf_result execute_bpf_program(void *serialized_proto, size_t length) {
     std::string serialized_proto_string(reinterpret_cast<const char*>(serialized_proto), length);
     ExecutionRequest execution_request;
     if (!execution_request.ParseFromString(serialized_proto_string)) {
-        execution_result.set_error_message("Could not parse ExecutionRequest proto");
-        return serialize_proto(execution_result);
+        return return_error("Could not parse ExecutionRequest proto", &execution_result, nullptr);
     }
 
     int socks[2] = {};
     if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) != 0) {
-            execution_result.set_error_message(strerror(errno));
-            execution_result.set_did_succeed(false);
-            return serialize_proto(execution_result);
+            return return_error(strerror(errno), &execution_result, socks);
     }
 
     int prog_fd = execution_request.prog_fd();
     if (setsockopt(socks[0], SOL_SOCKET, SO_ATTACH_BPF, &prog_fd, sizeof(prog_fd)) != 0) {
-            execution_result.set_error_message(strerror(errno));
-            execution_result.set_did_succeed(false);
-            return serialize_proto(execution_result);
+            return return_error(strerror(errno), &execution_result, socks);
     }
    
     uint8_t *data;
@@ -228,19 +233,17 @@ struct bpf_result execute_bpf_program(void *serialized_proto, size_t length) {
     }
 
     if (write(socks[1], data, data_size) != data_size) {
-            execution_result.set_error_message("Could not write all data to socket");
-            execution_result.set_did_succeed(false);
-            return serialize_proto(execution_result);
+            return return_error("Could not write all data to socket", &execution_result, socks);
     }
 
     for (auto map_description : execution_request.maps()) {
         auto map_elements = execution_result.add_map_elements();
         if (get_map_elements(map_description, map_elements->mutable_elements()) < 0) {
-            execution_result.set_error_message(strerror(errno));
-            execution_result.set_did_succeed(false);
-            return serialize_proto(execution_result);
+            return return_error(strerror(errno), &execution_result, socks);
         }
     }
+    close(socks[0]);
+    close(socks[1]);
     execution_result.set_did_succeed(true);
     return serialize_proto(execution_result);
 }
