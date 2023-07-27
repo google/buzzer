@@ -93,13 +93,13 @@ func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface) error {
 		// Build a new execution request.
 		logMap := gr.Prog.LogMap()
 		logCount := gen.logCount
-		mapDescription := &fpb.ExecutionRequest_MapDescription {
-			MapFd:       int64(logMap),
-			MapSize:    uint64(logCount),
+		mapDescription := &fpb.ExecutionRequest_MapDescription{
+			MapFd:   int64(logMap),
+			MapSize: uint64(logCount),
 		}
 		executionRequest := &fpb.ExecutionRequest{
-			ProgFd:      gr.ProgFD,
-			Maps:        []*fpb.ExecutionRequest_MapDescription{mapDescription},
+			ProgFd: gr.ProgFD,
+			Maps:   []*fpb.ExecutionRequest_MapDescription{mapDescription},
 		}
 
 		defer func() {
@@ -161,8 +161,8 @@ func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface) error {
 			}
 		}
 
-			C.close_fd(C.int(executionRequest.GetProgFd()))
-			C.close_fd(C.int(mapDescription.GetMapFd()))
+		C.close_fd(C.int(executionRequest.GetProgFd()))
+		C.close_fd(C.int(mapDescription.GetMapFd()))
 	}
 	return nil
 }

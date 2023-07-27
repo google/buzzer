@@ -403,7 +403,7 @@ func LdMapElement(mapPtr *Register, element int, keyPtr *Register, offset int16)
 // All the interface{} parameters can be either integers or Registers.
 func CallSkbLoadBytesRelative(skb *Register, skb_offset interface{}, dstAddress *Register, dstAddressOffset interface{}, length interface{}, start_header interface{}) Instruction {
 	root, _ := InstructionSequence(
-		Mov64(RegR1, skb), 
+		Mov64(RegR1, skb),
 		Mov64(RegR2, skb_offset),
 		Mov64(RegR3, dstAddress),
 		Add64(RegR3, dstAddressOffset),

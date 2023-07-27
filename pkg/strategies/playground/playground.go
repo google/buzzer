@@ -70,14 +70,14 @@ func (pg *Strategy) Fuzz(e strategies.ExecutorInterface) error {
 		return fmt.Errorf("generated invalid program")
 	}
 
-	mapDescriptor := &fpb.ExecutionRequest_MapDescription {
-		MapFd: int64(prog.LogMap()),
+	mapDescriptor := &fpb.ExecutionRequest_MapDescription{
+		MapFd:   int64(prog.LogMap()),
 		MapSize: uint64(pg.mapSize),
 	}
 
 	executionRequest := &fpb.ExecutionRequest{
-		ProgFd:      res.GetProgramFd(),
-		Maps: []*fpb.ExecutionRequest_MapDescription{mapDescriptor},
+		ProgFd: res.GetProgramFd(),
+		Maps:   []*fpb.ExecutionRequest_MapDescription{mapDescriptor},
 	}
 
 	defer func() {

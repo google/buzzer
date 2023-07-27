@@ -127,19 +127,19 @@ func (pa *Strategy) Fuzz(e strategies.ExecutorInterface) error {
 		}
 
 		// Build a new execution request.
-		mapDescription := &fpb.ExecutionRequest_MapDescription {
-			MapFd:       int64(gr.Prog.LogMap()),
-			MapSize:    uint64(2),
+		mapDescription := &fpb.ExecutionRequest_MapDescription{
+			MapFd:   int64(gr.Prog.LogMap()),
+			MapSize: uint64(2),
 		}
 		executionRequest := &fpb.ExecutionRequest{
-			ProgFd:      gr.ProgFD,
-			Maps:        []*fpb.ExecutionRequest_MapDescription{mapDescription},
+			ProgFd: gr.ProgFD,
+			Maps:   []*fpb.ExecutionRequest_MapDescription{mapDescription},
 		}
 
 		if err := func() error {
 			defer func() {
-			C.close_fd(C.int(executionRequest.GetProgFd()))
-			C.close_fd(C.int(mapDescription.GetMapFd()))
+				C.close_fd(C.int(executionRequest.GetProgFd()))
+				C.close_fd(C.int(mapDescription.GetMapFd()))
 			}()
 			exRes, err := pa.executeProgram(e, executionRequest)
 

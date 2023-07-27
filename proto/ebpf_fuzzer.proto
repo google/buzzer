@@ -17,22 +17,21 @@ syntax = "proto3";
 package ebpf_fuzzer;
 
 message ExecutionRequest {
+  // Program file descriptor to execute.
+  int64 prog_fd = 1;
 
-    // Program file descriptor to execute.
-    int64 prog_fd = 1;
+  // MapDescription holds a file descriptor to a map and a its size.
+  // The collection of MapDescriptions will be used to pull data from the
+  // maps after execution has been completed.
+  message MapDescription {
+    int64 map_fd = 1;
+    uint64 map_size = 2;
+  }
+  repeated MapDescription maps = 2;
 
-    // MapDescription holds a file descriptor to a map and a its size.
-    // The collection of MapDescriptions will be used to pull data from the
-    // maps after execution has been completed.
-    message MapDescription {
-        int64 map_fd = 1;
-        uint64 map_size = 2;
-    }
-    repeated MapDescription maps = 2;
-
-    // Optional data to send over the network that can be accessed by the
-    // ebpf program.
-    bytes input_data = 3;
+  // Optional data to send over the network that can be accessed by the
+  // ebpf program.
+  bytes input_data = 3;
 }
 
 // Results from Executing the ebpf program.
@@ -41,8 +40,8 @@ message ExecutionResult {
   string error_message = 2;
 
   message MapElements {
-      int64 map_fd = 1;
-      repeated uint64 elements = 2;
+    int64 map_fd = 1;
+    repeated uint64 elements = 2;
   }
   repeated MapElements map_elements = 3;
 }
@@ -58,4 +57,3 @@ message ValidationResult {
   int64 coverage_buffer = 7;
   repeated uint64 coverage_address = 8;
 }
-
