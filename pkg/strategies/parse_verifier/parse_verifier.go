@@ -93,16 +93,18 @@ func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface) error {
 		// Build a new execution request.
 		logMap := gr.Prog.LogMap()
 		logCount := gen.logCount
-		rpr := &fpb.RunProgramRequest{
-			ProgFd:      gr.ProgFD,
-			MapFd:       int64(logMap),
-			MapCount:    logCount,
-			EbpfProgram: gr.ProgByteCode,
+		mapDescription := &fpb.ExecutionRequest_MapDescription{
+			MapFd:   int64(logMap),
+			MapSize: uint64(logCount),
+		}
+		executionRequest := &fpb.ExecutionRequest{
+			ProgFd: gr.ProgFD,
+			Maps:   []*fpb.ExecutionRequest_MapDescription{mapDescription},
 		}
 
 		defer func() {
-			C.close_fd(C.int(rpr.GetProgFd()))
-			C.close_fd(C.int(rpr.GetMapFd()))
+			C.close_fd(C.int(executionRequest.GetProgFd()))
+			C.close_fd(C.int(mapDescription.GetMapFd()))
 		}()
 
 		programFlaked := true
@@ -112,7 +114,7 @@ func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface) error {
 
 		for programFlaked && maxAttempts != 0 {
 			maxAttempts--
-			eR, err := e.RunProgram(rpr)
+			eR, err := e.RunProgram(executionRequest)
 			if err != nil {
 				return err
 			}
@@ -120,8 +122,9 @@ func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface) error {
 			if !eR.GetDidSucceed() {
 				return fmt.Errorf("execute Program did not succeed")
 			}
-			for i := 0; i < len(eR.GetElements()); i++ {
-				if eR.GetElements()[i] != 0 {
+			mapElements := eR.GetMapElements()[0].GetElements()
+			for i := 0; i < len(mapElements); i++ {
+				if mapElements[i] != 0 {
 					programFlaked = false
 					exRes = eR
 					break
@@ -141,14 +144,16 @@ func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface) error {
 			return err
 		}
 
-		for mapIndex := int32(0); mapIndex < rpr.GetMapCount(); mapIndex++ {
+		mapSize := int32(executionRequest.GetMaps()[0].GetMapSize())
+		mapElements := exRes.GetMapElements()[0].GetElements()
+		for mapIndex := int32(0); mapIndex < mapSize; mapIndex++ {
 			offset := gen.GetProgramOffset(mapIndex)
 			dstReg := gen.GetDestReg(mapIndex)
 			verifierValue, known, err := regOracle.LookupRegValue(offset, dstReg)
 			if err != nil {
 				return err
 			}
-			actualValue := exRes.GetElements()[mapIndex]
+			actualValue := mapElements[mapIndex]
 			if known && verifierValue != actualValue {
 				if err := strategies.SaveExecutionResults(gr); err != nil {
 					return err
@@ -156,8 +161,8 @@ func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface) error {
 			}
 		}
 
-		C.close_fd(C.int(rpr.GetProgFd()))
-		C.close_fd(C.int(rpr.GetMapFd()))
+		C.close_fd(C.int(executionRequest.GetProgFd()))
+		C.close_fd(C.int(mapDescription.GetMapFd()))
 	}
 	return nil
 }

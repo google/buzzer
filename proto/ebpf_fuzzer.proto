@@ -16,11 +16,34 @@ syntax = "proto3";
 
 package ebpf_fuzzer;
 
+message ExecutionRequest {
+  // Program file descriptor to execute.
+  int64 prog_fd = 1;
+
+  // MapDescription holds a file descriptor to a map and a its size.
+  // The collection of MapDescriptions will be used to pull data from the
+  // maps after execution has been completed.
+  message MapDescription {
+    int64 map_fd = 1;
+    uint64 map_size = 2;
+  }
+  repeated MapDescription maps = 2;
+
+  // Optional data to send over the network that can be accessed by the
+  // ebpf program.
+  bytes input_data = 3;
+}
+
 // Results from Executing the ebpf program.
 message ExecutionResult {
   bool did_succeed = 1;
   string error_message = 2;
-  repeated uint64 elements = 3;
+
+  message MapElements {
+    int64 map_fd = 1;
+    repeated uint64 elements = 2;
+  }
+  repeated MapElements map_elements = 3;
 }
 
 // Results From feeding the program into a ebpf executor.
@@ -33,22 +56,4 @@ message ValidationResult {
   int64 coverage_size = 6;
   int64 coverage_buffer = 7;
   repeated uint64 coverage_address = 8;
-}
-
-// eBPF Program to run.
-message RunProgramRequest {
-  repeated uint64 ebpf_program = 1;
-  int64 prog_fd = 2;
-  int64 map_fd = 3;
-  int32 map_count = 4;
-}
-
-message RunProgramResult {
-  enum RunProgramStatus {
-    STATUS_UNKONWN = 0;
-    STATUS_OK = 1;
-    STATUS_ERROR = 2;
-  }
-  RunProgramStatus run_program_status = 1;
-  string verifier_log = 2;
 }

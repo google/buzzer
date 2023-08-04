@@ -99,3 +99,155 @@ func (c *MemoryInstruction) GeneratePoc() []string {
 	}
 	return r
 }
+
+func newStoreOperation(size uint8, dstReg *Register, src interface{}, offset int16) Instruction {
+	var srcReg *Register
+	var imm int32
+	var insClass uint8
+	isInt, srcInt := isIntType(src)
+	if isInt {
+		imm = int32(srcInt)
+		// srcReg will be mostly ignored in this case, we need to specify
+		// something so the default nil value doesn't cause trouble.
+		srcReg = RegR0
+		insClass = InsClassSt
+	} else if srcR, ok := src.(*Register); ok {
+		srcReg = srcR
+		imm = 0
+		insClass = InsClassStx
+	} else {
+		return nil
+	}
+
+	return &MemoryInstruction{
+		BaseInstruction: BaseInstruction{
+			InstructionClass: insClass,
+		},
+		Mode:   StLdModeMEM,
+		Size:   size,
+		DstReg: dstReg,
+		// SrcReg is unused, put it here because otherwise it will be nil
+		// and it will cause problems somewhere else.
+		SrcReg: srcReg,
+		Offset: offset,
+		Imm:    imm,
+	}
+}
+
+// StDW Stores 8 byte data from `src` into `dst`
+func StDW(dst *Register, src interface{}, offset int16) Instruction {
+	return newStoreOperation(StLdSizeDW, dst, src, offset)
+}
+
+// StDW Stores 4 byte data from `src` into `dst`
+func StW(dst *Register, src interface{}, offset int16) Instruction {
+	return newStoreOperation(StLdSizeW, dst, src, offset)
+}
+
+// StH Stores 2 byte (Half word) data from `src` into `dst`
+func StH(dst *Register, src interface{}, offset int16) Instruction {
+	return newStoreOperation(StLdSizeH, dst, src, offset)
+}
+
+// StB Stores 1 byte data from `src` into `dst`
+func StB(dst *Register, src interface{}, offset int16) Instruction {
+	return newStoreOperation(StLdSizeB, dst, src, offset)
+}
+
+func newLoadToRegisterOperation(size uint8, dstReg *Register, src *Register, offset int16) Instruction {
+	return &MemoryInstruction{
+		BaseInstruction: BaseInstruction{
+			InstructionClass: InsClassLdx,
+		},
+		Mode:   StLdModeMEM,
+		Size:   size,
+		DstReg: dstReg,
+		// SrcReg is unused, put it here because otherwise it will be nil
+		// and it will cause problems somewhere else.
+		SrcReg: src,
+		Offset: offset,
+	}
+}
+
+// LdDW Stores 8 byte data from `src` into `dst`
+func LdDW(dst *Register, src *Register, offset int16) Instruction {
+	return newLoadToRegisterOperation(StLdSizeDW, dst, src, offset)
+}
+
+// LdW Stores 4 byte data from `src` into `dst`
+func LdW(dst *Register, src *Register, offset int16) Instruction {
+	return newLoadToRegisterOperation(StLdSizeW, dst, src, offset)
+}
+
+// LdH Stores 2 byte (Half word) data from `src` into `dst`
+func LdH(dst *Register, src *Register, offset int16) Instruction {
+	return newLoadToRegisterOperation(StLdSizeH, dst, src, offset)
+}
+
+// LdB Stores 1 byte data from `src` into `dst`
+func LdB(dst *Register, src *Register, offset int16) Instruction {
+	return newLoadToRegisterOperation(StLdSizeB, dst, src, offset)
+}
+
+func LdMapByFd(dst *Register, fd int) Instruction {
+	return &MemoryInstruction{
+		BaseInstruction: BaseInstruction{
+			InstructionClass: InsClassLd,
+		},
+		Size:   StLdSizeDW,
+		Mode:   StLdModeIMM,
+		DstReg: dst,
+		// SrcReg is unused, put it here because otherwise it will be nil
+		// and it will cause problems somewhere else.
+		SrcReg: PseudoMapFD,
+		Imm:    int32(fd),
+	}
+}
+
+func newAtomicInstruction(dst, src *Register, size, class uint8, offset int16, operation int32) Instruction {
+	return &MemoryInstruction{
+		BaseInstruction: BaseInstruction{
+			InstructionClass: class,
+		},
+		Size:   size,
+		Mode:   StLdModeATOMIC,
+		DstReg: dst,
+		// SrcReg is unused, put it here because otherwise it will be nil
+		// and it will cause problems somewhere else.
+		SrcReg: src,
+		Offset: offset,
+		Imm:    operation,
+	}
+}
+
+func MemAdd64(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeDW, InsClassStx, offset, int32(AluAdd))
+}
+
+func MemAdd(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeW, InsClassStx, offset, int32(AluAdd))
+}
+
+func MemOr64(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeDW, InsClassStx, offset, int32(AluOr))
+}
+
+func MemOr(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeW, InsClassStx, offset, int32(AluOr))
+}
+
+func MemAnd64(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeDW, InsClassStx, offset, int32(AluAnd))
+}
+
+func MemAnd(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeW, InsClassStx, offset, int32(AluAnd))
+}
+
+func MemXor64(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeDW, InsClassStx, offset, int32(AluXor))
+}
+
+func MemXor(dst, src *Register, offset int16) Instruction {
+	return newAtomicInstruction(dst, src, StLdSizeW, InsClassStx, offset, int32(AluXor))
+}

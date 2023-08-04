@@ -15,22 +15,22 @@
 package playground
 
 import (
-	"buzzer/pkg/ebpf/ebpf"
+	. "buzzer/pkg/ebpf/ebpf"
 )
 
 // Generator is responsible for constructing the ast for this strategy.
 type Generator struct{}
 
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree
-func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Instruction {
+func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
 	return nil
 }
 
 // Generate is the main function that builds the ast for this strategy.
-func (g *Generator) Generate(a *ebpf.Program) ebpf.Instruction {
-	root, _ := ebpf.InstructionSequence(
-		ebpf.Mov64(ebpf.RegR0, 0),
-		ebpf.Exit(),
+func (g *Generator) Generate(a *Program) Instruction {
+	root, _ := InstructionSequence(
+		Mov64(RegR0, 0),
+		Exit(),
 	)
 	return root
 }

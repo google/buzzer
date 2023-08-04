@@ -31,6 +31,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/escaping.h"
 #include "google/protobuf/message.h"
+#include "google/protobuf/repeated_field.h"
 #include "proto/ebpf_fuzzer.pb.h"
 
 #define KCOV_INIT_TRACE _IOR('c', 1, uint64_t)
@@ -40,6 +41,7 @@
 #define KCOV_TRACE_PC 0
 #define KCOV_TRACE_CMP 1
 
+using ebpf_fuzzer::ExecutionRequest;
 using ebpf_fuzzer::ExecutionResult;
 using ebpf_fuzzer::ValidationResult;
 
@@ -104,6 +106,24 @@ void get_coverage_and_free_resources(struct coverage_data *cstruct,
   ioctl(cstruct->fd, KCOV_DISABLE, 0);
   close(cstruct->fd);
   munmap(cstruct->coverage_buffer, cstruct->coverage_size * sizeof(uint64_t));
+}
+
+int get_map_elements(
+    const ExecutionRequest::MapDescription &map,
+    google::protobuf::RepeatedField<google::protobuf::uint64> *elements) {
+  for (uint64_t key = 0; key < (uint64_t)map.map_size(); key++) {
+    uint64_t element = 0;
+    union bpf_attr lookup_map = {.map_fd = static_cast<uint32_t>(map.map_fd()),
+                                 .key = reinterpret_cast<uint64_t>(&key),
+                                 .value = reinterpret_cast<uint64_t>(&element)};
+    int err =
+        syscall(SYS_bpf, BPF_MAP_LOOKUP_ELEM, &lookup_map, sizeof(lookup_map));
+    if (err < 0) {
+      return err;
+    }
+    elements->Add(element);
+  }
+  return 0;
 }
 
 struct bpf_result load_bpf_program(void *prog_buff, size_t size,
@@ -175,76 +195,62 @@ int create_bpf_map(size_t size) {
                         size);
 }
 
-static int setup_send_sock() {
-  return socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
-}
-
-static int setup_listener_sock() {
-  int sock_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC, 0);
-  if (sock_fd < 0) {
-    return sock_fd;
+struct bpf_result return_error(std::string error_message,
+                               ExecutionResult *result, int *sockets) {
+  if (sockets != nullptr) {
+    close(sockets[0]);
+    close(sockets[1]);
   }
-
-  struct sockaddr_in serverAddr;
-  serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(ebpf_ffi::kPort);
-  serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-
-  int err = bind(sock_fd, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
-  if (err < 0) return err;
-
-  err = listen(sock_fd, 32);
-  if (err < 0) return err;
-
-  return sock_fd;
+  result->set_did_succeed(false);
+  result->set_error_message(error_message);
+  return serialize_proto(*result);
 }
 
-struct bpf_result execute_bpf_program(int prog_fd, int map_fd, int map_count) {
-  int listener_sock = setup_listener_sock();
-  int send_sock = setup_send_sock();
-
+struct bpf_result execute_bpf_program(void *serialized_proto, size_t length) {
   ExecutionResult execution_result;
 
-  if (listener_sock < 0 || send_sock < 0) {
-    execution_result.set_error_message(strerror(errno));
-    execution_result.set_did_succeed(false);
-    return serialize_proto(execution_result);
+  std::string serialized_proto_string(
+      reinterpret_cast<const char *>(serialized_proto), length);
+  ExecutionRequest execution_request;
+  if (!execution_request.ParseFromString(serialized_proto_string)) {
+    return return_error("Could not parse ExecutionRequest proto",
+                        &execution_result, nullptr);
   }
 
-  if (setsockopt(listener_sock, SOL_SOCKET, SO_ATTACH_BPF, &prog_fd,
-                 sizeof(prog_fd)) < 0) {
-    execution_result.set_error_message(strerror(errno));
-    execution_result.set_did_succeed(false);
-    return serialize_proto(execution_result);
+  int socks[2] = {};
+  if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) != 0) {
+    return return_error(strerror(errno), &execution_result, socks);
   }
 
-  // trigger execution by connecting to the listener socket
-  struct sockaddr_in serverAddr;
-  serverAddr.sin_family = AF_INET;
-  serverAddr.sin_port = htons(ebpf_ffi::kPort);
-  serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+  int prog_fd = execution_request.prog_fd();
+  if (setsockopt(socks[0], SOL_SOCKET, SO_ATTACH_BPF, &prog_fd,
+                 sizeof(prog_fd)) != 0) {
+    return return_error(strerror(errno), &execution_result, socks);
+  }
 
-  // no need to check connect, it will fail anyways
-  connect(send_sock, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
+  uint8_t *data;
+  uint8_t backup_data[4] = {0xAA, 0xAA, 0xAA, 0xAA};
+  data = backup_data;
+  int data_size = 4;
+  if (execution_request.input_data().length() != 0) {
+    data = (uint8_t *)(execution_request.input_data().c_str());
+    data_size = execution_request.input_data().length();
+  }
 
-  close(listener_sock);
-  close(send_sock);
-  auto *map_elements = execution_result.mutable_elements();
-  for (uint64_t key = 0; key < (uint64_t)map_count; key++) {
-    uint64_t element = 0;
-    union bpf_attr lookup_map = {.map_fd = static_cast<uint32_t>(map_fd),
-                                 .key = reinterpret_cast<uint64_t>(&key),
-                                 .value = reinterpret_cast<uint64_t>(&element)};
-    int err =
-        syscall(SYS_bpf, BPF_MAP_LOOKUP_ELEM, &lookup_map, sizeof(lookup_map));
-    if (err < 0) {
-      execution_result.set_error_message(strerror(errno));
-      execution_result.set_did_succeed(false);
-      return serialize_proto(execution_result);
+  if (write(socks[1], data, data_size) != data_size) {
+    return return_error("Could not write all data to socket", &execution_result,
+                        socks);
+  }
+
+  for (auto map_description : execution_request.maps()) {
+    auto map_elements = execution_result.add_map_elements();
+    if (get_map_elements(map_description, map_elements->mutable_elements()) <
+        0) {
+      return return_error(strerror(errno), &execution_result, socks);
     }
-    map_elements->Add(element);
   }
-
+  close(socks[0]);
+  close(socks[1]);
   execution_result.set_did_succeed(true);
   return serialize_proto(execution_result);
 }

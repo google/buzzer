@@ -76,7 +76,7 @@ func (pa *Strategy) generateAndValidateProgram(e strategies.ExecutorInterface, g
 	}
 }
 
-func (pa *Strategy) executeProgram(e strategies.ExecutorInterface, rpr *fpb.RunProgramRequest) (*fpb.ExecutionResult, error) {
+func (pa *Strategy) executeProgram(e strategies.ExecutorInterface, executionRequest *fpb.ExecutionRequest) (*fpb.ExecutionResult, error) {
 	programFlaked := true
 
 	var exRes *fpb.ExecutionResult
@@ -84,7 +84,7 @@ func (pa *Strategy) executeProgram(e strategies.ExecutorInterface, rpr *fpb.RunP
 
 	for programFlaked && maxAttempts != 0 {
 		maxAttempts--
-		eR, err := e.RunProgram(rpr)
+		eR, err := e.RunProgram(executionRequest)
 		if err != nil {
 			return nil, err
 		}
@@ -92,8 +92,9 @@ func (pa *Strategy) executeProgram(e strategies.ExecutorInterface, rpr *fpb.RunP
 		if !eR.GetDidSucceed() {
 			return nil, fmt.Errorf("execute Program did not succeed")
 		}
-		for i := 0; i < len(eR.GetElements()); i++ {
-			if eR.GetElements()[i] != 0 {
+		mapElements := eR.GetMapElements()[0].GetElements()
+		for i := 0; i < len(mapElements); i++ {
+			if mapElements[i] != 0 {
 				programFlaked = false
 				exRes = eR
 				break
@@ -126,20 +127,21 @@ func (pa *Strategy) Fuzz(e strategies.ExecutorInterface) error {
 		}
 
 		// Build a new execution request.
-		logMap := gr.Prog.LogMap()
-		rpr := &fpb.RunProgramRequest{
-			ProgFd:      gr.ProgFD,
-			MapFd:       int64(logMap),
-			MapCount:    2,
-			EbpfProgram: gr.ProgByteCode,
+		mapDescription := &fpb.ExecutionRequest_MapDescription{
+			MapFd:   int64(gr.Prog.LogMap()),
+			MapSize: uint64(2),
+		}
+		executionRequest := &fpb.ExecutionRequest{
+			ProgFd: gr.ProgFD,
+			Maps:   []*fpb.ExecutionRequest_MapDescription{mapDescription},
 		}
 
 		if err := func() error {
 			defer func() {
-				C.close_fd(C.int(rpr.GetProgFd()))
-				C.close_fd(C.int(rpr.GetMapFd()))
+				C.close_fd(C.int(executionRequest.GetProgFd()))
+				C.close_fd(C.int(mapDescription.GetMapFd()))
 			}()
-			exRes, err := pa.executeProgram(e, rpr)
+			exRes, err := pa.executeProgram(e, executionRequest)
 
 			if err != nil {
 				return err
@@ -149,7 +151,8 @@ func (pa *Strategy) Fuzz(e strategies.ExecutorInterface) error {
 			// arithmetic and another one without it, we expect the first
 			// two elements to be the same. Otherwise, we wrote out of
 			// bounds.
-			if exRes.GetElements()[0] != exRes.GetElements()[1] {
+			mapElements := exRes.GetMapElements()[0].GetElements()
+			if mapElements[0] != mapElements[1] {
 				strategies.SaveExecutionResults(gr)
 				return fmt.Errorf("Program wrote out of bounds")
 			}

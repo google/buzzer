@@ -17,7 +17,7 @@ package parseverifier
 import (
 	"fmt"
 
-	"buzzer/pkg/ebpf/ebpf"
+	. "buzzer/pkg/ebpf/ebpf"
 )
 
 // Generator is responsible for constructing the ebpf for this strategy.
@@ -41,28 +41,28 @@ type Generator struct {
 	regMap map[int32]uint8
 }
 
-func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Instruction {
-	var root, ptr ebpf.Instruction
-	root = &ebpf.MemoryInstruction{
-		BaseInstruction: ebpf.BaseInstruction{
-			InstructionClass: ebpf.InsClassLd,
+func (g *Generator) generateHeader(prog *Program) Instruction {
+	var root, ptr Instruction
+	root = &MemoryInstruction{
+		BaseInstruction: BaseInstruction{
+			InstructionClass: InsClassLd,
 		},
-		Size:   ebpf.StLdSizeDW,
-		Mode:   ebpf.StLdModeIMM,
-		DstReg: ebpf.RegR6,
-		SrcReg: ebpf.PseudoMapFD,
+		Size:   StLdSizeDW,
+		Mode:   StLdModeIMM,
+		DstReg: RegR6,
+		SrcReg: PseudoMapFD,
 		Imm:    int32(prog.LogMap()),
 	}
-	prog.MarkRegisterInitialized(ebpf.RegR6.RegisterNumber())
+	prog.MarkRegisterInitialized(RegR6.RegisterNumber())
 	ptr = root
 	// Initializing R6 to a pointer value via a 8-byte immediate
 	// generates a wide instruction. So, two 8-byte values.
 	hSize := int32(2)
 
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
-		reg, _ := ebpf.GetRegisterFromNumber(uint8(i))
+		reg, _ := GetRegisterFromNumber(uint8(i))
 		regVal := int32(prog.GetRNG().RandInt())
-		nextInstr := ebpf.MovRegImm64(reg, regVal)
+		nextInstr := MovRegImm64(reg, regVal)
 		ptr.SetNextInstruction(nextInstr)
 		ptr = nextInstr
 		prog.MarkRegisterInitialized(reg.RegisterNumber())
@@ -73,27 +73,27 @@ func (g *Generator) generateHeader(prog *ebpf.Program) ebpf.Instruction {
 }
 
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree
-func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Instruction {
+func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
 	// We reached the number of instructions we were told to generate.
 	if g.instructionCount == 0 {
 		return g.generateProgramFooter(prog)
 	}
 	g.instructionCount--
 
-	instr := ebpf.GenerateRandomAluInstruction(prog)
+	instr := GenerateRandomAluInstruction(prog)
 
-	var dstReg *ebpf.Register
+	var dstReg *Register
 
-	if alui, ok := instr.(*ebpf.AluImmInstruction); ok {
+	if alui, ok := instr.(*AluImmInstruction); ok {
 		dstReg = alui.DstReg
-	} else if alui, ok := instr.(*ebpf.AluRegInstruction); ok {
+	} else if alui, ok := instr.(*AluRegInstruction); ok {
 		dstReg = alui.DstReg
 	} else {
 		fmt.Printf("Could not get dst reg for operation %v", instr)
 		return nil
 	}
 
-	stInst, _ := g.generateStateStoringSnippet(dstReg, prog)
+	stInst := g.generateStateStoringSnippet(dstReg, prog)
 	instr.SetNextInstruction(stInst)
 	instrLen := int32(len(instr.GenerateBytecode()))
 	instrOffset := int32(0)
@@ -112,91 +112,44 @@ func (g *Generator) GenerateNextInstruction(prog *ebpf.Program) ebpf.Instruction
 	return instr
 }
 
-func (g *Generator) generateProgramFooter(prog *ebpf.Program) ebpf.Instruction {
-	reg0 := ebpf.MovRegImm64(ebpf.RegR0, 0)
-	reg0.SetNextInstruction(ebpf.Exit())
+func (g *Generator) generateProgramFooter(prog *Program) Instruction {
+	reg0 := MovRegImm64(RegR0, 0)
+	reg0.SetNextInstruction(Exit())
 	return reg0
 }
 
 // Generate is the main function that builds the ebpf for this strategy.
-func (g *Generator) Generate(prog *ebpf.Program) ebpf.Instruction {
+func (g *Generator) Generate(prog *Program) Instruction {
 	root := g.generateHeader(prog)
 	root.SetNextInstruction(g.GenerateNextInstruction(prog))
 	return root
 }
 
-func (g *Generator) generateStateStoringSnippet(dstReg *ebpf.Register, prog *ebpf.Program) (ebpf.Instruction, ebpf.Instruction) {
-	var instr, next, ptr ebpf.Instruction
-
+func (g *Generator) generateStateStoringSnippet(dstReg *Register, prog *Program) Instruction {
 	// The storing snippet looks something like this:
-	// - r0 = ebpf.logCount
+	// - r0 = logCount
 	// - *(r10 - 4) = r0; Where R10 is the stack pointer, we store the value
-	// of ebpf.logCount into the stack so we can write it into the map.
+	// of logCount into the stack so we can write it into the map.
 	// - r1 = r6; where r6 contains the map file descriptor
 	// - r2 = r10
-	// - r2 -= 4; We make r2 point to the ebpf.count value we stored.
+	// - r2 -= 4; We make r2 point to the count value we stored.
 	// - r0 = bpf_map_lookup_element(map_fd, element_index)
 	// - if r0 == null exit(); We need to check for null pointers.
 	// - *(r0) = rX; where rX is the register that was the destination of
 	//   the random operation.
-	instr = ebpf.MovRegImm64(ebpf.RegR0, g.logCount)
-	ptr = instr
+	root, _ := InstructionSequence(
+		Mov64(RegR0, g.logCount),
+		StW(RegR10, RegR0, -4),
+		Mov64(RegR1, RegR6),
+		Mov64(RegR2, RegR10),
+		Add64(RegR2, -4),
+		Call(MapLookup),
+		JmpNE(RegR0, 0, 1),
+		Exit(),
+		StDW(RegR0, dstReg, 0),
+	)
 
-	offset := int16(-4)
-
-	next = &ebpf.MemoryInstruction{
-		BaseInstruction: ebpf.BaseInstruction{
-			InstructionClass: ebpf.InsClassStx,
-		},
-		Size:   ebpf.StLdSizeW,
-		Mode:   ebpf.StLdModeMEM,
-		DstReg: ebpf.RegR10,
-		SrcReg: ebpf.RegR0,
-		Offset: offset,
-		Imm:    ebpf.UnusedField,
-	}
-	ptr.SetNextInstruction(next)
-	ptr = next
-
-	next = ebpf.Mov64(ebpf.RegR6, ebpf.RegR1)
-	ptr.SetNextInstruction(next)
-	ptr = next
-
-	next = ebpf.Mov64(ebpf.RegR10, ebpf.RegR2)
-	ptr.SetNextInstruction(next)
-	ptr = next
-
-	subs := int32(-4)
-
-	next = ebpf.NewAluImmInstruction(ebpf.AluAdd, ebpf.InsClassAlu64, ebpf.RegR2, subs)
-	ptr.SetNextInstruction(next)
-	ptr = next
-
-	next = ebpf.Call(ebpf.MapLookup)
-	ptr.SetNextInstruction(next)
-	ptr = next
-
-	next = ebpf.JmpNE(ebpf.RegR0, 0, 1)
-	nextAsJmp := next.(*ebpf.JmpImmInstruction)
-	nextAsJmp.FalseBranchNextInstr = ebpf.Exit()
-	ptr.SetNextInstruction(next)
-	ptr = next
-
-	next = &ebpf.MemoryInstruction{
-		BaseInstruction: ebpf.BaseInstruction{
-			InstructionClass: ebpf.InsClassStx,
-		},
-		Size:   ebpf.StLdSizeDW,
-		Mode:   ebpf.StLdModeMEM,
-		DstReg: ebpf.RegR0,
-		SrcReg: dstReg,
-		Offset: ebpf.UnusedField,
-		Imm:    ebpf.UnusedField,
-	}
-	ptr.SetNextInstruction(next)
-	ptr = next
-
-	return instr, ptr
+	return root
 }
 
 // GetProgramOffset returns the program offset corresponding to the n'th
