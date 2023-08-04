@@ -19,13 +19,13 @@ import (
 )
 
 // Generator is responsible for constructing the ast for this strategy.
-type Generator struct{
-	instructionCount int
-	magicNumber		int
-	skbOffset		int16
-	mapPtrOffset	int16
+type Generator struct {
+	instructionCount      int
+	magicNumber           int
+	skbOffset             int16
+	mapPtrOffset          int16
 	mapFirstElementOffset int16
-	skbReadOffset   int16
+	skbReadOffset         int16
 }
 
 // Generates the first set of instructions of the program.
@@ -84,7 +84,7 @@ func (g *Generator) randomJmp(prog *Program) Instruction {
 }
 
 func (g *Generator) skbCall(prog *Program) Instruction {
-    source, _ := GetRegisterFromNumber(prog.GetRandomRegister())
+	source, _ := GetRegisterFromNumber(prog.GetRandomRegister())
 	corruptingSnippet, _ := InstructionSequence(
 		JmpLT(source, 1, 1),
 		Mov64(source, 1),
@@ -99,7 +99,7 @@ func (g *Generator) skbCall(prog *Program) Instruction {
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree
 func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
 	g.instructionCount -= 1
-	if (g.instructionCount == 0) {
+	if g.instructionCount == 0 {
 		return g.generateProgramFooter(prog)
 	}
 
@@ -139,7 +139,7 @@ func (g *Generator) generateProgramFooter(p *Program) Instruction {
 		JmpNE(RegR0, 0, 1),
 		Exit(),
 		LdDW(RegR1, RegR10, g.skbReadOffset),
-		StDW(RegR0,RegR1, 0),
+		StDW(RegR0, RegR1, 0),
 		Mov64(RegR0, 0),
 		Exit(),
 	)

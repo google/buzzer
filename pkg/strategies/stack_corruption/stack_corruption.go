@@ -51,9 +51,9 @@ func (sc *Strategy) Fuzz(e strategies.ExecutorInterface) error {
 	for true {
 		fmt.Printf("count: %d, valid: %d, invalid: %d, bugs: %d                                              \r", count, valid, invalid, bugs)
 		count += 1
-	gen := &Generator{
-		magicNumber:0xCAFE,
-	}
+		gen := &Generator{
+			magicNumber: 0xCAFE,
+		}
 		prog, err := ebpf.New(gen, sc.mapSize, ebpf.RegR6.RegisterNumber(), ebpf.RegR9.RegisterNumber())
 
 		if err != nil {
@@ -64,11 +64,11 @@ func (sc *Strategy) Fuzz(e strategies.ExecutorInterface) error {
 		byteCode := prog.GenerateBytecode()
 		res, err := e.ValidateProgram(byteCode)
 		gr := &strategies.GeneratorResult{
-				Prog:         prog,
-				ProgByteCode: byteCode,
-				ProgFD:       res.GetProgramFd(),
-				VerifierLog:  res.GetVerifierLog(),
-			}
+			Prog:         prog,
+			ProgByteCode: byteCode,
+			ProgFD:       res.GetProgramFd(),
+			VerifierLog:  res.GetVerifierLog(),
+		}
 		if err != nil {
 			fmt.Println(err)
 			prog.Cleanup()
@@ -83,15 +83,15 @@ func (sc *Strategy) Fuzz(e strategies.ExecutorInterface) error {
 
 		valid += 1
 
-		mapDescription := &fpb.ExecutionRequest_MapDescription {
-			MapFd:       int64(prog.LogMap()),
-			MapSize:    uint64(sc.mapSize),
+		mapDescription := &fpb.ExecutionRequest_MapDescription{
+			MapFd:   int64(prog.LogMap()),
+			MapSize: uint64(sc.mapSize),
 		}
 		executionRequest := &fpb.ExecutionRequest{
-			ProgFd:      res.GetProgramFd(),
-			Maps:        []*fpb.ExecutionRequest_MapDescription{mapDescription},
-			InputData: []byte{0xff, 0x01, 0x02, 0x03,0x04, 0x05, 0x06, 0x07, 0x08,
-			0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10},
+			ProgFd: res.GetProgramFd(),
+			Maps:   []*fpb.ExecutionRequest_MapDescription{mapDescription},
+			InputData: []byte{0xff, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+				0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10},
 		}
 
 		executionResponse, err := e.RunProgram(executionRequest)

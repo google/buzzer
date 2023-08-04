@@ -28,7 +28,7 @@ go_binary(
         "-linkmode=external",
         "-extldflags=-static",
     ],
-    static="on",
+    static = "on",
     deps = [
         "//pkg/metrics",
         "//pkg/units",
