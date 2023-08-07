@@ -18,9 +18,10 @@ package units
 import (
 	"fmt"
 
-	spvl "buzzer/pkg/strategies/parse_verifier/parseverifier"
+	"buzzer/pkg/strategies/parse_verifier/parseverifier"
 	"buzzer/pkg/strategies/playground/playground"
-	pa "buzzer/pkg/strategies/pointer_arithmetic/pointerarithmetic"
+	"buzzer/pkg/strategies/pointer_arithmetic/pointerarithmetic"
+	"buzzer/pkg/strategies/stack_corruption/stackcorruption"
 	"buzzer/pkg/strategies/strategies"
 )
 
@@ -108,15 +109,17 @@ func (cu *ControlUnit) Init(executor strategies.ExecutorInterface, runMode, fuzz
 	}
 
 	switch fuzzStrategyFlag {
-	case spvl.StrategyName:
-		cu.strat = &spvl.StrategyParseVerifierLog{}
-	case pa.StrategyName:
-		cu.strat = &pa.Strategy{
+	case parseverifier.StrategyName:
+		cu.strat = &parseverifier.StrategyParseVerifierLog{}
+	case pointerarithmetic.StrategyName:
+		cu.strat = &pointerarithmetic.Strategy{
 			// 60 is an arbitrary number.
 			InstructionCount: 60,
 		}
 	case playground.StrategyName:
 		cu.strat = &playground.Strategy{}
+	case stackcorruption.StrategyName:
+		cu.strat = &stackcorruption.Strategy{}
 	default:
 		return fmt.Errorf("unknown fuzzing strategy: %s", fuzzStrategyFlag)
 	}

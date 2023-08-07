@@ -107,6 +107,9 @@ func generateImmAluInstruction(op, insClass uint8, dstReg *Register, prog *Progr
 			maxShift = 32
 		}
 		value = value % maxShift
+		if value < 0 {
+			value *= -1
+		}
 	case AluNeg:
 		value = 0
 	case AluMov:
