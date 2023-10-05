@@ -47,8 +47,6 @@ using ebpf_fuzzer::ValidationResult;
 
 namespace ebpf_ffi {
 
-const int kPort = 1337;
-
 // This constant was determined arbitrarily, the number of 0's has incremented
 // when the size was no longer enough for the verifier logs.
 constexpr size_t kLogBuffSize = 100000000;
