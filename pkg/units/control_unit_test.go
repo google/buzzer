@@ -20,22 +20,22 @@ import (
 
 func TestControlUnitInitSuccess(t *testing.T) {
 	tests := []struct {
-		testName   string
-		runMode    string
-		fuzzStrat  string
+		testName  string
+		runMode   string
+		fuzzStrat string
 	}{
 		{
-			testName:   "Server mode info verbosity",
-			runMode:    "server",
-			fuzzStrat:  "parse_verifier_log",
+			testName:  "Server mode info verbosity",
+			runMode:   "server",
+			fuzzStrat: "parse_verifier_log",
 		}, {
-			testName:   "Client mode quiet verbosity",
-			runMode:    "client",
-			fuzzStrat:  "parse_verifier_log",
+			testName:  "Client mode quiet verbosity",
+			runMode:   "client",
+			fuzzStrat: "parse_verifier_log",
 		}, {
-			testName:   "Standalone mode Verbose verbosity",
-			runMode:    "standalone",
-			fuzzStrat:  "parse_verifier_log",
+			testName:  "Standalone mode Verbose verbosity",
+			runMode:   "standalone",
+			fuzzStrat: "parse_verifier_log",
 		},
 	}
 
