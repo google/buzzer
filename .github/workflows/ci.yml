@@ -12,10 +12,13 @@ jobs:
       with:
         path: "~/.cache/bazel"
         key: bazel
+    - name: Set up Clang
+      uses: egor-tensin/setup-clang@v1
+      with:
+        version: 14
+        platform: x64
     - name: Check Buzzer tests
       run: |
-           sudo apt update
-           sudo apt install clang-14.0
            bazel build //...
            bazel test //...
       env:
