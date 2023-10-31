@@ -24,6 +24,7 @@ go_library(
     name = "units",
     srcs = [
         "control_unit.go",
+        "coverage_manager.go",
         "executor_unit.go",
         "metrics_collection.go",
         "metrics_server.go",

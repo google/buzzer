@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -52,12 +50,7 @@ type Metrics struct {
 	// Protects the validation queue.
 	validationMutex sync.Mutex
 
-	// Path where the vm linux image lives, it will be passed to addr2line
-	vmLinuxPath string
-
-	coverageCache map[uint64]bool
-
-	metricsCollection *Collection
+	metricsCollection *MetricsCollection
 	metricsServer     *MetricsServer
 }
 
@@ -95,70 +88,11 @@ func (mu *Metrics) validationResultProcessingRoutine() {
 			time.Sleep(1 * time.Second)
 			continue
 		}
-		err := mu.processCoverage(vres.GetCoverageAddress())
+		err := mu.metricsCollection.coverageManager.ProcessCoverageAddresses(vres.GetCoverageAddress())
 		if err != nil {
 			fmt.Printf("%q\n", err)
 		}
 	}
-}
-
-func (mu *Metrics) processCoverage(cov []uint64) error {
-	unknownAddr := []uint64{}
-	for _, address := range cov {
-		if _, ok := mu.coverageCache[address]; !ok {
-			unknownAddr = append(unknownAddr, address)
-		}
-	}
-
-	if len(unknownAddr) == 0 {
-		return nil
-	}
-
-	stdInStr := ""
-	for _, ukAddr := range unknownAddr {
-		stdInStr += fmt.Sprintf("%02x\n", ukAddr)
-	}
-	cmd := exec.Command("/usr/bin/addr2line", "-e", mu.vmLinuxPath)
-	w, err := cmd.StdinPipe()
-	if err != nil {
-		return err
-	}
-	w.Write([]byte(stdInStr))
-	w.Close()
-	out, err := cmd.Output()
-	if err != nil {
-		return err
-	}
-	outString := string(out)
-	coverage := strings.Split(outString, "\n")
-	for i, line := range coverage {
-		if len(line) == 0 {
-			continue
-		}
-		lineSplit := strings.Split(line, " ")
-		if len(lineSplit) == 0 {
-			continue
-		}
-		cleanedLine := lineSplit[0]
-		pathSplit := strings.Split(cleanedLine, "/")
-		if len(pathSplit) == 0 {
-			continue
-		}
-		fnAndLn := strings.Split(pathSplit[len(pathSplit)-1], ":")
-		if len(fnAndLn) == 0 {
-			continue
-		}
-		fileName := fnAndLn[0]
-		lineNumber, err := strconv.Atoi(fnAndLn[1])
-		if err != nil {
-			return err
-		}
-		fullPath := strings.Split(cleanedLine, ":")[0]
-
-		mu.coverageCache[unknownAddr[i]] = true
-		mu.metricsCollection.recordCoverageLine(fileName, fullPath, lineNumber)
-	}
-	return nil
 }
 
 // ShouldGetCoverage has two purposes: record that a program is about
@@ -208,8 +142,23 @@ func (mu *Metrics) init() {
 
 // NewMetricsUnit Creates a new Central Metrics Unit.
 func NewMetricsUnit(threshold int, kcovSize uint64, vmLinuxPath, sourceFilesPath, metricsServerAddr string, metricsServerPort uint16) *Metrics {
-	mc := &Collection{
-		coverageInfoMap: make(map[string]*coverageInfo),
+	cm := &CoverageManager{
+		coverageCache:   make(map[uint64]string),
+		coverageInfoMap: make(map[string]*CoverageInfo),
+		addressToLineFunction: func(inputString string) (string, error) {
+			cmd := exec.Command("/usr/bin/addr2line", "-e", vmLinuxPath)
+			w, err := cmd.StdinPipe()
+			if err != nil {
+				return "", err
+			}
+			w.Write([]byte(inputString))
+			w.Close()
+			outBytes, err := cmd.Output()
+			return string(outBytes), err
+		},
+	}
+	mc := &MetricsCollection{
+		coverageManager: cm,
 	}
 	ms := &MetricsServer{
 		host:              metricsServerAddr,
@@ -220,10 +169,8 @@ func NewMetricsUnit(threshold int, kcovSize uint64, vmLinuxPath, sourceFilesPath
 	mu := &Metrics{
 		SamplingThreshold: threshold,
 		KCovSize:          kcovSize,
-		coverageCache:     make(map[uint64]bool),
 		metricsCollection: mc,
 		metricsServer:     ms,
-		vmLinuxPath:       vmLinuxPath,
 	}
 	mu.init()
 	go mu.validationResultProcessingRoutine()

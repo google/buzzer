@@ -31,7 +31,7 @@ import (
 type MetricsServer struct {
 	host              string
 	port              uint16
-	metricsCollection *Collection
+	metricsCollection *MetricsCollection
 	filePath          string
 }
 
@@ -64,7 +64,7 @@ func (ms *MetricsServer) handleFileCoverage(w http.ResponseWriter, req *http.Req
 	file := fileParam[0]
 
 	_, _, coverageInformation := ms.metricsCollection.getMetrics()
-	var covInfo *coverageInfo
+	var covInfo *CoverageInfo
 	for _, cov := range coverageInformation {
 		if cov.fileName == file {
 			covInfo = &cov
