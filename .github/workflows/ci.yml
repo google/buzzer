@@ -15,7 +15,7 @@ jobs:
     - name: Check Buzzer tests
       run: |
            sudo apt update
-           sudo apt install clang
+           sudo apt install clang-14.0
            bazel build //...
            bazel test //...
       env:
