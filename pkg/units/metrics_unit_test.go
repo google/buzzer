@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package units
 
 import (
 	"testing"
@@ -20,14 +20,20 @@ import (
 	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 )
 
-func TestCentralUnit(t *testing.T) {
+func TestMetrics(t *testing.T) {
 	expectedKcovSize := uint64(42)
-
-	metricsCollection := &Collection{
-		coverageInfoMap: make(map[string]*coverageInfo),
+	cm := &CoverageManager{
+		coverageCache:   make(map[uint64]string),
+		coverageInfoMap: make(map[string]*CoverageInfo),
+		addressToLineFunction: func(inputString string) (string, error) {
+			return "", nil
+		},
+	}
+	metricsCollection := &MetricsCollection{
+		coverageManager: cm,
 	}
 
-	metricsUnit := CentralUnit{
+	metricsUnit := Metrics{
 		SamplingThreshold: 1,
 		KCovSize:          expectedKcovSize,
 		isKCovSupported:   true,

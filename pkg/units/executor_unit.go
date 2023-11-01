@@ -29,7 +29,6 @@ import (
 	"fmt"
 	"unsafe"
 
-	"buzzer/pkg/metrics/metrics"
 	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 	"github.com/golang/protobuf/proto"
 )
@@ -85,7 +84,7 @@ func executionProtoFromStruct(s *C.struct_bpf_result) (*fpb.ExecutionResult, err
 
 // Executor is the unit that will talk to ebpf and run/validate programs.
 type Executor struct {
-	MetricsUnit *metrics.CentralUnit
+	MetricsUnit *Metrics
 }
 
 // ValidateProgram passes the program through the bpf verifier without executing

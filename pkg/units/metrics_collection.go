@@ -12,66 +12,46 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package units
 
 import (
 	"sync"
 )
 
-type coverageInfo struct {
-	fileName     string
-	fullPath     string
-	coveredLines []int
-}
-
-// Collection Holds the actual metrics that have been collected so far
+// MetricsCollection Holds the actual metrics that have been collected so far
 // and provides a way to access them in a thread safe manner.
-type Collection struct {
+type MetricsCollection struct {
 	metricsLock sync.Mutex
 
 	// Metrics start here
 	programsVerified int
 	validPrograms    int
-	coverageInfoMap  map[string]*coverageInfo
+	coverageManager  *CoverageManager
 }
 
-func (mc *Collection) recordVerifiedProgram() {
+func (mc *MetricsCollection) recordVerifiedProgram() {
 	mc.metricsLock.Lock()
 	defer mc.metricsLock.Unlock()
 	mc.programsVerified++
 }
 
-func (mc *Collection) recordValidProgram() {
+func (mc *MetricsCollection) recordValidProgram() {
 	mc.metricsLock.Lock()
 	defer mc.metricsLock.Unlock()
 	mc.validPrograms++
 }
 
-func (mc *Collection) recordCoverageLine(fileName, fullPath string, lineNumber int) {
-	mc.metricsLock.Lock()
-	defer mc.metricsLock.Unlock()
-	if info, ok := mc.coverageInfoMap[fileName]; !ok {
-		mc.coverageInfoMap[fileName] = &coverageInfo{
-			fileName:     fileName,
-			fullPath:     fullPath,
-			coveredLines: []int{lineNumber},
-		}
-	} else {
-		info.coveredLines = append(info.coveredLines, lineNumber)
-	}
-}
-
-func (mc *Collection) getProgramsVerified() int {
+func (mc *MetricsCollection) getProgramsVerified() int {
 	mc.metricsLock.Lock()
 	defer mc.metricsLock.Unlock()
 	return mc.programsVerified
 }
 
-func (mc *Collection) getMetrics() (int, int, []coverageInfo) {
+func (mc *MetricsCollection) getMetrics() (int, int, []CoverageInfo) {
 	mc.metricsLock.Lock()
 	defer mc.metricsLock.Unlock()
-	covArray := []coverageInfo{}
-	for _, cov := range mc.coverageInfoMap {
+	covArray := []CoverageInfo{}
+	for _, cov := range *mc.coverageManager.GetCoverageInfoMap() {
 		covCopy := *cov
 		covCopy.coveredLines = nil
 		covCopy.coveredLines = append(covCopy.coveredLines, cov.coveredLines...)

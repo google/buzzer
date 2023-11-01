@@ -19,7 +19,6 @@ import (
 	"flag"
 	"log"
 
-	"buzzer/pkg/metrics/metrics"
 	"buzzer/pkg/units/units"
 )
 
@@ -38,7 +37,7 @@ var (
 func main() {
 	flag.Parse()
 	controlUnit := units.ControlUnit{}
-	metricsUnit := metrics.New(*metricsThreshold, *coverageBufferSize, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort))
+	metricsUnit := units.NewMetricsUnit(*metricsThreshold, *coverageBufferSize, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort))
 	if err := controlUnit.Init(&units.Executor{
 		MetricsUnit: metricsUnit,
 	}, *runMode, *fuzzStrat); err != nil {

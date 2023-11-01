@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package metrics
+package units
 
 import (
 	"bufio"
@@ -26,12 +26,12 @@ import (
 	"github.com/google/safehtml"
 )
 
-// Server exposes an http server where information about coverage/metrics
+// MetricsServer exposes an http server where information about coverage/metrics
 // can be visualized.
-type Server struct {
+type MetricsServer struct {
 	host              string
 	port              uint16
-	metricsCollection *Collection
+	metricsCollection *MetricsCollection
 	filePath          string
 }
 
@@ -49,7 +49,7 @@ type fileCoverageInfo struct {
 	Coverage     []lineInfo
 }
 
-func (ms *Server) handleFileCoverage(w http.ResponseWriter, req *http.Request) {
+func (ms *MetricsServer) handleFileCoverage(w http.ResponseWriter, req *http.Request) {
 	fileParam, ok := req.URL.Query()["file"]
 	if !ok {
 		fmt.Fprintf(w, "Should specify file to check for coverage")
@@ -64,7 +64,7 @@ func (ms *Server) handleFileCoverage(w http.ResponseWriter, req *http.Request) {
 	file := fileParam[0]
 
 	_, _, coverageInformation := ms.metricsCollection.getMetrics()
-	var covInfo *coverageInfo
+	var covInfo *CoverageInfo
 	for _, cov := range coverageInformation {
 		if cov.fileName == file {
 			covInfo = &cov
@@ -131,7 +131,7 @@ type generalInfo struct {
 	CoveredFiles     []*fileCoverageInfo
 }
 
-func (ms *Server) handleIndex(w http.ResponseWriter, req *http.Request) {
+func (ms *MetricsServer) handleIndex(w http.ResponseWriter, req *http.Request) {
 	programsVerified, validPrograms, coverageInformation := ms.metricsCollection.getMetrics()
 	gi := &generalInfo{
 		ProgramsVerified: programsVerified,
@@ -185,7 +185,7 @@ func (ms *Server) handleIndex(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</html>\n")
 }
 
-func (ms *Server) serve() {
+func (ms *MetricsServer) serve() {
 	http.HandleFunc("/general", ms.handleIndex)
 	http.HandleFunc("/fileCoverage", ms.handleFileCoverage)
 	http.ListenAndServe(fmt.Sprintf("%s:%d", ms.host, ms.port), nil)

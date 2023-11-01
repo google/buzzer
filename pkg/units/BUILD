@@ -24,7 +24,11 @@ go_library(
     name = "units",
     srcs = [
         "control_unit.go",
+        "coverage_manager.go",
         "executor_unit.go",
+        "metrics_collection.go",
+        "metrics_server.go",
+        "metrics_unit.go",
     ],
     cdeps = [
         "//ebpf_ffi",
@@ -32,7 +36,6 @@ go_library(
     cgo = 1,
     importpath = "buzzer/pkg/units/units",
     deps = [
-        "//pkg/metrics",
         "//pkg/strategies",
         "//pkg/strategies/parse_verifier:parseverifier",
         "//pkg/strategies/playground",
@@ -40,6 +43,7 @@ go_library(
         "//pkg/strategies/stack_corruption:stackcorruption",
         "//proto:ebpf_fuzzer_go_proto",
         "@com_github_golang_protobuf//proto",
+        "@com_github_google_safehtml//:safehtml",
     ],
 )
 
@@ -47,6 +51,7 @@ go_test(
     name = "units_test",
     srcs = [
         "control_unit_test.go",
+        "metrics_unit_test.go",
     ],
     embed = [":units"],
 )
