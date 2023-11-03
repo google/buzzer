@@ -43,7 +43,7 @@ func TestControlUnitInitSuccess(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Logf("Running test case %s", tc.testName)
 			cu := &ControlUnit{}
-			if err := cu.Init(&Executor{}, tc.runMode, tc.fuzzStrat); err != nil {
+			if err := cu.Init(&Executor{}, &CoverageManagerImpl{}, tc.runMode, tc.fuzzStrat); err != nil {
 				t.Fatalf("Unexpected error %s", err)
 			}
 
