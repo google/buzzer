@@ -18,6 +18,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os/exec"
 
 	"buzzer/pkg/units/units"
 )
@@ -36,11 +37,24 @@ var (
 
 func main() {
 	flag.Parse()
+	coverageManager := units.NewCoverageManagerImpl(func(inputString string) (string, error) {
+		cmd := exec.Command("/usr/bin/addr2line", "-e", *vmLinuxPath)
+		w, err := cmd.StdinPipe()
+		if err != nil {
+			return "", err
+		}
+		w.Write([]byte(inputString))
+		w.Close()
+		outBytes, err := cmd.Output()
+		return string(outBytes), err
+	})
+
 	controlUnit := units.ControlUnit{}
-	metricsUnit := units.NewMetricsUnit(*metricsThreshold, *coverageBufferSize, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort))
+	metricsUnit := units.NewMetricsUnit(*metricsThreshold, *coverageBufferSize, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort), coverageManager)
+
 	if err := controlUnit.Init(&units.Executor{
 		MetricsUnit: metricsUnit,
-	}, *runMode, *fuzzStrat); err != nil {
+	}, coverageManager, *runMode, *fuzzStrat); err != nil {
 		log.Fatalf("failed to init control unit: %v", err)
 	}
 

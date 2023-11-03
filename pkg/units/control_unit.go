@@ -31,7 +31,7 @@ type RunMode string
 // StrategyInterface contains all the methods that a fuzzing strategy should
 // implement.
 type StrategyInterface interface {
-	Fuzz(e strategies.ExecutorInterface) error
+	Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageManager) error
 }
 
 // ControlUnit directs the execution of the fuzzer.
@@ -39,11 +39,12 @@ type ControlUnit struct {
 	strat StrategyInterface
 	ex    strategies.ExecutorInterface
 	rm    RunMode
+	cm    strategies.CoverageManager
 	rdy   bool
 }
 
 // Init prepares the control unit to be used.
-func (cu *ControlUnit) Init(executor strategies.ExecutorInterface, runMode, fuzzStrategyFlag string) error {
+func (cu *ControlUnit) Init(executor strategies.ExecutorInterface, coverageManager strategies.CoverageManager, runMode, fuzzStrategyFlag string) error {
 	cu.ex = executor
 
 	switch fuzzStrategyFlag {
@@ -73,5 +74,5 @@ func (cu *ControlUnit) IsReady() bool {
 
 // RunFuzzer kickstars the fuzzer in the mode that was specified at Init time.
 func (cu *ControlUnit) RunFuzzer() error {
-	return cu.strat.Fuzz(cu.ex)
+	return cu.strat.Fuzz(cu.ex, cu.cm)
 }

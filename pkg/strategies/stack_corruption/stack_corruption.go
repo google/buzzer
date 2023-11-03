@@ -41,7 +41,7 @@ type Strategy struct {
 }
 
 // Fuzz implements the main fuzzing logic.
-func (sc *Strategy) Fuzz(e strategies.ExecutorInterface) error {
+func (sc *Strategy) Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageManager) error {
 	sc.mapSize = 3
 	fmt.Printf("running fuzzing strategy %s\n", StrategyName)
 	count := 0

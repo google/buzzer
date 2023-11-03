@@ -72,7 +72,7 @@ func (st *StrategyParseVerifierLog) generateAndValidateProgram(e strategies.Exec
 }
 
 // Fuzz implements the main fuzzing logic.
-func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface) error {
+func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageManager) error {
 	fmt.Printf("running fuzzing strategy %s\n", StrategyName)
 	i := 0
 	for {

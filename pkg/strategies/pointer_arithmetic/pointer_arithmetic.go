@@ -110,7 +110,7 @@ func (pa *Strategy) executeProgram(e strategies.ExecutorInterface, executionRequ
 }
 
 // Fuzz implements the main fuzzing logic.
-func (pa *Strategy) Fuzz(e strategies.ExecutorInterface) error {
+func (pa *Strategy) Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageManager) error {
 	fmt.Printf("running fuzzing strategy %s\n", StrategyName)
 	i := 0
 	for {

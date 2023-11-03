@@ -41,6 +41,13 @@ type ExecutorInterface interface {
 	RunProgram(rpr *fpb.ExecutionRequest) (*fpb.ExecutionResult, error)
 }
 
+// CoverageManager objects should be able to provide coverage information
+// to fuzzing strategies.
+type CoverageManager interface {
+	ProcessCoverageAddresses(cov []uint64) ([]string, error)
+	GetCoverageInfoMap() *map[string][]int
+}
+
 // WriteLogFile writes the verifier log `data` to a temporary file.
 func WriteLogFile(data []byte) error {
 	f, err := os.CreateTemp("", "verifier-log-")
