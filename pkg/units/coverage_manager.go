@@ -25,7 +25,7 @@ type CoverageManagerImpl struct {
 
 // ProcessCoverageAddresses converts raw coverage hex addresses into line
 // numbers and files, it also caches the results.
-func (cm *CoverageManagerImpl) ProcessCoverageAddresses(cov []uint64) ([]string, error) {
+func (cm *CoverageManagerImpl) ProcessCoverageAddresses(cov []uint64) (map[uint64]string, error) {
 	cm.coverageLock.Lock()
 	defer cm.coverageLock.Unlock()
 
@@ -36,12 +36,12 @@ func (cm *CoverageManagerImpl) ProcessCoverageAddresses(cov []uint64) ([]string,
 		}
 	}
 
-	convertAddresses := func() []string {
-		coveredLines := []string{}
+	convertAddresses := func() map[uint64]string {
+		coveredLines := make(map[uint64]string)
 		for _, addr := range cov {
 			line, ok := cm.coverageCache[addr]
 			if ok {
-				coveredLines = append(coveredLines, line)
+				coveredLines[addr] = line
 			}
 		}
 		return coveredLines

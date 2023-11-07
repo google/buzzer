@@ -44,7 +44,7 @@ type ExecutorInterface interface {
 // CoverageManager objects should be able to provide coverage information
 // to fuzzing strategies.
 type CoverageManager interface {
-	ProcessCoverageAddresses(cov []uint64) ([]string, error)
+	ProcessCoverageAddresses(cov []uint64) (map[uint64]string, error)
 	GetCoverageInfoMap() *map[string][]int
 }
 
