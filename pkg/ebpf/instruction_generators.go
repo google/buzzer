@@ -15,24 +15,28 @@
 package ebpf
 
 import (
-	"fmt"
+	"buzzer/pkg/rand"
 )
+
+// The generators below take as parameter the program to generate instructions
+// into, this is so they can make sure the instructions generated use initialized
+// registers only. Therefore these instructions are more "safe" to use.
 
 // GenerateRandomAluInstruction provides a random ALU operation with either
 // IMM or Reg src that will be applied to a random dst reg.
 func GenerateRandomAluInstruction(prog *Program) Instruction {
-	op := uint8(prog.GetRNG().RandRange(0x00, 0x0c)) << 4
+	op := RandomAluOp() 
 
 	var dstReg uint8
 	if op == AluMov {
-		dstReg = uint8(prog.GetRNG().RandRange(uint64(prog.MinRegister), uint64(prog.MaxRegister)))
+		dstReg = uint8(rand.SharedRNG.RandRange(uint64(prog.MinRegister), uint64(prog.MaxRegister)))
 	} else {
 		dstReg = prog.GetRandomRegister()
 	}
 	dReg, _ := GetRegisterFromNumber(dstReg)
 
 	var insClass uint8
-	if prog.GetRNG().RandRange(0, 1) == 0 {
+	if rand.SharedRNG.RandRange(0, 1) == 0 {
 		insClass = InsClassAlu
 	} else {
 		insClass = InsClassAlu64
@@ -41,7 +45,7 @@ func GenerateRandomAluInstruction(prog *Program) Instruction {
 	// Toss another coin to decide if we are going to do an imm alu
 	// operation or one that uses a src register.
 	var instr Instruction
-	if prog.GetRNG().RandRange(0, 1) == 0 {
+	if rand.SharedRNG.RandRange(0, 1) == 0 {
 		instr = generateImmAluInstruction(op, insClass, dReg, prog)
 	} else {
 		instr = generateRegAluInstruction(op, insClass, dReg, prog)
@@ -51,9 +55,15 @@ func GenerateRandomAluInstruction(prog *Program) Instruction {
 }
 
 // RandomJumpOp generates a random jump operator.
-func RandomJumpOp(a *Program) uint8 {
+func RandomJumpOp() uint8 {
 	// https://docs.kernel.org/bpf/instruction-set.html#jump-instructions
-	return uint8(a.GetRNG().RandRange(0x00, 0x0d))
+	return uint8(rand.SharedRNG.RandRange(0x00, 0x0d)) << 4
+}
+
+func RandomAluOp() uint8 {
+	// Shift by 4 bits because we need to respect the ebpf encoding:
+	// https://docs.kernel.org/bpf/instruction-set.html#id6
+	return uint8(rand.SharedRNG.RandRange(0x00, 0x0c)) << 4
 }
 
 // IsConditional determines if the operator is not an Exit, Call or JA
@@ -66,14 +76,9 @@ func IsConditional(op uint8) bool {
 // the src operand is a random register. The generator functions tell the
 // instruction how to generate the true/false branches.
 func GenerateRandomJmpRegInstruction(prog *Program, trueBranchGenerator func(prog *Program) Instruction, falseBranchGenerator func(prog *Program) (Instruction, int16)) Instruction {
-
 	var op uint8
-
 	for {
-		op = RandomJumpOp(prog)
-		// Shift by 4 bits because we need to respect the ebpf encoding:
-		// https://docs.kernel.org/bpf/instruction-set.html#id6
-		op <<= 4
+		op = RandomJumpOp()
 		if IsConditional(op) {
 			break
 		}
@@ -101,7 +106,7 @@ func GenerateRandomJmpRegInstruction(prog *Program, trueBranchGenerator func(pro
 }
 
 func generateImmAluInstruction(op, insClass uint8, dstReg *Register, prog *Program) Instruction {
-	value := int32(prog.GetRNG().RandRange(0, 0xFFFFFFFF))
+	value := int32(rand.SharedRNG.RandRange(0, 0xFFFFFFFF))
 	switch op {
 	case AluRsh, AluLsh, AluArsh:
 		var maxShift = int32(64)
@@ -127,7 +132,7 @@ func generateRegAluInstruction(op, insClass uint8, dstReg *Register, prog *Progr
 	srcReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
 	// Negation is not supported with Register as src.
 	for op == AluNeg {
-		op = uint8(prog.GetRNG().RandRange(0x00, 0x0c)) << 4
+		op = uint8(rand.SharedRNG.RandRange(0x00, 0x0c)) << 4
 	}
 
 	if op == AluMov && !prog.IsRegisterInitialized(dstReg.RegisterNumber()) {
@@ -137,112 +142,55 @@ func generateRegAluInstruction(op, insClass uint8, dstReg *Register, prog *Progr
 	return NewAluRegInstruction(op, insClass, dstReg, srcReg)
 }
 
-// InstructionSequence abstracts away the process of creating a sequence of
-// ebpf instructions. This should make writing ebpf programs in buzzer
-// more readable and easier to achieve.
-func InstructionSequence(instructions ...Instruction) (Instruction, error) {
-	return instructionSequenceImpl(instructions)
+// The generators below are more flexible to use but also provide less
+// guarantees on if the instruction will pass the verifier (e.g registers
+// might not be initialized yet)
+func RandomAluInstruction() Instruction {
+	op := RandomAluOp()
+
+	var insClass uint8
+	if rand.SharedRNG.OneOf(2) {
+		insClass = InsClassAlu64
+	} else {
+		insClass = InsClassAlu
+	}
+
+	dstReg := RandomRegister()
+
+	var src any
+
+	if rand.SharedRNG.OneOf(2) {
+		src = uint32(rand.SharedRNG.RandRange(0, 0xffffffff))
+	} else {
+		src = RandomRegister()
+	}
+
+	return newAluInstruction(op, insClass, dstReg, src)
 }
 
-// In order to deal with things like nested jumps, the instruction sequence
-// feature needs to be a recursive function, hide the actual implementation
-// from users using a non exported function.
-func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
-	if len(instructions) == 0 {
-		// no more instructions to process, break the recursion.
-		return nil, nil
-	}
-	var root, ptr Instruction
-	advancePointer := func(i Instruction) {
-		if root == nil {
-			root = i
-			ptr = root
-		} else {
-			ptr.SetNextInstruction(i)
-			ptr = i
-		}
+// RandomJmpInstruction generates a random jmp instruction that has an
+// offset of at most `maxOffset` this is to minimize the possibility of a jmp
+// out of the bounds of a program.
+func RandomJmpInstruction(maxOffset uint64) Instruction {
+	op := RandomJumpOp()
+
+	var insClass uint8
+	if rand.SharedRNG.OneOf(2) {
+		insClass = InsClassJmp32
+	} else {
+		insClass = InsClassJmp
 	}
 
-	for i := 0; i < len(instructions); i++ {
-		instruction := instructions[i]
+	dstReg := RandomRegister()
 
-		if jmpInstr, ok := instruction.(JmpInstruction); ok {
-			if jmpInstr.GetFalseBranchSize() == 0 && jmpInstr.GetOpcode() != JmpExit {
-				return nil, fmt.Errorf("Only Exit() can have an offset of 0")
-			}
-			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:], jmpInstr.GetFalseBranchSize())
-			if err != nil {
-				return nil, err
-			}
+	var src any
 
-			jmpInstr.SetFalseBranchNextInstr(falseBranchNextInstr)
-			jmpInstr.SetTrueBranchNextInstr(trueBranchNextInstr)
-
-			advancePointer(jmpInstr)
-
-			// Break here because handleJmpInstruction should have processed the rest of the ebpf program.
-			break
-		} else {
-			advancePointer(instruction)
-		}
-	}
-	return root, nil
-}
-
-func handleJmpInstruction(instructions []Instruction, offset int16) (Instruction, Instruction, error) {
-	if len(instructions) == 0 {
-		// TODO: here and below, to improve testing lets define the possible
-		// errors in a list somewhere else so we can compare directly that we
-		// got the error we expect.
-		return nil, nil, fmt.Errorf("handleJmpInstruction invocation should receive at least 1 instruction")
-	}
-	trueBranchStartIndex := int(offset) + 1
-	if trueBranchStartIndex > len(instructions) {
-		// TODO: For this error message and others, it would make debugging
-		// easier if we could put the offending instruction.
-		// For that we would need a way to convert an instruction to a
-		// readable string, this is easy to do but let's do it in a follow
-		// up patch.
-		return nil, nil, fmt.Errorf("Jmp goes out of bounds")
+	if rand.SharedRNG.OneOf(2) {
+		src = uint32(rand.SharedRNG.RandRange(0, 0xffffffff))
+	} else {
+		src = RandomRegister()
 	}
 
-	// instructions[0] should be the jump itself.
-	falseBranchInstrs := instructions[1:trueBranchStartIndex]
-	trueBranchInstrs := instructions[trueBranchStartIndex:]
-
-	falseBranchNextInstr, err := instructionSequenceImpl(falseBranchInstrs)
-	if err != nil {
-		return nil, nil, err
-	}
-	trueBranchNextInstr, err := instructionSequenceImpl(trueBranchInstrs)
-	if err != nil {
-		return nil, nil, err
-	}
-	return falseBranchNextInstr, trueBranchNextInstr, nil
-}
-
-// This function is meant to be used by all the Instruction Helper functions,
-// to test if the supplied src parameter is of type int. Callers of the helper
-// functions might provide an int, int64, int32, int16, int8, int as src
-// parameter and it makes sense to centralize the logic to check for a data
-// type here.
-//
-// If the passed data is indeed of an int data type, bool is true and
-// the value casted to int() is returned.
-//
-// If it is not, it returns false and an arbitrary int()
-func isIntType(src interface{}) (bool, int) {
-	if srcInt, ok := src.(int); ok {
-		return true, srcInt
-	} else if srcInt64, ok := src.(int64); ok {
-		return true, int(srcInt64)
-	} else if srcInt32, ok := src.(int32); ok {
-		return true, int(srcInt32)
-	} else if srcInt16, ok := src.(int16); ok {
-		return true, int(srcInt16)
-	} else if srcInt8, ok := src.(int8); ok {
-		return true, int(srcInt8)
-	}
-
-	return false, int(0)
+	offset := int16(rand.SharedRNG.RandRange(1, maxOffset))
+	return newJmpInstruction(op, insClass, dstReg, src, offset)
 }

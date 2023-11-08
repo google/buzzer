@@ -17,6 +17,7 @@ package ebpf
 import (
 	"fmt"
 	"strconv"
+	"buzzer/pkg/rand"
 )
 
 // Instruction represents a single, high-level EBPF instruction such as an ALU instruction,
@@ -122,4 +123,9 @@ func GetRegisterFromNumber(regNo uint8) (*Register, error) {
 	default:
 		return nil, fmt.Errorf("unknonw register value %d", regNo)
 	}
+}
+
+func RandomRegister() *Register {
+	reg, _ :=  GetRegisterFromNumber(uint8(rand.SharedRNG.RandRange(uint64(RegR0.RegisterNumber()), uint64(RegR9.RegisterNumber()))))
+	return reg
 }

@@ -21,6 +21,7 @@ package rand
 
 import (
 	"math/rand"
+	"time"
 )
 
 var (
@@ -51,6 +52,8 @@ func NewRand(randSource rand.Source) *NumGen {
 		r: rand.New(randSource),
 	}
 }
+
+var SharedRNG = NewRand(rand.NewSource(time.Now().Unix()))
 
 // RandRange returns a random 64-bit integer in the range of begin..end
 func (g *NumGen) RandRange(begin, end uint64) uint64 {
