@@ -22,6 +22,7 @@ import (
 // Instruction represents a single, high-level EBPF instruction such as an ALU instruction,
 // a conditional or function call
 type Instruction interface {
+	GetOpcode() uint8
 	GenerateBytecode() []uint64
 	GenerateNextInstruction(prog *Program)
 	SetNextInstruction(next Instruction)
@@ -37,6 +38,11 @@ type BaseInstruction struct {
 	Opcode            uint8
 	InstructionClass  uint8
 	nextInstruction   Instruction
+}
+
+// GetOpcode gets the underlying opcode of the instruction.
+func (i *BaseInstruction) GetOpcode() uint8 {
+	return i.Opcode
 }
 
 // GenerateNextInstruction generates the next instruction.

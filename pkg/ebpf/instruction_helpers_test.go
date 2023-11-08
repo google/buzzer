@@ -21,7 +21,8 @@ import (
 
 func checkInstructionImpl(t *testing.T, ptr Instruction, expectedInstructions []Instruction) error {
 	t.Logf("checking ptr: %v, expectedInstructions: %v", ptr, expectedInstructions)
-	for i := 0; i < len(expectedInstructions); {
+	numberOfExpectedInstructions := len(expectedInstructions)
+	for i := 0; i < numberOfExpectedInstructions; {
 		operation := expectedInstructions[i]
 		if ptr != operation {
 			return fmt.Errorf("mismatched operation at index %d, want %v, have %v", i, operation, ptr)
@@ -55,6 +56,9 @@ func checkInstructionImpl(t *testing.T, ptr Instruction, expectedInstructions []
 		if jmpInstr, ok := ptr.(*JmpImmInstruction); ok {
 			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Opcode != JmpExit {
 				t.Fatalf("Jump instruction with false branch size of 0 and not an exit operation or uncodintional jump at index %d (%v)", i, jmpInstr)
+			}
+			if jmpInstr.Opcode == JmpExit && (jmpInstr.TrueBranchNextInstr != nil || jmpInstr.FalseBranchNextInstr != nil) {
+				t.Fatalf("Exit instruction should not have a next instruction, true branch: %v, false branch: %v", jmpInstr.TrueBranchNextInstr, jmpInstr.FalseBranchNextInstr)
 			}
 			nextInstrIndex, err := checkJmpFunction(i, int(jmpInstr.FalseBranchSize), jmpInstr, t, jmpInstr.FalseBranchNextInstr)
 			if err != nil {
@@ -125,6 +129,9 @@ func TestInstructionChainHelperTest(t *testing.T) {
 			result := checkInstructionImpl(t, root, tc.operations)
 			if result != nil {
 				t.Fatalf("%v", result)
+			}
+			if tc.operations[len(tc.operations)-1].GetNextInstruction() != nil {
+				t.Fatalf("Unexpected next operation after last instruction %v", tc.operations[len(tc.operations)-1].GetNextInstruction())
 			}
 		})
 	}

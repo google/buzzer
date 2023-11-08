@@ -90,10 +90,12 @@ func GenerateRandomJmpRegInstruction(prog *Program, trueBranchGenerator func(pro
 			Opcode:           op,
 			InstructionClass: InsClassJmp,
 		},
-		DstReg:               dstReg,
-		SrcReg:               srcReg,
-		trueBranchGenerator:  trueBranchGenerator,
-		falseBranchGenerator: falseBranchGenerator,
+		BaseJmpInstruction: BaseJmpInstruction{
+			DstReg:               dstReg,
+			trueBranchGenerator:  trueBranchGenerator,
+			falseBranchGenerator: falseBranchGenerator,
+		},
+		SrcReg: srcReg,
 	}
 
 }
@@ -151,6 +153,16 @@ func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
 		return nil, nil
 	}
 	var root, ptr Instruction
+	advancePointer := func(i Instruction) {
+		if root == nil {
+			root = i
+			ptr = root
+		} else {
+			ptr.SetNextInstruction(i)
+			ptr = i
+		}
+	}
+
 	for i := 0; i < len(instructions); i++ {
 		instruction := instructions[i]
 
@@ -166,12 +178,8 @@ func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
 			jmpInstr.FalseBranchNextInstr = falseBranchNextInstr
 			jmpInstr.TrueBranchNextInstr = trueBranchNextInstr
 
-			if root == nil {
-				root = jmpInstr
-				ptr = root
-			} else {
-				ptr.SetNextInstruction(jmpInstr)
-			}
+			advancePointer(jmpInstr)
+
 			// Break here because handleJmpInstruction should have processed the rest of the ebpf program.
 			break
 		} else if jmpInstr, ok := instruction.(*JmpRegInstruction); ok {
@@ -185,21 +193,10 @@ func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
 			jmpInstr.FalseBranchNextInstr = falseBranchNextInstr
 			jmpInstr.TrueBranchNextInstr = trueBranchNextInstr
 
-			if root == nil {
-				root = jmpInstr
-				ptr = root
-			} else {
-				ptr.SetNextInstruction(jmpInstr)
-			} // Break here because handleJmpInstruction should have processed the rest of the ebpf program.
+			advancePointer(jmpInstr)
 			break
 		} else {
-			if root == nil {
-				root = instruction
-				ptr = root
-			} else {
-				ptr.SetNextInstruction(instruction)
-				ptr = instruction
-			}
+			advancePointer(instruction)
 		}
 	}
 	return root, nil
