@@ -102,12 +102,12 @@ func TestInstructionChainHelperTest(t *testing.T) {
 		{
 			testName:      "Jump imm With offset of 0",
 			operations:    []Instruction{Mov64(RegR0, 0), JmpGT(RegR0, 0, 0), Exit()},
-			expectedError: fmt.Errorf("Only Exit() and Jmp() can have an offset of 0"),
+			expectedError: fmt.Errorf("Only Exit() can have an offset of 0"),
 		},
 		{
 			testName:      "Jump reg With offset of 0",
 			operations:    []Instruction{Mov64(RegR0, 0), JmpLT(RegR0, RegR1, 0), Exit()},
-			expectedError: fmt.Errorf("JmpReg instruction cannot have jump offset of 0"),
+			expectedError: fmt.Errorf("Only Exit() can have an offset of 0"),
 		},
 		{
 			testName:      "Jump goes out of bounds",

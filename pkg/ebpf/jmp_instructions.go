@@ -20,6 +20,10 @@ import (
 
 // JmpInstruction represents the basic interface jmp instructions should implement
 type JmpInstruction interface {
+	Instruction
+	GetFalseBranchSize() int16
+	SetFalseBranchNextInstr(i Instruction)
+	SetTrueBranchNextInstr(i Instruction)
 }
 
 // BaseJmpInstruction has the basic fields of a jmp instruction
@@ -41,6 +45,19 @@ type BaseJmpInstruction struct {
 	// branch.
 	FalseBranchSize      int16
 	falseBranchGenerator func(prog *Program) (Instruction, int16)
+}
+
+// GetFalseBranchSize returns how many instructions there are in the false
+// branch of the jmp instruction.
+func (c *BaseJmpInstruction) GetFalseBranchSize() int16 {
+	return c.FalseBranchSize
+}
+
+func (c *BaseJmpInstruction) SetFalseBranchNextInstr(i Instruction) {
+	c.FalseBranchNextInstr = i
+}
+func (c *BaseJmpInstruction) SetTrueBranchNextInstr(i Instruction) {
+	c.TrueBranchNextInstr = i
 }
 
 // GenerateNextInstruction uses the prog generator to create the rest of the tree.

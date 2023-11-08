@@ -166,34 +166,21 @@ func instructionSequenceImpl(instructions []Instruction) (Instruction, error) {
 	for i := 0; i < len(instructions); i++ {
 		instruction := instructions[i]
 
-		if jmpInstr, ok := instruction.(*JmpImmInstruction); ok {
-			if jmpInstr.FalseBranchSize == 0 && jmpInstr.Opcode != JmpExit {
-				return nil, fmt.Errorf("Only Exit() and Jmp() can have an offset of 0")
+		if jmpInstr, ok := instruction.(JmpInstruction); ok {
+			if jmpInstr.GetFalseBranchSize() == 0 && jmpInstr.GetOpcode() != JmpExit {
+				return nil, fmt.Errorf("Only Exit() can have an offset of 0")
 			}
-			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:], jmpInstr.FalseBranchSize)
+			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:], jmpInstr.GetFalseBranchSize())
 			if err != nil {
 				return nil, err
 			}
 
-			jmpInstr.FalseBranchNextInstr = falseBranchNextInstr
-			jmpInstr.TrueBranchNextInstr = trueBranchNextInstr
+			jmpInstr.SetFalseBranchNextInstr(falseBranchNextInstr)
+			jmpInstr.SetTrueBranchNextInstr(trueBranchNextInstr)
 
 			advancePointer(jmpInstr)
 
 			// Break here because handleJmpInstruction should have processed the rest of the ebpf program.
-			break
-		} else if jmpInstr, ok := instruction.(*JmpRegInstruction); ok {
-			if jmpInstr.FalseBranchSize == 0 {
-				return nil, fmt.Errorf("JmpReg instruction cannot have jump offset of 0")
-			}
-			falseBranchNextInstr, trueBranchNextInstr, err := handleJmpInstruction(instructions[i:], jmpInstr.FalseBranchSize)
-			if err != nil {
-				return nil, err
-			}
-			jmpInstr.FalseBranchNextInstr = falseBranchNextInstr
-			jmpInstr.TrueBranchNextInstr = trueBranchNextInstr
-
-			advancePointer(jmpInstr)
 			break
 		} else {
 			advancePointer(instruction)
