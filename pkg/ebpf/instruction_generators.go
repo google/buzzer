@@ -25,7 +25,7 @@ import (
 // GenerateRandomAluInstruction provides a random ALU operation with either
 // IMM or Reg src that will be applied to a random dst reg.
 func GenerateRandomAluInstruction(prog *Program) Instruction {
-	op := RandomAluOp() 
+	op := RandomAluOp()
 
 	var dstReg uint8
 	if op == AluMov {

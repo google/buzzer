@@ -24,8 +24,8 @@ import "C"
 
 // Program represents the Abstract Syntax Tree of an eBPF Program.
 import (
-	"errors"
 	"buzzer/pkg/rand"
+	"errors"
 )
 
 // GeneratorInterface are all the functions that a generator plugged into
