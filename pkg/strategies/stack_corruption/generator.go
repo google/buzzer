@@ -41,7 +41,6 @@ func (g *Generator) generateHeader(prog *Program) []Instruction {
 		StDW(RegR10, RegR1, g.skbOffset),
 		LdMapByFd(RegR0, prog.LogMap()),
 		StDW(RegR10, RegR0, g.mapPtrOffset),
-		
 	)
 	ldMapElement, _ := LdMapElement(RegR0, 0, RegR10, -20)
 	root = append(root, ldMapElement...)
@@ -92,7 +91,7 @@ func (g *Generator) generateBody() []Instruction {
 	body := []Instruction{}
 	for i := 0; i < g.instructionCount; i++ {
 		if rand.SharedRNG.OneOf(65) {
-			body = append(body, RandomJmpInstruction(uint64(g.instructionCount - i)))
+			body = append(body, RandomJmpInstruction(uint64(g.instructionCount-i)))
 		} else {
 			body = append(body, RandomAluInstruction())
 		}
@@ -114,8 +113,6 @@ func (g *Generator) generateFooter(p *Program) []Instruction {
 		LdDW(RegR0, RegR10, g.mapFirstElementOffset),
 		StDW(RegR0, g.magicNumber, 0),
 		LdDW(RegR0, RegR10, g.mapPtrOffset),
-		
-		
 	)
 	temp, _ := LdMapElement(RegR0, 1, RegR10, -36)
 	footer = append(footer, temp...)
@@ -135,7 +132,7 @@ func (g *Generator) generateFooter(p *Program) []Instruction {
 		Exit(),
 	)
 	footer = append(footer, temp...)
-	
+
 	sequence = append(sequence, footer...)
 	return sequence
 }

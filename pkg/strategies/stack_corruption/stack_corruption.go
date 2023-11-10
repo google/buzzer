@@ -76,7 +76,7 @@ func (sc *Strategy) Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageM
 			continue
 		}
 
-		if count % 200 == 0 {
+		if count%200 == 0 {
 			fmt.Println(res.GetVerifierLog())
 		}
 

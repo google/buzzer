@@ -38,10 +38,10 @@ func (g *Generator) generateHeader(prog *Program) []Instruction {
 
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree.
 func (g *Generator) generateBody() []Instruction {
-	body := []Instruction{}	
-	for i:= 0; i < g.instructionCount; i++ {
+	body := []Instruction{}
+	for i := 0; i < g.instructionCount; i++ {
 		// Generate about 60% of instructions as alu instructions, the rest as jumps.
-		if rand.SharedRNG.RandRange(0,100) <= 60 {
+		if rand.SharedRNG.RandRange(0, 100) <= 60 {
 			body = append(body, RandomAluInstruction())
 		} else {
 			// The parameter to RandomJmpInstruction is the maximum offset to have
@@ -64,7 +64,7 @@ func (g *Generator) generateFooter(prog *Program) []Instruction {
 	// If control flow makes it to (5) *and* the map element written in (5)
 	// is non-zero, then the generated program was verified correct and
 	// executed.
-	chosenReg, _ := GetRegisterFromNumber(uint8(rand.SharedRNG.RandRange(6,9)))
+	chosenReg, _ := GetRegisterFromNumber(uint8(rand.SharedRNG.RandRange(6, 9)))
 	root, _ := InstructionSequence(
 		Mov64(RegR0, 0),
 		StW(RegR10, RegR0, -4),

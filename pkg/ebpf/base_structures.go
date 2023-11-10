@@ -31,8 +31,8 @@ type Instruction interface {
 // BaseInstruction groups together logic that is common to all eBPF instruction
 // representations.
 type BaseInstruction struct {
-	Opcode            uint8
-	InstructionClass  uint8
+	Opcode           uint8
+	InstructionClass uint8
 
 	// DstReg is where the result will be stored.
 	DstReg *Register

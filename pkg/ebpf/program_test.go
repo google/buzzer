@@ -21,17 +21,17 @@ import (
 
 func NewTestProgram(insts []Instruction) *Program {
 	prog := &Program{
-		logMap:      0,
-		MapSize:     0,
+		logMap:       0,
+		MapSize:      0,
 		Instructions: insts,
-		MinRegister: RegR0.RegisterNumber(),
-		MaxRegister: RegR9.RegisterNumber(),
+		MinRegister:  RegR0.RegisterNumber(),
+		MaxRegister:  RegR9.RegisterNumber(),
 	}
 	return prog
 }
 
 func TestProgramGeneration(t *testing.T) {
-    insts, _ := InstructionSequence(Mov64(RegR0, 0), Exit())	
+	insts, _ := InstructionSequence(Mov64(RegR0, 0), Exit())
 	a := NewTestProgram(insts)
 
 	if !reflect.DeepEqual(insts, a.Instructions) {
@@ -44,9 +44,8 @@ func TestProgramGeneration(t *testing.T) {
 		t.Errorf("expected R0 to be marked as initialized\n")
 	}
 
-
 	a.MarkRegisterInitialized(RegR10.RegisterNumber())
-	
+
 	if a.IsRegisterInitialized(RegR10.RegisterNumber()) {
 		t.Errorf("RegR10 is outside of the range of tracked registers and should not be marked initialized\n")
 	}

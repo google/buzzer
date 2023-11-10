@@ -94,7 +94,7 @@ func GenerateRandomJmpRegInstruction(prog *Program, trueBranchGenerator func(pro
 		BaseInstruction: BaseInstruction{
 			Opcode:           op,
 			InstructionClass: InsClassJmp,
-			DstReg:               dstReg,
+			DstReg:           dstReg,
 		},
 		SrcReg: srcReg,
 	}
@@ -179,7 +179,7 @@ func RandomAluInstruction() Instruction {
 		}
 	}
 
-	instr:= newAluInstruction(op, insClass, dstReg, src)
+	instr := newAluInstruction(op, insClass, dstReg, src)
 	return instr
 }
 

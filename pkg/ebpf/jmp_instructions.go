@@ -18,7 +18,6 @@ import (
 	"fmt"
 )
 
-
 // JmpImmInstruction Represents an eBPF jump (branching) operation.
 type JmpImmInstruction struct {
 

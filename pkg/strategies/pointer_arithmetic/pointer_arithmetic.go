@@ -46,7 +46,7 @@ type Strategy struct {
 func (pa *Strategy) generateAndValidateProgram(e strategies.ExecutorInterface, gen *Generator) (*strategies.GeneratorResult, error) {
 	for i := 0; ; i++ {
 		gen.instructionCount = pa.InstructionCount
-		prog, err := ebpf.New(/*mapSize=*/4 /*minReg=*/, ebpf.RegR0.RegisterNumber() /*maxReg=*/, ebpf.RegR9.RegisterNumber())
+		prog, err := ebpf.New( /*mapSize=*/ 4 /*minReg=*/, ebpf.RegR0.RegisterNumber() /*maxReg=*/, ebpf.RegR9.RegisterNumber())
 		prog.Instructions = gen.Generate(prog)
 		if err != nil {
 			return nil, err
@@ -60,7 +60,7 @@ func (pa *Strategy) generateAndValidateProgram(e strategies.ExecutorInterface, g
 
 		// Only print every 2000 generated programs.
 		if i%2000 == 0 {
-	 		fmt.Println(res.GetVerifierLog())
+			fmt.Println(res.GetVerifierLog())
 		}
 
 		if res.GetIsValid() {
@@ -86,7 +86,7 @@ func (pa *Strategy) executeProgram(e strategies.ExecutorInterface, executionRequ
 	if !eR.GetDidSucceed() {
 		return nil, fmt.Errorf("execute Program did not succeed")
 	}
-	return eR, nil	
+	return eR, nil
 }
 
 // Fuzz implements the main fuzzing logic.
@@ -137,7 +137,7 @@ func (pa *Strategy) Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageM
 					strategies.SaveExecutionResults(gr)
 					return fmt.Errorf("Program wrote out of bounds")
 				}
-			} 
+			}
 			return nil
 		}(); err != nil {
 			return err

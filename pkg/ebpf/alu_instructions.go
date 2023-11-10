@@ -53,8 +53,8 @@ func (c *AluImmInstruction) GeneratePoc() []string {
 func NewAluImmInstruction(op, insClass uint8, dstReg *Register, imm int32) *AluImmInstruction {
 	return &AluImmInstruction{
 		BaseInstruction: BaseInstruction{Opcode: op, InstructionClass: insClass,
-		DstReg:          dstReg},
-		Imm:             imm,
+			DstReg: dstReg},
+		Imm: imm,
 	}
 }
 
@@ -100,11 +100,11 @@ func (c *AluRegInstruction) GeneratePoc() []string {
 // the given instruction category.
 func NewAluRegInstruction(op, insClass uint8, dstReg *Register, srcReg *Register) *AluRegInstruction {
 	return &AluRegInstruction{
-		BaseInstruction: BaseInstruction{Opcode: op, 
+		BaseInstruction: BaseInstruction{Opcode: op,
 
-		InstructionClass: insClass,
-		DstReg:          dstReg},
-		SrcReg:          srcReg,
+			InstructionClass: insClass,
+			DstReg:           dstReg},
+		SrcReg: srcReg,
 	}
 }
 

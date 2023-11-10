@@ -45,7 +45,7 @@ type StrategyParseVerifierLog struct{}
 
 func (st *StrategyParseVerifierLog) generateAndValidateProgram(e strategies.ExecutorInterface, gen *Generator) (*strategies.GeneratorResult, error) {
 	for i := 0; i < 100_000; i++ {
-		prog, err := ebpf.New(/*mapSize=*/1000 /*minReg=*/, ebpf.RegR7.RegisterNumber() /*maxReg=*/, ebpf.RegR9.RegisterNumber())
+		prog, err := ebpf.New( /*mapSize=*/ 1000 /*minReg=*/, ebpf.RegR7.RegisterNumber() /*maxReg=*/, ebpf.RegR9.RegisterNumber())
 		gen.logMapFd = prog.LogMap()
 		prog.Instructions = gen.Generate(prog)
 		if err != nil {

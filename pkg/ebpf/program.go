@@ -124,11 +124,11 @@ func New(mapSize int, minReg, maxReg uint8) (*Program, error) {
 		return nil, errors.New("Could not create log map for the program")
 	}
 	prog := &Program{
-		logMap:      lMap,
-		MapSize:     mapSize,
-		MinRegister: minReg,
-		MaxRegister: maxReg,
-		trackedRegs: []uint8{},
+		logMap:       lMap,
+		MapSize:      mapSize,
+		MinRegister:  minReg,
+		MaxRegister:  maxReg,
+		trackedRegs:  []uint8{},
 		Instructions: []Instruction{},
 	}
 	return prog, nil

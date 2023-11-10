@@ -113,10 +113,10 @@ func newStoreOperation(size uint8, dstReg *Register, src interface{}, offset int
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: insClass,
-			DstReg: dstReg,
+			DstReg:           dstReg,
 		},
-		Mode:   StLdModeMEM,
-		Size:   size,
+		Mode: StLdModeMEM,
+		Size: size,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: srcReg,
@@ -149,10 +149,10 @@ func newLoadToRegisterOperation(size uint8, dstReg *Register, src *Register, off
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: InsClassLdx,
-			DstReg: dstReg,
+			DstReg:           dstReg,
 		},
-		Mode:   StLdModeMEM,
-		Size:   size,
+		Mode: StLdModeMEM,
+		Size: size,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: src,
@@ -184,10 +184,10 @@ func LdMapByFd(dst *Register, fd int) Instruction {
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: InsClassLd,
-			DstReg: dst,
+			DstReg:           dst,
 		},
-		Size:   StLdSizeDW,
-		Mode:   StLdModeIMM,
+		Size: StLdSizeDW,
+		Mode: StLdModeIMM,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: PseudoMapFD,
@@ -199,10 +199,10 @@ func newAtomicInstruction(dst, src *Register, size, class uint8, offset int16, o
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: class,
-			DstReg: dst,
+			DstReg:           dst,
 		},
-		Size:   size,
-		Mode:   StLdModeATOMIC,
+		Size: size,
+		Mode: StLdModeATOMIC,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: src,

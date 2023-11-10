@@ -57,7 +57,7 @@ func (g *Generator) generateHeader(prog *Program) []Instruction {
 		reg, _ := GetRegisterFromNumber(uint8(i))
 		regVal := int32(rand.SharedRNG.RandInt())
 		inst := Mov64(reg, regVal)
-		root = append(root, inst)		
+		root = append(root, inst)
 		prog.MarkRegisterInitialized(reg.RegisterNumber())
 		hSize++
 	}
@@ -100,7 +100,7 @@ func (g *Generator) generateBody() []Instruction {
 }
 
 func (g *Generator) generateFooter() []Instruction {
-    ins, _ := InstructionSequence(Mov64(RegR0, 0), Exit())	
+	ins, _ := InstructionSequence(Mov64(RegR0, 0), Exit())
 	return ins
 }
 
