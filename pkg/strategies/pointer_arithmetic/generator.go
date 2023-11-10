@@ -64,7 +64,7 @@ func (g *Generator) generateFooter(prog *Program) []Instruction {
 	// If control flow makes it to (5) *and* the map element written in (5)
 	// is non-zero, then the generated program was verified correct and
 	// executed.
-	//chosenReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
+	chosenReg, _ := GetRegisterFromNumber(uint8(rand.SharedRNG.RandRange(6,9)))
 	root, _ := InstructionSequence(
 		Mov64(RegR0, 0),
 		StW(RegR10, RegR0, -4),
@@ -75,7 +75,7 @@ func (g *Generator) generateFooter(prog *Program) []Instruction {
 		Call(MapLookup),
 		JmpNE(RegR0, 0, 1),
 		Exit(),
-		//Add64(RegR0, chosenReg),
+		Add64(RegR0, chosenReg),
 		StDW(RegR0, g.magicNumber, 0),
 
 		// Repeat, no ptr arithmetic.

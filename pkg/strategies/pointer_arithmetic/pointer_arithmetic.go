@@ -59,9 +59,9 @@ func (pa *Strategy) generateAndValidateProgram(e strategies.ExecutorInterface, g
 		}
 
 		// Only print every 2000 generated programs.
-		//if i%2000 == 0 {
-	 	//	fmt.Println(res.GetVerifierLog())
-		//}
+		if i%2000 == 0 {
+	 		fmt.Println(res.GetVerifierLog())
+		}
 
 		if res.GetIsValid() {
 			result := &strategies.GeneratorResult{
