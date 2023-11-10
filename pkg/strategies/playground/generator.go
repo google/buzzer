@@ -21,13 +21,8 @@ import (
 // Generator is responsible for constructing the ast for this strategy.
 type Generator struct{}
 
-// GenerateNextInstruction is responsible for recursively building the ebpf program tree
-func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
-	return nil
-}
-
 // Generate is the main function that builds the ast for this strategy.
-func (g *Generator) Generate(a *Program) Instruction {
+func (g *Generator) Generate() []Instruction {
 	root, _ := InstructionSequence(
 		Mov64(RegR0, 0),
 		Exit(),

@@ -22,33 +22,16 @@ package ebpf
 //void close_fd(int fd);
 import "C"
 
-// Program represents the Abstract Syntax Tree of an eBPF Program.
+// Program represents a sequence of instructions of an ebpf program.
 import (
 	"buzzer/pkg/rand"
 	"errors"
 )
 
-// GeneratorInterface are all the functions that a generator plugged into
-// the prog is expected to have to indicate how to build the tree.
-type GeneratorInterface interface {
-	// Generate is the general top level function that will be invoked to
-	// kick off the generation of the program.
-	Generate(prog *Program) Instruction
-
-	// GenerateNextInstruction gets invoked by every instruction's GenerateNextInstruction
-	// you can view it as returning the control of the construction back
-	// to the generator to decide what to do next, generate more instructions
-	// or finish the construction.
-	GenerateNextInstruction(prog *Program) Instruction
-}
-
 // Program represents a generated instance of an eBPF Program. This data structure
 // exists mostly to keep track of the state of an eBPF program and to export methods
 // that the generator can use to interact with the program.
 type Program struct {
-	root Instruction
-	size uint32
-
 	// Keep track of which registers have been initialized so we can use
 	// them for other operations without the verifier complaining.
 	trackedRegs []uint8
@@ -67,14 +50,18 @@ type Program struct {
 	// alu operations.
 	MaxRegister uint8
 
-	// Gen is the Generator Strategy for this prog.
-	Gen GeneratorInterface
+	// Instructions corresponding to this ebpf program.
+	Instructions []Instruction
 }
 
 // GenerateBytecode returns the bytecode array associated with this ebpf
 // program.
 func (a *Program) GenerateBytecode() []uint64 {
-	return a.root.GenerateBytecode()
+	r := []uint64{}
+	for _, i := range a.Instructions {
+		r = append(r, i.GenerateBytecode()...)
+	}
+	return r
 }
 
 // LogMap returns the internal log map fd.
@@ -125,32 +112,24 @@ func (a *Program) GeneratePoc() error {
 	return GeneratePoc(a)
 }
 
-func (a *Program) construct() error {
-	a.trackedRegs = make([]uint8, 0)
-
-	if ptr := a.Gen.Generate(a); ptr != nil {
-		a.root = ptr
-	} else {
-		return errors.New("provided generator did not generate any valid instructions")
-	}
-
-	a.size = uint32(a.root.NumerateInstruction(0))
-	return nil
+// SetInstructions assigns the given instruction array to the program.
+func (a *Program) SetInstructions(i []Instruction) {
+	a.Instructions = i
 }
 
 // New creates a new prog with the given generator.
-func New(gen GeneratorInterface, mapSize int, minReg, maxReg uint8) (*Program, error) {
+func New(mapSize int, minReg, maxReg uint8) (*Program, error) {
 	lMap := int(C.create_bpf_map(C.ulong(mapSize)))
 	if lMap < 0 {
 		return nil, errors.New("Could not create log map for the program")
 	}
 	prog := &Program{
 		logMap:      lMap,
-		Gen:         gen,
 		MapSize:     mapSize,
 		MinRegister: minReg,
 		MaxRegister: maxReg,
+		trackedRegs: []uint8{},
+		Instructions: []Instruction{},
 	}
-	prog.construct()
 	return prog, nil
 }

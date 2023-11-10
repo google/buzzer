@@ -30,7 +30,7 @@ type Generator struct {
 }
 
 // Generates the first set of instructions of the program.
-func (g *Generator) generateHeader(prog *Program) Instruction {
+func (g *Generator) generateHeader(prog *Program) []Instruction {
 	g.instructionCount = int(rand.SharedRNG.RandRange(50, 100))
 	g.skbOffset = -8
 	g.mapPtrOffset = -16
@@ -41,17 +41,22 @@ func (g *Generator) generateHeader(prog *Program) Instruction {
 		StDW(RegR10, RegR1, g.skbOffset),
 		LdMapByFd(RegR0, prog.LogMap()),
 		StDW(RegR10, RegR0, g.mapPtrOffset),
-		LdMapElement(RegR0, 0, RegR10, -20),
+		
+	)
+	ldMapElement, _ := LdMapElement(RegR0, 0, RegR10, -20)
+	root = append(root, ldMapElement...)
+	rest, _ := InstructionSequence(
 		JmpNE(RegR0, 0, 1),
 		Exit(),
 		StDW(RegR10, RegR0, g.mapFirstElementOffset),
 		StDW(RegR10, 0, g.skbReadOffset),
 	)
+	root = append(root, rest...)
 
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
 		reg, _ := GetRegisterFromNumber(uint8(i))
-		var instr Instruction
-		if rand.SharedRNG.RandRange(1, 10) < 7 {
+		var instr []Instruction
+		if rand.SharedRNG.OneOf(7) {
 			instr, _ = InstructionSequence(
 				LdDW(reg, RegR0, 0),
 				Add64(reg, int32(rand.SharedRNG.RandInt())),
@@ -62,88 +67,75 @@ func (g *Generator) generateHeader(prog *Program) Instruction {
 			)
 		}
 		prog.MarkRegisterInitialized(i)
-		root.SetNextInstruction(instr)
+		root = append(root, instr...)
 	}
 	return root
 }
 
-func (g *Generator) randomAlu(prog *Program) Instruction {
-	return GenerateRandomAluInstruction(prog)
-}
-
-func (g *Generator) randomJmp(prog *Program) Instruction {
-	falseBranchGenerator := func(prog *Program) (Instruction, int16) {
-		operationQuantity := int16(rand.SharedRNG.RandRange(1, 10))
-		instructions := []Instruction{}
-		for i := int16(0); i < operationQuantity; i++ {
-			instructions = append(instructions, GenerateRandomAluInstruction(prog))
-		}
-		root, _ := InstructionSequence(instructions...)
-		return root, operationQuantity
-	}
-	return GenerateRandomJmpRegInstruction(prog, g.GenerateNextInstruction, falseBranchGenerator)
-}
-
-func (g *Generator) skbCall(prog *Program) Instruction {
+func (g *Generator) skbCall(prog *Program) []Instruction {
 	source, _ := GetRegisterFromNumber(prog.GetRandomRegister())
 	corruptingSnippet, _ := InstructionSequence(
 		JmpLT(source, 1, 1),
 		Mov64(source, 1),
 		Add64(source, 1),
 		LdDW(RegR1, RegR10, g.skbOffset),
-		CallSkbLoadBytesRelative(RegR1, 0, RegR10, g.skbReadOffset, source, 1),
-		Mov(RegR1, 0x0FFFFFFF),
 	)
+
+	callskb, _ := CallSkbLoadBytesRelative(RegR1, 0, RegR10, g.skbReadOffset, source, 1)
+	corruptingSnippet = append(corruptingSnippet, callskb...)
+	corruptingSnippet = append(corruptingSnippet, Mov(RegR1, 0x0FFFFFFF))
 	return corruptingSnippet
 }
 
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree
-func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
-	g.instructionCount -= 1
-	if g.instructionCount == 0 {
-		return g.generateProgramFooter(prog)
+func (g *Generator) generateBody() []Instruction {
+	body := []Instruction{}
+	for i := 0; i < g.instructionCount; i++ {
+		if rand.SharedRNG.OneOf(65) {
+			body = append(body, RandomJmpInstruction(uint64(g.instructionCount - i)))
+		} else {
+			body = append(body, RandomAluInstruction())
+		}
 	}
-
-	var instr Instruction
-
-	coinToss := rand.SharedRNG.RandRange(1, 100)
-
-	if coinToss <= 65 {
-		instr = g.randomJmp(prog)
-	} else {
-		instr = g.randomAlu(prog)
-	}
-
-	instr.GenerateNextInstruction(prog)
-	return instr
+	return body
 }
 
 // Generate is the main function that builds the ast for this strategy.
-func (g *Generator) Generate(prog *Program) Instruction {
-	header := g.generateHeader(prog)
-	header.SetNextInstruction(g.GenerateNextInstruction(prog))
-	return header
+func (g *Generator) Generate(prog *Program) []Instruction {
+	program := g.generateHeader(prog)
+	program = append(program, g.generateBody()...)
+	program = append(program, g.generateFooter(prog)...)
+	return program
 }
 
-func (g *Generator) generateProgramFooter(p *Program) Instruction {
+func (g *Generator) generateFooter(p *Program) []Instruction {
 	sequence := g.skbCall(p)
 	footer, _ := InstructionSequence(
 		LdDW(RegR0, RegR10, g.mapFirstElementOffset),
 		StDW(RegR0, g.magicNumber, 0),
 		LdDW(RegR0, RegR10, g.mapPtrOffset),
-		LdMapElement(RegR0, 1, RegR10, -36),
-		JmpNE(RegR0, 0, 1),
+		
+		
+	)
+	temp, _ := LdMapElement(RegR0, 1, RegR10, -36)
+	footer = append(footer, temp...)
+	temp, _ = InstructionSequence(JmpNE(RegR0, 0, 1),
 		Exit(),
 		StDW(RegR0, g.magicNumber, 0),
 		LdDW(RegR0, RegR10, g.mapPtrOffset),
-		LdMapElement(RegR0, 2, RegR10, -36),
-		JmpNE(RegR0, 0, 1),
+	)
+	footer = append(footer, temp...)
+	temp, _ = LdMapElement(RegR0, 2, RegR10, -36)
+	footer = append(footer, temp...)
+	temp, _ = InstructionSequence(JmpNE(RegR0, 0, 1),
 		Exit(),
 		LdDW(RegR1, RegR10, g.skbReadOffset),
 		StDW(RegR0, RegR1, 0),
 		Mov64(RegR0, 0),
 		Exit(),
 	)
-	sequence.SetNextInstruction(footer)
+	footer = append(footer, temp...)
+	
+	sequence = append(sequence, footer...)
 	return sequence
 }

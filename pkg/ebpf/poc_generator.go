@@ -232,7 +232,10 @@ int execute_bpf_program(int prog_fd, int map_fd, int map_count, uint64_t* map_co
 // GeneratePoc generates a c program that can be used to reproduce fuzzer
 // test cases.
 func GeneratePoc(prog *Program) error {
-	macros := prog.root.GeneratePoc()
+	macros := []string{}
+	for _, i := range prog.Instructions {
+		macros = append(macros, i.GeneratePoc()...)
+	}
 	pocString := ""
 	for i, m := range macros {
 		if i != len(macros)-1 {

@@ -46,7 +46,8 @@ type Strategy struct {
 func (pa *Strategy) generateAndValidateProgram(e strategies.ExecutorInterface, gen *Generator) (*strategies.GeneratorResult, error) {
 	for i := 0; ; i++ {
 		gen.instructionCount = pa.InstructionCount
-		prog, err := ebpf.New(gen /*mapSize=*/, 4 /*minReg=*/, ebpf.RegR6.RegisterNumber() /*maxReg=*/, ebpf.RegR9.RegisterNumber())
+		prog, err := ebpf.New(/*mapSize=*/4 /*minReg=*/, ebpf.RegR0.RegisterNumber() /*maxReg=*/, ebpf.RegR9.RegisterNumber())
+		prog.Instructions = gen.Generate(prog)
 		if err != nil {
 			return nil, err
 		}
@@ -58,9 +59,9 @@ func (pa *Strategy) generateAndValidateProgram(e strategies.ExecutorInterface, g
 		}
 
 		// Only print every 2000 generated programs.
-		if i%2000 == 0 {
-			fmt.Println(res.GetVerifierLog())
-		}
+		//if i%2000 == 0 {
+	 	//	fmt.Println(res.GetVerifierLog())
+		//}
 
 		if res.GetIsValid() {
 			result := &strategies.GeneratorResult{
@@ -77,36 +78,15 @@ func (pa *Strategy) generateAndValidateProgram(e strategies.ExecutorInterface, g
 }
 
 func (pa *Strategy) executeProgram(e strategies.ExecutorInterface, executionRequest *fpb.ExecutionRequest) (*fpb.ExecutionResult, error) {
-	programFlaked := true
-
-	var exRes *fpb.ExecutionResult
-	maxAttempts := 1000
-
-	for programFlaked && maxAttempts != 0 {
-		maxAttempts--
-		eR, err := e.RunProgram(executionRequest)
-		if err != nil {
-			return nil, err
-		}
-
-		if !eR.GetDidSucceed() {
-			return nil, fmt.Errorf("execute Program did not succeed")
-		}
-		mapElements := eR.GetMapElements()[0].GetElements()
-		for i := 0; i < len(mapElements); i++ {
-			if mapElements[i] != 0 {
-				programFlaked = false
-				exRes = eR
-				break
-			}
-		}
+	eR, err := e.RunProgram(executionRequest)
+	if err != nil {
+		return nil, err
 	}
 
-	if maxAttempts == 0 {
-		return nil, fmt.Errorf("program flaked a lot")
+	if !eR.GetDidSucceed() {
+		return nil, fmt.Errorf("execute Program did not succeed")
 	}
-
-	return exRes, nil
+	return eR, nil	
 }
 
 // Fuzz implements the main fuzzing logic.
@@ -151,11 +131,13 @@ func (pa *Strategy) Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageM
 			// arithmetic and another one without it, we expect the first
 			// two elements to be the same. Otherwise, we wrote out of
 			// bounds.
-			mapElements := exRes.GetMapElements()[0].GetElements()
-			if mapElements[0] != mapElements[1] {
-				strategies.SaveExecutionResults(gr)
-				return fmt.Errorf("Program wrote out of bounds")
-			}
+			if len(exRes.GetMapElements()) != 0 {
+				mapElements := exRes.GetMapElements()[0].GetElements()
+				if mapElements[0] != mapElements[1] {
+					strategies.SaveExecutionResults(gr)
+					return fmt.Errorf("Program wrote out of bounds")
+				}
+			} 
 			return nil
 		}(); err != nil {
 			return err

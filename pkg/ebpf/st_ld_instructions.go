@@ -30,9 +30,6 @@ type MemoryInstruction struct {
 	// Mode of the operation.
 	Mode uint8
 
-	// DstReg represents the destination register.
-	DstReg *Register
-
 	// Even if this is an imm operation, it seems that ebpf uses the
 	// src register to point at what type of value we are loading from
 	// memory. E.G. if srcReg is set to 0x1, the imm will get treated as
@@ -58,9 +55,6 @@ func (c *MemoryInstruction) GenerateBytecode() []uint64 {
 	// verifier code: http://shortn/_cHoySHsuW2
 	if c.InstructionClass == InsClassLd && c.Mode == StLdModeIMM {
 		bytecode = append(bytecode, uint64(0))
-	}
-	if c.nextInstruction != nil {
-		bytecode = append(bytecode, c.nextInstruction.GenerateBytecode()...)
 	}
 	return bytecode
 }
@@ -94,9 +88,6 @@ func (c *MemoryInstruction) GeneratePoc() []string {
 	}
 
 	r := []string{macro}
-	if c.nextInstruction != nil {
-		r = append(r, c.nextInstruction.GeneratePoc()...)
-	}
 	return r
 }
 
@@ -122,10 +113,10 @@ func newStoreOperation(size uint8, dstReg *Register, src interface{}, offset int
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: insClass,
+			DstReg: dstReg,
 		},
 		Mode:   StLdModeMEM,
 		Size:   size,
-		DstReg: dstReg,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: srcReg,
@@ -158,10 +149,10 @@ func newLoadToRegisterOperation(size uint8, dstReg *Register, src *Register, off
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: InsClassLdx,
+			DstReg: dstReg,
 		},
 		Mode:   StLdModeMEM,
 		Size:   size,
-		DstReg: dstReg,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: src,
@@ -193,10 +184,10 @@ func LdMapByFd(dst *Register, fd int) Instruction {
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: InsClassLd,
+			DstReg: dst,
 		},
 		Size:   StLdSizeDW,
 		Mode:   StLdModeIMM,
-		DstReg: dst,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: PseudoMapFD,
@@ -208,10 +199,10 @@ func newAtomicInstruction(dst, src *Register, size, class uint8, offset int16, o
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: class,
+			DstReg: dst,
 		},
 		Size:   size,
 		Mode:   StLdModeATOMIC,
-		DstReg: dst,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: src,

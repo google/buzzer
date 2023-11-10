@@ -15,55 +15,42 @@
 package ebpf
 
 import (
+	"reflect"
 	"testing"
 )
 
-type MockGenerator struct {
-	generateInvoked                bool
-	generateNextInstructionInvoked bool
-}
-
-func (g *MockGenerator) Generate(a *Program) Instruction {
-	g.generateInvoked = true
-	return g.GenerateNextInstruction(a)
-}
-
-func (g *MockGenerator) GenerateNextInstruction(a *Program) Instruction {
-	g.generateNextInstructionInvoked = true
-	reg0 := MovRegImm64(RegR0, 0)
-	reg0.SetNextInstruction(Exit())
-	a.MarkRegisterInitialized(RegR0.RegisterNumber())
-	return reg0
-}
-
-func NewTestProgram(gen *MockGenerator) *Program {
+func NewTestProgram(insts []Instruction) *Program {
 	prog := &Program{
 		logMap:      0,
-		Gen:         gen,
 		MapSize:     0,
+		Instructions: insts,
 		MinRegister: RegR0.RegisterNumber(),
-		MaxRegister: RegR10.RegisterNumber(),
+		MaxRegister: RegR9.RegisterNumber(),
 	}
-	prog.construct()
 	return prog
 }
 
 func TestProgramGeneration(t *testing.T) {
-	gen := &MockGenerator{
-		generateInvoked:                false,
-		generateNextInstructionInvoked: false,
-	}
-	a := NewTestProgram(gen)
-	if !gen.generateInvoked {
-		t.Errorf("Expected Generate() to be invoked")
+    insts, _ := InstructionSequence(Mov64(RegR0, 0), Exit())	
+	a := NewTestProgram(insts)
+
+	if !reflect.DeepEqual(insts, a.Instructions) {
+		t.Fatalf("program Instructions array is different than the one supplied.")
 	}
 
-	if !gen.generateNextInstructionInvoked {
-		t.Errorf("Expected GenerateNextInstruction to be invoked")
-	}
+	a.MarkRegisterInitialized(RegR0.RegisterNumber())
+
 	if !a.IsRegisterInitialized(RegR0.RegisterNumber()) {
 		t.Errorf("expected R0 to be marked as initialized\n")
 	}
+
+
+	a.MarkRegisterInitialized(RegR10.RegisterNumber())
+	
+	if a.IsRegisterInitialized(RegR10.RegisterNumber()) {
+		t.Errorf("RegR10 is outside of the range of tracked registers and should not be marked initialized\n")
+	}
+
 	expectedBytecode := []uint64{0x000000000000b7, 0x00000000000095}
 	actualBytecode := a.GenerateBytecode()
 	if len(expectedBytecode) != len(actualBytecode) {
