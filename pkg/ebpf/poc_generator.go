@@ -99,6 +99,15 @@ const (
 		.off   = OFF,					\
 		.imm   = 0 })
 `
+	memImmOperationMacroDef = `
+#define BPF_MEM_IMM_OPERATION(INS_CLASS, SIZE, DST, IMM, OFF)			\
+	((struct bpf_insn) {					\
+		.code  = INS_CLASS | BPF_SIZE(SIZE) | BPF_MEM,	\
+		.dst_reg = DST,					\
+		.src_reg = 0,					\
+		.off   = OFF,					\
+		.imm   = IMM })
+`
 )
 
 const (
@@ -274,7 +283,7 @@ func GeneratePoc(prog *Program) error {
 		return 0;
 }`, prog.MapSize, pocString)
 
-	poc := cHeader + aluImmMacroDef + aluRegMacroDef + exitMacroDef + jumpRegMacroDef + jumpImmMacroDef + callMacroDef + loadMapFdDef + memOperationMacroDef + progLoadFunc + createMapFunc + executeProgramFunc + mainBody
+	poc := cHeader + aluImmMacroDef + aluRegMacroDef + exitMacroDef + jumpRegMacroDef + jumpImmMacroDef + callMacroDef + loadMapFdDef + memOperationMacroDef + memImmOperationMacroDef + progLoadFunc + createMapFunc + executeProgramFunc + mainBody
 	f, err := os.CreateTemp("", "ebpf-poc-*.c")
 	if err != nil {
 		return err

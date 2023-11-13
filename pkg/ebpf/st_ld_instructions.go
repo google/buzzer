@@ -62,29 +62,33 @@ func (c *MemoryInstruction) GenerateBytecode() []uint64 {
 // GeneratePoc generates the C macros to repro this program.
 func (c *MemoryInstruction) GeneratePoc() []string {
 	var macro string
-	if c.InstructionClass == InsClassLd && c.Mode == StLdModeIMM {
-		macro = fmt.Sprintf("BPF_LD_MAP_FD(/*dst=*/%d, map_fd)", c.DstReg)
+	var insClass string
+	if c.InstructionClass == InsClassStx {
+		insClass = "BPF_STX"
+	} else if c.InstructionClass == InsClassSt {
+		insClass = "BPF_ST"
 	} else {
-		var insClass string
-		if c.InstructionClass == InsClassStx {
-			insClass = "BPF_STX"
-		} else {
-			insClass = "BPF_LDX"
-		}
-		var size string
-		switch c.Size {
-		case StLdSizeW:
-			size = "BPF_W"
-		case StLdSizeH:
-			size = "BPF_H"
-		case StLdSizeB:
-			size = "BPF_B"
-		case StLdSizeDW:
-			size = "BPF_DW"
-		default:
-			size = "unknown"
-		}
-		macro = fmt.Sprintf("BPF_MEM_OPERATION(%s, %s, /*dst=*/%d, /*src=*/%d, /*offset=*/%d)", insClass, size, c.DstReg, c.SrcReg, c.Offset)
+		insClass = "BPF_LDX"
+	}
+	var size string
+	switch c.Size {
+	case StLdSizeW:
+		size = "BPF_W"
+	case StLdSizeH:
+		size = "BPF_H"
+	case StLdSizeB:
+		size = "BPF_B"
+	case StLdSizeDW:
+		size = "BPF_DW"
+	default:
+		size = "unknown"
+	}
+	if c.InstructionClass == InsClassLd && c.Mode == StLdModeIMM {
+		macro = fmt.Sprintf("BPF_LD_MAP_FD(/*dst=*/%s, map_fd)", c.DstReg.ToString())
+	} else if c.InstructionClass == InsClassStx || c.InstructionClass == InsClassLdx {
+		macro = fmt.Sprintf("BPF_MEM_OPERATION(%s, %s, /*dst=*/%d, /*src=*/%d, /*offset=*/%d)", insClass, size, c.DstReg.ToString(), c.SrcReg.ToString(), c.Offset)
+	} else {
+		macro = fmt.Sprintf("BPF_MEM_IMM_OPERATION(%s, %s, /*dst=*/%d, /*src=*/%d, /*offset=*/%d)", insClass, size, c.DstReg.ToString(), c.Imm, c.Offset)
 	}
 
 	r := []string{macro}
