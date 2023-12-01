@@ -46,7 +46,8 @@ func (pg *Strategy) Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageM
 	pg.mapSize = 4
 	fmt.Printf("running fuzzing strategy %s\n", StrategyName)
 	gen := &Generator{}
-	prog, err := ebpf.New(gen, pg.mapSize, ebpf.RegR0.RegisterNumber(), ebpf.RegR9.RegisterNumber())
+	prog, err := ebpf.New(pg.mapSize, ebpf.RegR0.RegisterNumber(), ebpf.RegR9.RegisterNumber())
+	prog.Instructions = gen.Generate()
 
 	if prog != nil {
 		defer func() {

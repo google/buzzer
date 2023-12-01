@@ -88,5 +88,6 @@ func SaveExecutionResults(gr *GeneratorResult) error {
 	if err := WriteLogFile([]byte(gr.VerifierLog)); err != nil {
 		return err
 	}
+	gr.Prog.GeneratePoc()
 	return WriteProgFile(gr.ProgByteCode)
 }

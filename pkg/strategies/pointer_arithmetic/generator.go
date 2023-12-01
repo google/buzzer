@@ -25,57 +25,34 @@ type Generator struct {
 	magicNumber      int32
 }
 
-func (g *Generator) generateHeader(prog *Program) Instruction {
-	var root, ptr Instruction
+func (g *Generator) generateHeader(prog *Program) []Instruction {
+	var root []Instruction
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
 		reg, _ := GetRegisterFromNumber(uint8(i))
 		regVal := int32(rand.SharedRNG.RandInt())
-		nextInstr := MovRegImm64(reg, regVal)
-		if ptr != nil {
-			ptr.SetNextInstruction(nextInstr)
-		}
-		if root == nil {
-			root = nextInstr
-		}
-		ptr = nextInstr
+		root = append(root, Mov64(reg, regVal))
 		prog.MarkRegisterInitialized(reg.RegisterNumber())
 	}
 	return root
 }
 
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree.
-func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
-	// We reached the number of instructions we were told to generate.
-	if g.instructionCount == 0 {
-		return g.generateProgramFooter(prog)
-	}
-	g.instructionCount--
-
-	var instr Instruction
-
-	// Generate about 40% of instructions as jumps.
-	if rand.SharedRNG.RandRange(1, 100) <= 60 {
-		instr = GenerateRandomAluInstruction(prog)
-	} else {
-		falseBranchGenerator := func(a *Program) (Instruction, int16) {
-			// 20 is an arbitrary number here.
-			operationQuantity := int16(20)
-			root := GenerateRandomAluInstruction(prog)
-			ptr := root
-			for i := int16(1); i < operationQuantity; i++ {
-				next := GenerateRandomAluInstruction(prog)
-				ptr.SetNextInstruction(next)
-				ptr = next
-			}
-			return root, operationQuantity
+func (g *Generator) generateBody() []Instruction {
+	body := []Instruction{}
+	for i := 0; i < g.instructionCount; i++ {
+		// Generate about 60% of instructions as alu instructions, the rest as jumps.
+		if rand.SharedRNG.RandRange(0, 100) <= 60 {
+			body = append(body, RandomAluInstruction())
+		} else {
+			// The parameter to RandomJmpInstruction is the maximum offset to have
+			// this is to prevent out of bounds jumps.
+			body = append(body, RandomJmpInstruction(uint64(10)))
 		}
-		instr = GenerateRandomJmpRegInstruction(prog, g.GenerateNextInstruction, falseBranchGenerator)
 	}
-	instr.GenerateNextInstruction(prog)
-	return instr
+	return body
 }
 
-func (g *Generator) generateProgramFooter(prog *Program) Instruction {
+func (g *Generator) generateFooter(prog *Program) []Instruction {
 	// The generated footer does the following:
 	// 1) Loads a register with a pointer to a map.
 	// 2) Chooses a random register.
@@ -87,7 +64,7 @@ func (g *Generator) generateProgramFooter(prog *Program) Instruction {
 	// If control flow makes it to (5) *and* the map element written in (5)
 	// is non-zero, then the generated program was verified correct and
 	// executed.
-	chosenReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
+	chosenReg, _ := GetRegisterFromNumber(uint8(rand.SharedRNG.RandRange(6, 9)))
 	root, _ := InstructionSequence(
 		Mov64(RegR0, 0),
 		StW(RegR10, RegR0, -4),
@@ -120,8 +97,9 @@ func (g *Generator) generateProgramFooter(prog *Program) Instruction {
 }
 
 // Generate is the main function that builds the ebpf for this strategy.
-func (g *Generator) Generate(prog *Program) Instruction {
+func (g *Generator) Generate(prog *Program) []Instruction {
 	root := g.generateHeader(prog)
-	root.SetNextInstruction(g.GenerateNextInstruction(prog))
+	root = append(root, g.generateBody()...)
+	root = append(root, g.generateFooter(prog)...)
 	return root
 }

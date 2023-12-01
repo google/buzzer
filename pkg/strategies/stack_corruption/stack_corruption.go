@@ -54,7 +54,8 @@ func (sc *Strategy) Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageM
 		gen := &Generator{
 			magicNumber: 0xCAFE,
 		}
-		prog, err := ebpf.New(gen, sc.mapSize, ebpf.RegR6.RegisterNumber(), ebpf.RegR9.RegisterNumber())
+		prog, err := ebpf.New(sc.mapSize, ebpf.RegR1.RegisterNumber(), ebpf.RegR9.RegisterNumber())
+		prog.Instructions = gen.Generate(prog)
 
 		if err != nil {
 			fmt.Println(err)
@@ -73,6 +74,10 @@ func (sc *Strategy) Fuzz(e strategies.ExecutorInterface, cm strategies.CoverageM
 			fmt.Println(err)
 			prog.Cleanup()
 			continue
+		}
+
+		if count%200 == 0 {
+			fmt.Println(res.GetVerifierLog())
 		}
 
 		if !res.GetIsValid() {

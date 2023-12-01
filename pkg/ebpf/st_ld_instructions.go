@@ -30,9 +30,6 @@ type MemoryInstruction struct {
 	// Mode of the operation.
 	Mode uint8
 
-	// DstReg represents the destination register.
-	DstReg *Register
-
 	// Even if this is an imm operation, it seems that ebpf uses the
 	// src register to point at what type of value we are loading from
 	// memory. E.G. if srcReg is set to 0x1, the imm will get treated as
@@ -59,44 +56,42 @@ func (c *MemoryInstruction) GenerateBytecode() []uint64 {
 	if c.InstructionClass == InsClassLd && c.Mode == StLdModeIMM {
 		bytecode = append(bytecode, uint64(0))
 	}
-	if c.nextInstruction != nil {
-		bytecode = append(bytecode, c.nextInstruction.GenerateBytecode()...)
-	}
 	return bytecode
 }
 
 // GeneratePoc generates the C macros to repro this program.
 func (c *MemoryInstruction) GeneratePoc() []string {
 	var macro string
-	if c.InstructionClass == InsClassLd && c.Mode == StLdModeIMM {
-		macro = fmt.Sprintf("BPF_LD_MAP_FD(/*dst=*/%d, map_fd)", c.DstReg)
+	var insClass string
+	if c.InstructionClass == InsClassStx {
+		insClass = "BPF_STX"
+	} else if c.InstructionClass == InsClassSt {
+		insClass = "BPF_ST"
 	} else {
-		var insClass string
-		if c.InstructionClass == InsClassStx {
-			insClass = "BPF_STX"
-		} else {
-			insClass = "BPF_LDX"
-		}
-		var size string
-		switch c.Size {
-		case StLdSizeW:
-			size = "BPF_W"
-		case StLdSizeH:
-			size = "BPF_H"
-		case StLdSizeB:
-			size = "BPF_B"
-		case StLdSizeDW:
-			size = "BPF_DW"
-		default:
-			size = "unknown"
-		}
-		macro = fmt.Sprintf("BPF_MEM_OPERATION(%s, %s, /*dst=*/%d, /*src=*/%d, /*offset=*/%d)", insClass, size, c.DstReg, c.SrcReg, c.Offset)
+		insClass = "BPF_LDX"
+	}
+	var size string
+	switch c.Size {
+	case StLdSizeW:
+		size = "BPF_W"
+	case StLdSizeH:
+		size = "BPF_H"
+	case StLdSizeB:
+		size = "BPF_B"
+	case StLdSizeDW:
+		size = "BPF_DW"
+	default:
+		size = "unknown"
+	}
+	if c.InstructionClass == InsClassLd && c.Mode == StLdModeIMM {
+		macro = fmt.Sprintf("BPF_LD_MAP_FD(/*dst=*/%s, map_fd)", c.DstReg.ToString())
+	} else if c.InstructionClass == InsClassStx || c.InstructionClass == InsClassLdx {
+		macro = fmt.Sprintf("BPF_MEM_OPERATION(%s, %s, /*dst=*/%d, /*src=*/%d, /*offset=*/%d)", insClass, size, c.DstReg.ToString(), c.SrcReg.ToString(), c.Offset)
+	} else {
+		macro = fmt.Sprintf("BPF_MEM_IMM_OPERATION(%s, %s, /*dst=*/%d, /*src=*/%d, /*offset=*/%d)", insClass, size, c.DstReg.ToString(), c.Imm, c.Offset)
 	}
 
 	r := []string{macro}
-	if c.nextInstruction != nil {
-		r = append(r, c.nextInstruction.GeneratePoc()...)
-	}
 	return r
 }
 
@@ -122,10 +117,10 @@ func newStoreOperation(size uint8, dstReg *Register, src interface{}, offset int
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: insClass,
+			DstReg:           dstReg,
 		},
-		Mode:   StLdModeMEM,
-		Size:   size,
-		DstReg: dstReg,
+		Mode: StLdModeMEM,
+		Size: size,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: srcReg,
@@ -158,10 +153,10 @@ func newLoadToRegisterOperation(size uint8, dstReg *Register, src *Register, off
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: InsClassLdx,
+			DstReg:           dstReg,
 		},
-		Mode:   StLdModeMEM,
-		Size:   size,
-		DstReg: dstReg,
+		Mode: StLdModeMEM,
+		Size: size,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: src,
@@ -193,10 +188,10 @@ func LdMapByFd(dst *Register, fd int) Instruction {
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: InsClassLd,
+			DstReg:           dst,
 		},
-		Size:   StLdSizeDW,
-		Mode:   StLdModeIMM,
-		DstReg: dst,
+		Size: StLdSizeDW,
+		Mode: StLdModeIMM,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: PseudoMapFD,
@@ -208,10 +203,10 @@ func newAtomicInstruction(dst, src *Register, size, class uint8, offset int16, o
 	return &MemoryInstruction{
 		BaseInstruction: BaseInstruction{
 			InstructionClass: class,
+			DstReg:           dst,
 		},
-		Size:   size,
-		Mode:   StLdModeATOMIC,
-		DstReg: dst,
+		Size: size,
+		Mode: StLdModeATOMIC,
 		// SrcReg is unused, put it here because otherwise it will be nil
 		// and it will cause problems somewhere else.
 		SrcReg: src,

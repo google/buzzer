@@ -94,11 +94,7 @@ func GenerateRandomJmpRegInstruction(prog *Program, trueBranchGenerator func(pro
 		BaseInstruction: BaseInstruction{
 			Opcode:           op,
 			InstructionClass: InsClassJmp,
-		},
-		BaseJmpInstruction: BaseJmpInstruction{
-			DstReg:               dstReg,
-			trueBranchGenerator:  trueBranchGenerator,
-			falseBranchGenerator: falseBranchGenerator,
+			DstReg:           dstReg,
 		},
 		SrcReg: srcReg,
 	}
@@ -160,12 +156,31 @@ func RandomAluInstruction() Instruction {
 	var src any
 
 	if rand.SharedRNG.OneOf(2) {
-		src = uint32(rand.SharedRNG.RandRange(0, 0xffffffff))
+		srcInt32 := int32(rand.SharedRNG.RandRange(0, 0xffffffff))
+		switch op {
+		case AluRsh, AluLsh, AluArsh:
+			var maxShift = int32(64)
+			if insClass == InsClassAlu {
+				maxShift = 32
+			}
+			srcInt32 %= maxShift
+			if srcInt32 < 0 {
+				srcInt32 *= -1
+			}
+		case AluNeg:
+			srcInt32 = 0
+		}
+		src = srcInt32
 	} else {
 		src = RandomRegister()
+		// Negation is not supported with Register as src.
+		for op == AluNeg {
+			op = uint8(rand.SharedRNG.RandRange(0x00, 0x0c)) << 4
+		}
 	}
 
-	return newAluInstruction(op, insClass, dstReg, src)
+	instr := newAluInstruction(op, insClass, dstReg, src)
+	return instr
 }
 
 // RandomJmpInstruction generates a random jmp instruction that has an
@@ -173,6 +188,13 @@ func RandomAluInstruction() Instruction {
 // out of the bounds of a program.
 func RandomJmpInstruction(maxOffset uint64) Instruction {
 	op := RandomJumpOp()
+
+	for {
+		op = RandomJumpOp()
+		if IsConditional(op) {
+			break
+		}
+	}
 
 	var insClass uint8
 	if rand.SharedRNG.OneOf(2) {
@@ -186,11 +208,12 @@ func RandomJmpInstruction(maxOffset uint64) Instruction {
 	var src any
 
 	if rand.SharedRNG.OneOf(2) {
-		src = uint32(rand.SharedRNG.RandRange(0, 0xffffffff))
+		src = int32(rand.SharedRNG.RandRange(0, 0xffffffff))
 	} else {
 		src = RandomRegister()
 	}
 
 	offset := int16(rand.SharedRNG.RandRange(1, maxOffset))
-	return newJmpInstruction(op, insClass, dstReg, src, offset)
+	instr := newJmpInstruction(op, insClass, dstReg, src, offset)
+	return instr
 }

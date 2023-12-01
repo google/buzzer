@@ -28,6 +28,9 @@ type Generator struct {
 	// The number of instructions generated excluding instrumentation instructions.
 	logCount int32
 
+	// File Descriptor of the map to store the logs.
+	logMapFd int
+
 	headerSize int32
 
 	// A map from the generated instruction number to the assembled instruction offset.
@@ -42,20 +45,10 @@ type Generator struct {
 	regMap map[int32]uint8
 }
 
-func (g *Generator) generateHeader(prog *Program) Instruction {
-	var root, ptr Instruction
-	root = &MemoryInstruction{
-		BaseInstruction: BaseInstruction{
-			InstructionClass: InsClassLd,
-		},
-		Size:   StLdSizeDW,
-		Mode:   StLdModeIMM,
-		DstReg: RegR6,
-		SrcReg: PseudoMapFD,
-		Imm:    int32(prog.LogMap()),
-	}
+func (g *Generator) generateHeader(prog *Program) []Instruction {
+	root, _ := InstructionSequence(LdMapByFd(RegR6, g.logMapFd))
 	prog.MarkRegisterInitialized(RegR6.RegisterNumber())
-	ptr = root
+
 	// Initializing R6 to a pointer value via a 8-byte immediate
 	// generates a wide instruction. So, two 8-byte values.
 	hSize := int32(2)
@@ -63,9 +56,8 @@ func (g *Generator) generateHeader(prog *Program) Instruction {
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
 		reg, _ := GetRegisterFromNumber(uint8(i))
 		regVal := int32(rand.SharedRNG.RandInt())
-		nextInstr := MovRegImm64(reg, regVal)
-		ptr.SetNextInstruction(nextInstr)
-		ptr = nextInstr
+		inst := Mov64(reg, regVal)
+		root = append(root, inst)
 		prog.MarkRegisterInitialized(reg.RegisterNumber())
 		hSize++
 	}
@@ -74,59 +66,53 @@ func (g *Generator) generateHeader(prog *Program) Instruction {
 }
 
 // GenerateNextInstruction is responsible for recursively building the ebpf program tree
-func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
-	// We reached the number of instructions we were told to generate.
-	if g.instructionCount == 0 {
-		return g.generateProgramFooter(prog)
+func (g *Generator) generateBody() []Instruction {
+	r := []Instruction{}
+	for i := 0; i < g.instructionCount; i++ {
+		instr := RandomAluInstruction()
+		var dstReg *Register
+		if alui, ok := instr.(*AluImmInstruction); ok {
+			dstReg = alui.DstReg
+		} else if alui, ok := instr.(*AluRegInstruction); ok {
+			dstReg = alui.DstReg
+		} else {
+			fmt.Printf("Could not get dst reg for operation %v", instr)
+			return nil
+		}
+
+		stInst := g.generateStateStoringSnippet(dstReg)
+		instrLen := int32(len(instr.GenerateBytecode()))
+		instrOffset := int32(0)
+		if g.logCount == 0 {
+			instrOffset = g.headerSize
+		} else {
+			instrOffset = g.offsetMap[g.logCount-1] + g.sizeMap[g.logCount-1]
+		}
+
+		g.offsetMap[g.logCount] = instrOffset
+		g.regMap[g.logCount] = dstReg.RegisterNumber()
+		g.sizeMap[g.logCount] = instrLen
+		g.logCount++
+		r = append(r, instr)
+		r = append(r, stInst...)
 	}
-	g.instructionCount--
-
-	instr := GenerateRandomAluInstruction(prog)
-
-	var dstReg *Register
-
-	if alui, ok := instr.(*AluImmInstruction); ok {
-		dstReg = alui.DstReg
-	} else if alui, ok := instr.(*AluRegInstruction); ok {
-		dstReg = alui.DstReg
-	} else {
-		fmt.Printf("Could not get dst reg for operation %v", instr)
-		return nil
-	}
-
-	stInst := g.generateStateStoringSnippet(dstReg, prog)
-	instr.SetNextInstruction(stInst)
-	instrLen := int32(len(instr.GenerateBytecode()))
-	instrOffset := int32(0)
-	if g.logCount == 0 {
-		instrOffset = g.headerSize
-	} else {
-		instrOffset = g.offsetMap[g.logCount-1] + g.sizeMap[g.logCount-1]
-	}
-
-	g.offsetMap[g.logCount] = instrOffset
-	g.regMap[g.logCount] = dstReg.RegisterNumber()
-	g.sizeMap[g.logCount] = instrLen
-	g.logCount++
-
-	instr.GenerateNextInstruction(prog)
-	return instr
+	return r
 }
 
-func (g *Generator) generateProgramFooter(prog *Program) Instruction {
-	reg0 := MovRegImm64(RegR0, 0)
-	reg0.SetNextInstruction(Exit())
-	return reg0
+func (g *Generator) generateFooter() []Instruction {
+	ins, _ := InstructionSequence(Mov64(RegR0, 0), Exit())
+	return ins
 }
 
 // Generate is the main function that builds the ebpf for this strategy.
-func (g *Generator) Generate(prog *Program) Instruction {
+func (g *Generator) Generate(prog *Program) []Instruction {
 	root := g.generateHeader(prog)
-	root.SetNextInstruction(g.GenerateNextInstruction(prog))
+	root = append(root, g.generateBody()...)
+	root = append(root, g.generateFooter()...)
 	return root
 }
 
-func (g *Generator) generateStateStoringSnippet(dstReg *Register, prog *Program) Instruction {
+func (g *Generator) generateStateStoringSnippet(dstReg *Register) []Instruction {
 	// The storing snippet looks something like this:
 	// - r0 = logCount
 	// - *(r10 - 4) = r0; Where R10 is the stack pointer, we store the value

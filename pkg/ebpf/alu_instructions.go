@@ -24,20 +24,13 @@ type AluImmInstruction struct {
 	// Add all the basic things all instructions have.
 	BaseInstruction
 
-	// DstReg is where the result of the operation will be stored.
-	DstReg *Register
-
 	// Imm is the immediate value to use as src operand
 	Imm int32
 }
 
 // GenerateBytecode generates the bytecode corresponding to this instruction.
 func (c *AluImmInstruction) GenerateBytecode() []uint64 {
-	bytecode := []uint64{encodeImmediateAluInstruction(c.Opcode, c.InstructionClass, c.DstReg.RegisterNumber(), c.Imm)}
-	if c.nextInstruction != nil {
-		bytecode = append(bytecode, c.nextInstruction.GenerateBytecode()...)
-	}
-	return bytecode
+	return []uint64{encodeImmediateAluInstruction(c.Opcode, c.InstructionClass, c.DstReg.RegisterNumber(), c.Imm)}
 }
 
 // GeneratePoc Generates the C macro that represents this instruction.
@@ -52,9 +45,6 @@ func (c *AluImmInstruction) GeneratePoc() []string {
 	regName := c.DstReg.ToString()
 	macro := fmt.Sprintf("BPF_ALU_IMM(%s, /*dst=*/%s, /*imm=*/%d, /*ins_class=*/%s)", instrName, regName, c.Imm, insClass)
 	r := []string{macro}
-	if c.nextInstruction != nil {
-		r = append(r, c.nextInstruction.GeneratePoc()...)
-	}
 	return r
 }
 
@@ -62,9 +52,9 @@ func (c *AluImmInstruction) GeneratePoc() []string {
 // the given instruction category.
 func NewAluImmInstruction(op, insClass uint8, dstReg *Register, imm int32) *AluImmInstruction {
 	return &AluImmInstruction{
-		BaseInstruction: BaseInstruction{Opcode: op, InstructionClass: insClass},
-		DstReg:          dstReg,
-		Imm:             imm,
+		BaseInstruction: BaseInstruction{Opcode: op, InstructionClass: insClass,
+			DstReg: dstReg},
+		Imm: imm,
 	}
 }
 
@@ -81,20 +71,13 @@ type AluRegInstruction struct {
 	// Add all the basic things all instructions have.
 	BaseInstruction
 
-	// DstReg is where the result will be stored.
-	DstReg *Register
-
 	// SrcReg is where to take the valuo for the second operand.
 	SrcReg *Register
 }
 
 // GenerateBytecode generates the bytecode corresponding to this instruction.
 func (c *AluRegInstruction) GenerateBytecode() []uint64 {
-	bytecode := []uint64{encodeRegisterAluInstruction(c.Opcode, c.InstructionClass, c.DstReg.RegisterNumber(), c.SrcReg.RegisterNumber())}
-	if c.nextInstruction != nil {
-		bytecode = append(bytecode, c.nextInstruction.GenerateBytecode()...)
-	}
-	return bytecode
+	return []uint64{encodeRegisterAluInstruction(c.Opcode, c.InstructionClass, c.DstReg.RegisterNumber(), c.SrcReg.RegisterNumber())}
 }
 
 // GeneratePoc Generates the C macro that represents this instruction.
@@ -110,9 +93,6 @@ func (c *AluRegInstruction) GeneratePoc() []string {
 	srcRegName := c.SrcReg.ToString()
 	macro := fmt.Sprintf("BPF_ALU_REG(%s, /*dst=*/%s, /*src=*/%s, /*ins_class=*/%s)", instrName, dstRegName, srcRegName, insClass)
 	r := []string{macro}
-	if c.nextInstruction != nil {
-		r = append(r, c.nextInstruction.GeneratePoc()...)
-	}
 	return r
 }
 
@@ -120,9 +100,11 @@ func (c *AluRegInstruction) GeneratePoc() []string {
 // the given instruction category.
 func NewAluRegInstruction(op, insClass uint8, dstReg *Register, srcReg *Register) *AluRegInstruction {
 	return &AluRegInstruction{
-		BaseInstruction: BaseInstruction{Opcode: op, InstructionClass: insClass},
-		DstReg:          dstReg,
-		SrcReg:          srcReg,
+		BaseInstruction: BaseInstruction{Opcode: op,
+
+			InstructionClass: insClass,
+			DstReg:           dstReg},
+		SrcReg: srcReg,
 	}
 }
 

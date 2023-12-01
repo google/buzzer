@@ -45,7 +45,9 @@ type StrategyParseVerifierLog struct{}
 
 func (st *StrategyParseVerifierLog) generateAndValidateProgram(e strategies.ExecutorInterface, gen *Generator) (*strategies.GeneratorResult, error) {
 	for i := 0; i < 100_000; i++ {
-		prog, err := ebpf.New(gen /*mapSize=*/, 1000 /*minReg=*/, ebpf.RegR7.RegisterNumber() /*maxReg=*/, ebpf.RegR9.RegisterNumber())
+		prog, err := ebpf.New( /*mapSize=*/ 1000 /*minReg=*/, ebpf.RegR7.RegisterNumber() /*maxReg=*/, ebpf.RegR9.RegisterNumber())
+		gen.logMapFd = prog.LogMap()
+		prog.Instructions = gen.Generate(prog)
 		if err != nil {
 			return nil, err
 		}
@@ -91,10 +93,9 @@ func (st *StrategyParseVerifierLog) Fuzz(e strategies.ExecutorInterface, cm stra
 		}
 
 		// Build a new execution request.
-		logMap := gr.Prog.LogMap()
 		logCount := gen.logCount
 		mapDescription := &fpb.ExecutionRequest_MapDescription{
-			MapFd:   int64(logMap),
+			MapFd:   int64(gen.logMapFd),
 			MapSize: uint64(logCount),
 		}
 		executionRequest := &fpb.ExecutionRequest{

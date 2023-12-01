@@ -244,11 +244,6 @@ func TestMemoryInstructionCorrectEncoding(t *testing.T) {
 			if !reflect.DeepEqual(encodingArray, tc.wantEncoding) {
 				t.Errorf("operation.generateBytecode() = %x, want %x", encodingArray, tc.wantEncoding)
 			}
-
-			instruction.NumerateInstruction(99)
-			if instruction.instructionNumber != 99 {
-				t.Errorf("instruction.instructionNumber = %d, want 99", instruction.instructionNumber)
-			}
 		})
 	}
 }

@@ -99,6 +99,15 @@ const (
 		.off   = OFF,					\
 		.imm   = 0 })
 `
+	memImmOperationMacroDef = `
+#define BPF_MEM_IMM_OPERATION(INS_CLASS, SIZE, DST, IMM, OFF)			\
+	((struct bpf_insn) {					\
+		.code  = INS_CLASS | BPF_SIZE(SIZE) | BPF_MEM,	\
+		.dst_reg = DST,					\
+		.src_reg = 0,					\
+		.off   = OFF,					\
+		.imm   = IMM })
+`
 )
 
 const (
@@ -232,7 +241,10 @@ int execute_bpf_program(int prog_fd, int map_fd, int map_count, uint64_t* map_co
 // GeneratePoc generates a c program that can be used to reproduce fuzzer
 // test cases.
 func GeneratePoc(prog *Program) error {
-	macros := prog.root.GeneratePoc()
+	macros := []string{}
+	for _, i := range prog.Instructions {
+		macros = append(macros, i.GeneratePoc()...)
+	}
 	pocString := ""
 	for i, m := range macros {
 		if i != len(macros)-1 {
@@ -271,7 +283,7 @@ func GeneratePoc(prog *Program) error {
 		return 0;
 }`, prog.MapSize, pocString)
 
-	poc := cHeader + aluImmMacroDef + aluRegMacroDef + exitMacroDef + jumpRegMacroDef + jumpImmMacroDef + callMacroDef + loadMapFdDef + memOperationMacroDef + progLoadFunc + createMapFunc + executeProgramFunc + mainBody
+	poc := cHeader + aluImmMacroDef + aluRegMacroDef + exitMacroDef + jumpRegMacroDef + jumpImmMacroDef + callMacroDef + loadMapFdDef + memOperationMacroDef + memImmOperationMacroDef + progLoadFunc + createMapFunc + executeProgramFunc + mainBody
 	f, err := os.CreateTemp("", "ebpf-poc-*.c")
 	if err != nil {
 		return err
