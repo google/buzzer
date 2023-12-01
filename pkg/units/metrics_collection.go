@@ -15,6 +15,8 @@
 package units
 
 import (
+	"buzzer/pkg/strategies/strategies"
+	"strings"
 	"sync"
 )
 
@@ -26,7 +28,7 @@ type MetricsCollection struct {
 	// Metrics start here
 	programsVerified int
 	validPrograms    int
-	coverageManager  *CoverageManager
+	coverageManager  strategies.CoverageManager
 }
 
 func (mc *MetricsCollection) recordVerifiedProgram() {
@@ -51,11 +53,21 @@ func (mc *MetricsCollection) getMetrics() (int, int, []CoverageInfo) {
 	mc.metricsLock.Lock()
 	defer mc.metricsLock.Unlock()
 	covArray := []CoverageInfo{}
-	for _, cov := range *mc.coverageManager.GetCoverageInfoMap() {
-		covCopy := *cov
-		covCopy.coveredLines = nil
-		covCopy.coveredLines = append(covCopy.coveredLines, cov.coveredLines...)
-		covArray = append(covArray, covCopy)
+	for filePath, cov := range *mc.coverageManager.GetCoverageInfoMap() {
+		covInfo := CoverageInfo{
+			coveredLines: []int{},
+		}
+
+		pathSplit := strings.Split(filePath, "/")
+		if len(pathSplit) == 0 {
+			continue
+		}
+
+		covInfo.fileName = pathSplit[len(pathSplit)-1]
+		covInfo.fullPath = filePath
+		covInfo.coveredLines = append(covInfo.coveredLines, cov...)
+
+		covArray = append(covArray, covInfo)
 	}
 	return mc.programsVerified, mc.validPrograms, covArray
 }

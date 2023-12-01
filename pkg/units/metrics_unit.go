@@ -18,10 +18,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"sync"
 	"time"
 
+	"buzzer/pkg/strategies/strategies"
 	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
 )
 
@@ -88,7 +88,7 @@ func (mu *Metrics) validationResultProcessingRoutine() {
 			time.Sleep(1 * time.Second)
 			continue
 		}
-		err := mu.metricsCollection.coverageManager.ProcessCoverageAddresses(vres.GetCoverageAddress())
+		_, err := mu.metricsCollection.coverageManager.ProcessCoverageAddresses(vres.GetCoverageAddress())
 		if err != nil {
 			fmt.Printf("%q\n", err)
 		}
@@ -141,22 +141,7 @@ func (mu *Metrics) init() {
 }
 
 // NewMetricsUnit Creates a new Central Metrics Unit.
-func NewMetricsUnit(threshold int, kcovSize uint64, vmLinuxPath, sourceFilesPath, metricsServerAddr string, metricsServerPort uint16) *Metrics {
-	cm := &CoverageManager{
-		coverageCache:   make(map[uint64]string),
-		coverageInfoMap: make(map[string]*CoverageInfo),
-		addressToLineFunction: func(inputString string) (string, error) {
-			cmd := exec.Command("/usr/bin/addr2line", "-e", vmLinuxPath)
-			w, err := cmd.StdinPipe()
-			if err != nil {
-				return "", err
-			}
-			w.Write([]byte(inputString))
-			w.Close()
-			outBytes, err := cmd.Output()
-			return string(outBytes), err
-		},
-	}
+func NewMetricsUnit(threshold int, kcovSize uint64, vmLinuxPath, sourceFilesPath, metricsServerAddr string, metricsServerPort uint16, cm strategies.CoverageManager) *Metrics {
 	mc := &MetricsCollection{
 		coverageManager: cm,
 	}
