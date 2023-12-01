@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	. "buzzer/pkg/ebpf/ebpf"
+	"buzzer/pkg/rand"
 )
 
 // Generator is responsible for constructing the ebpf for this strategy.
@@ -61,7 +62,7 @@ func (g *Generator) generateHeader(prog *Program) Instruction {
 
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
 		reg, _ := GetRegisterFromNumber(uint8(i))
-		regVal := int32(prog.GetRNG().RandInt())
+		regVal := int32(rand.SharedRNG.RandInt())
 		nextInstr := MovRegImm64(reg, regVal)
 		ptr.SetNextInstruction(nextInstr)
 		ptr = nextInstr

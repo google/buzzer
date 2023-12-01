@@ -24,11 +24,8 @@ import "C"
 
 // Program represents the Abstract Syntax Tree of an eBPF Program.
 import (
+	"buzzer/pkg/rand"
 	"errors"
-	"math/rand"
-	"time"
-
-	erand "buzzer/pkg/rand"
 )
 
 // GeneratorInterface are all the functions that a generator plugged into
@@ -55,8 +52,6 @@ type Program struct {
 	// Keep track of which registers have been initialized so we can use
 	// them for other operations without the verifier complaining.
 	trackedRegs []uint8
-
-	rng *erand.NumGen
 
 	// File descriptor for the eBPF map used to store value results.
 	logMap int
@@ -104,9 +99,9 @@ func (a *Program) GetRandomRegister() uint8 {
 		return 0xFF
 	}
 
-	reg := a.trackedRegs[a.rng.RandRange(0, uint64(len(a.trackedRegs)-1))]
+	reg := a.trackedRegs[rand.SharedRNG.RandRange(0, uint64(len(a.trackedRegs)-1))]
 	for !(reg >= a.MinRegister && reg <= a.MaxRegister) {
-		reg = a.trackedRegs[a.rng.RandRange(0, uint64(len(a.trackedRegs)-1))]
+		reg = a.trackedRegs[rand.SharedRNG.RandRange(0, uint64(len(a.trackedRegs)-1))]
 	}
 	return reg
 }
@@ -120,11 +115,6 @@ func (a *Program) MarkRegisterInitialized(reg uint8) {
 	a.trackedRegs = append(a.trackedRegs, reg)
 }
 
-// GetRNG returns the random number generator of the prog.
-func (a *Program) GetRNG() *erand.NumGen {
-	return a.rng
-}
-
 // Cleanup frees the map resources of this tree.
 func (a *Program) Cleanup() {
 	C.close_fd(C.int(a.logMap))
@@ -136,7 +126,6 @@ func (a *Program) GeneratePoc() error {
 }
 
 func (a *Program) construct() error {
-	a.rng = erand.NewRand(rand.NewSource(time.Now().Unix()))
 	a.trackedRegs = make([]uint8, 0)
 
 	if ptr := a.Gen.Generate(a); ptr != nil {

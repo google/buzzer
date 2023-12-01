@@ -16,6 +16,7 @@ package pointerarithmetic
 
 import (
 	. "buzzer/pkg/ebpf/ebpf"
+	"buzzer/pkg/rand"
 )
 
 // Generator is responsible for constructing the ebpf for this strategy.
@@ -28,7 +29,7 @@ func (g *Generator) generateHeader(prog *Program) Instruction {
 	var root, ptr Instruction
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
 		reg, _ := GetRegisterFromNumber(uint8(i))
-		regVal := int32(prog.GetRNG().RandInt())
+		regVal := int32(rand.SharedRNG.RandInt())
 		nextInstr := MovRegImm64(reg, regVal)
 		if ptr != nil {
 			ptr.SetNextInstruction(nextInstr)
@@ -53,7 +54,7 @@ func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
 	var instr Instruction
 
 	// Generate about 40% of instructions as jumps.
-	if prog.GetRNG().RandRange(1, 100) <= 60 {
+	if rand.SharedRNG.RandRange(1, 100) <= 60 {
 		instr = GenerateRandomAluInstruction(prog)
 	} else {
 		falseBranchGenerator := func(a *Program) (Instruction, int16) {

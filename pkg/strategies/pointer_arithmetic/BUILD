@@ -31,6 +31,7 @@ go_library(
     importpath = "buzzer/pkg/strategies/pointer_arithmetic/pointerarithmetic",
     deps = [
         "//pkg/ebpf",
+        "//pkg/rand",
         "//pkg/strategies",
         "//proto:ebpf_fuzzer_go_proto",
     ],

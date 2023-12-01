@@ -33,6 +33,7 @@ go_library(
     importpath = "buzzer/pkg/strategies/parse_verifier/parseverifier",
     deps = [
         "//pkg/ebpf",
+        "//pkg/rand",
         "//pkg/strategies",
         "//pkg/strategies/parse_verifier/oracle",
         "//proto:ebpf_fuzzer_go_proto",

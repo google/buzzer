@@ -16,6 +16,7 @@ package stackcorruption
 
 import (
 	. "buzzer/pkg/ebpf/ebpf"
+	"buzzer/pkg/rand"
 )
 
 // Generator is responsible for constructing the ast for this strategy.
@@ -30,7 +31,7 @@ type Generator struct {
 
 // Generates the first set of instructions of the program.
 func (g *Generator) generateHeader(prog *Program) Instruction {
-	g.instructionCount = int(prog.GetRNG().RandRange(50, 100))
+	g.instructionCount = int(rand.SharedRNG.RandRange(50, 100))
 	g.skbOffset = -8
 	g.mapPtrOffset = -16
 	g.mapFirstElementOffset = -24
@@ -50,14 +51,14 @@ func (g *Generator) generateHeader(prog *Program) Instruction {
 	for i := prog.MinRegister; i <= prog.MaxRegister; i++ {
 		reg, _ := GetRegisterFromNumber(uint8(i))
 		var instr Instruction
-		if prog.GetRNG().RandRange(1, 10) < 7 {
+		if rand.SharedRNG.RandRange(1, 10) < 7 {
 			instr, _ = InstructionSequence(
 				LdDW(reg, RegR0, 0),
-				Add64(reg, int32(prog.GetRNG().RandInt())),
+				Add64(reg, int32(rand.SharedRNG.RandInt())),
 			)
 		} else {
 			instr, _ = InstructionSequence(
-				Mov64(reg, int32(prog.GetRNG().RandInt())),
+				Mov64(reg, int32(rand.SharedRNG.RandInt())),
 			)
 		}
 		prog.MarkRegisterInitialized(i)
@@ -72,7 +73,7 @@ func (g *Generator) randomAlu(prog *Program) Instruction {
 
 func (g *Generator) randomJmp(prog *Program) Instruction {
 	falseBranchGenerator := func(prog *Program) (Instruction, int16) {
-		operationQuantity := int16(prog.GetRNG().RandRange(1, 10))
+		operationQuantity := int16(rand.SharedRNG.RandRange(1, 10))
 		instructions := []Instruction{}
 		for i := int16(0); i < operationQuantity; i++ {
 			instructions = append(instructions, GenerateRandomAluInstruction(prog))
@@ -105,7 +106,7 @@ func (g *Generator) GenerateNextInstruction(prog *Program) Instruction {
 
 	var instr Instruction
 
-	coinToss := prog.GetRNG().RandRange(1, 100)
+	coinToss := rand.SharedRNG.RandRange(1, 100)
 
 	if coinToss <= 65 {
 		instr = g.randomJmp(prog)

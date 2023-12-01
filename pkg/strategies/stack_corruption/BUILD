@@ -31,6 +31,7 @@ go_library(
     importpath = "buzzer/pkg/strategies/stack_corruption/stackcorruption",
     deps = [
         "//pkg/ebpf",
+        "//pkg/rand",
         "//pkg/strategies",
         "//proto:ebpf_fuzzer_go_proto",
     ],
