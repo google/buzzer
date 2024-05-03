@@ -32,7 +32,7 @@
 #include "absl/strings/escaping.h"
 #include "google/protobuf/message.h"
 #include "google/protobuf/repeated_field.h"
-#include "proto/ebpf_fuzzer.pb.h"
+#include "proto/ffi.pb.h"
 
 #define KCOV_INIT_TRACE _IOR('c', 1, uint64_t)
 #define KCOV_ENABLE _IO('c', 100)
@@ -138,7 +138,7 @@ struct bpf_result load_bpf_program(void *prog_buff, size_t size,
   attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;
   attr.insns = (uint64_t)insn;
   attr.insn_cnt = (size * sizeof(uint64_t)) / (sizeof(struct bpf_insn));
-  attr.license = (uint64_t) "GPL";
+  attr.license = (uint64_t)"GPL";
   attr.log_size = ebpf_ffi::kLogBuffSize;
   attr.log_buf = (uint64_t)log_buf;
   attr.log_level = 3;

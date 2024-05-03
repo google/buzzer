@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"buzzer/pkg/strategies/strategies"
-	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
+	fpb "buzzer/proto/ffi_go_proto"
 )
 
 // Metrics is the central place where the fuzzer can report any metrics

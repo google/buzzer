@@ -62,11 +62,9 @@ http_archive(
     url = "https://github.com/bazelbuild/bazel-gazelle/archive/refs/tags/v0.30.0.zip",
 )
 
-load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
+load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 
 gazelle_dependencies()
-
-load("@bazel_gazelle//:deps.bzl", "go_repository")
 
 go_repository(
     name = "com_github_google_safehtml",

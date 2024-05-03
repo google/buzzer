@@ -33,6 +33,6 @@ go_library(
         "//pkg/ebpf",
         "//pkg/rand",
         "//pkg/strategies",
-        "//proto:ebpf_fuzzer_go_proto",
+        "//proto:ffi_go_proto",
     ],
 )

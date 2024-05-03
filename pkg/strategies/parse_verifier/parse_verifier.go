@@ -29,7 +29,7 @@ import (
 	"buzzer/pkg/ebpf/ebpf"
 	"buzzer/pkg/strategies/parse_verifier/oracle/oracle"
 	"buzzer/pkg/strategies/strategies"
-	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
+	fpb "buzzer/proto/ffi_go_proto"
 )
 
 const (
