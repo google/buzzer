@@ -18,6 +18,8 @@ syntax = "proto3";
 // https://www.kernel.org/doc/html/v5.17/bpf/instruction-set.html
 package ebpf;
 
+message Empty {}
+
 // Reg each value corresponds to an ebpf register.
 enum Reg {
   R0 = 0;
@@ -150,5 +152,8 @@ message Instruction {
 
   // Some instructions have a "Pseudo instruction" after them. This is to
   // represent additional data.
-  uint64 pseudo_instruction = 8;
+  oneof pseudo_instruction {
+    uint64 PseudoValue = 8;
+    Empty empty = 9;
+  }
 }

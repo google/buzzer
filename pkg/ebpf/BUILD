@@ -24,14 +24,12 @@ go_library(
     name = "ebpf",
     srcs = [
         "alu_instructions.go",
-        "base_structures.go",
         "constants.go",
         "encoding_functions.go",
         "instruction_generators.go",
         "instruction_sequence.go",
         "jmp_instructions.go",
         "poc_generator.go",
-        "program.go",
         "st_ld_instructions.go",
     ],
     cdeps = [
@@ -41,6 +39,7 @@ go_library(
     importpath = "buzzer/pkg/ebpf/ebpf",
     deps = [
         "//pkg/rand",
+        "//proto:ebpf_go_proto",
     ],
 )
 
@@ -50,9 +49,12 @@ go_test(
         "alu_instructions_test.go",
         "instruction_helpers_test.go",
         "jmp_instructions_test.go",
-        "program_test.go",
         "st_ld_instructions_test.go",
     ],
     embed = [":ebpf"],
     importpath = "buzzer/pkg/ebpf",
+    deps = [
+        "//proto:ebpf_go_proto",
+        "@com_github_golang_protobuf//proto",
+    ],
 )

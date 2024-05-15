@@ -23,13 +23,11 @@ import (
 	"fmt"
 	"os"
 
-	"buzzer/pkg/ebpf/ebpf"
 	fpb "buzzer/proto/ffi_go_proto"
 )
 
 // GeneratorResult holds the state of generated programs that have been verified.
 type GeneratorResult struct {
-	Prog         *ebpf.Program
 	ProgFD       int64
 	ProgByteCode []uint64
 	VerifierLog  string
@@ -88,6 +86,5 @@ func SaveExecutionResults(gr *GeneratorResult) error {
 	if err := WriteLogFile([]byte(gr.VerifierLog)); err != nil {
 		return err
 	}
-	gr.Prog.GeneratePoc()
 	return WriteProgFile(gr.ProgByteCode)
 }

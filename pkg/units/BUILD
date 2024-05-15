@@ -37,10 +37,6 @@ go_library(
     importpath = "buzzer/pkg/units/units",
     deps = [
         "//pkg/strategies",
-        "//pkg/strategies/parse_verifier:parseverifier",
-        "//pkg/strategies/playground",
-        "//pkg/strategies/pointer_arithmetic:pointerarithmetic",
-        "//pkg/strategies/stack_corruption:stackcorruption",
         "//proto:ffi_go_proto",
         "@com_github_golang_protobuf//proto",
         "@com_github_google_safehtml//:safehtml",
