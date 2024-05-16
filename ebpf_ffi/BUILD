@@ -23,7 +23,7 @@ cc_library(
     srcs = ["ffi.cc"],
     hdrs = ["ffi.h"],
     deps = [
-        "//proto:ebpf_fuzzer_cc_proto",
+        "//proto:ffi_cc_proto",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",

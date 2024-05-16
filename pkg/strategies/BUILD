@@ -26,6 +26,6 @@ go_library(
     importpath = "buzzer/pkg/strategies/strategies",
     deps = [
         "//pkg/ebpf",
-        "//proto:ebpf_fuzzer_go_proto",
+        "//proto:ffi_go_proto",
     ],
 )

@@ -17,7 +17,7 @@ package units
 import (
 	"testing"
 
-	fpb "buzzer/proto/ebpf_fuzzer_go_proto"
+	fpb "buzzer/proto/ffi_go_proto"
 )
 
 func TestMetrics(t *testing.T) {

@@ -36,6 +36,6 @@ go_library(
         "//pkg/rand",
         "//pkg/strategies",
         "//pkg/strategies/parse_verifier/oracle",
-        "//proto:ebpf_fuzzer_go_proto",
+        "//proto:ffi_go_proto",
     ],
 )

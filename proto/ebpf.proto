@@ -1,0 +1,154 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+// Most of the things here represent the encoding documented at
+// https://www.kernel.org/doc/html/v5.17/bpf/instruction-set.html
+package ebpf;
+
+// Reg each value corresponds to an ebpf register.
+enum Reg {
+  R0 = 0;
+  R1 = 1;
+  R2 = 2;
+  R3 = 3;
+  R4 = 4;
+  R5 = 5;
+  R6 = 6;
+  R7 = 7;
+  R8 = 8;
+  R9 = 9;
+  R10 = 10;
+}
+
+enum AluOperationCode {
+  AluAdd = 0x00;
+  AluSub = 0x10;
+  AluMul = 0x20;
+  AluDiv = 0x30;
+  AluOr = 0x40;
+  AluAnd = 0x50;
+  AluLsh = 0x60;
+  AluRsh = 0x70;
+  AluNeg = 0x80;
+  AluMod = 0x90;
+  AluXor = 0xa0;
+  AluMov = 0xb0;
+  AluArsh = 0xc0;
+  AluEnd = 0xd0;
+}
+
+enum JmpOperationCode {
+  JmpJA = 0x00;
+  JmpJEQ = 0x10;
+  JmpJGT = 0x20;
+  JmpJGE = 0x30;
+  JmpJSET = 0x40;
+  JmpJNE = 0x50;
+  JmpJSGT = 0x60;
+  JmpJSGE = 0x70;
+  JmpCALL = 0x80;
+  JmpExit = 0x90;
+  JmpJLT = 0xa0;
+  JmpJLE = 0xb0;
+  JmpJSLT = 0xc0;
+  JmpJSLE = 0xd0;
+}
+
+enum SrcOperand {
+  Immediate = 0x00;
+  RegSrc = 0x08;
+}
+
+enum InsClass {
+  InsClassLd = 0x00;
+  InsClassLdx = 0x01;
+  InsClassSt = 0x02;
+  InsClassStx = 0x03;
+  InsClassAlu = 0x04;
+  InsClassJmp = 0x05;
+  InsClassJmp32 = 0x06;
+  InsClassAlu64 = 0x07;
+}
+
+enum StLdMode {
+  StLdModeIMM = 0x00;
+  StLdModeABS = 0x20;
+  StLdModeIND = 0x40;
+  StLdModeMEM = 0x60;
+  StLdModeATOMIC = 0xc0;
+}
+
+enum StLdSize {
+  StLdSizeW = 0x00;
+  StLdSizeH = 0x08;
+  StLdSizeB = 0x10;
+  StLdSizeDW = 0x18;
+}
+
+// This message should all fit in a single byte.
+message AluOpcode {
+  // 4 bits MSB
+  AluOperationCode operation_code = 1;
+
+  // 1 bit
+  SrcOperand source = 2;
+
+  // 3 bits LSB
+  InsClass instruction_class = 3;
+}
+
+message JmpOpcode {
+  // 4 bits MSB
+  JmpOperationCode operation_code = 1;
+
+  // 1 bit
+  SrcOperand source = 2;
+
+  // 3 bits LSB
+  InsClass instruction_class = 3;
+}
+
+message MemOpcode {
+  // 3 bits MSB
+  StLdMode mode = 1;
+
+  // 2 bits
+  StLdSize size = 2;
+
+  // 3 bits LSB
+  InsClass instruction_class = 3;
+}
+
+message Instruction {
+  oneof opcode {
+    AluOpcode alu_opcode = 1;
+    JmpOpcode jmp_opcode = 2;
+    MemOpcode mem_opcode = 3;
+  }
+
+  Reg dst_reg = 4;
+  Reg src_reg = 5;
+
+  // The real data type of this is int16, protobuf doesn't have support for it.
+  int32 offset = 6;
+
+  // int32 is the right value for the immediate.
+  int32 immediate = 7;
+
+  // Some instructions have a "Pseudo instruction" after them. This is to
+  // represent additional data.
+  uint64 pseudo_instruction = 8;
+}

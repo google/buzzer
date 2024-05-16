@@ -32,7 +32,7 @@
 #include "absl/strings/escaping.h"
 #include "google/protobuf/message.h"
 #include "google/protobuf/repeated_field.h"
-#include "proto/ebpf_fuzzer.pb.h"
+#include "proto/ffi.pb.h"
 
 #define KCOV_INIT_TRACE _IOR('c', 1, uint64_t)
 #define KCOV_ENABLE _IO('c', 100)

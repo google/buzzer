@@ -32,6 +32,6 @@ go_library(
     deps = [
         "//pkg/ebpf",
         "//pkg/strategies",
-        "//proto:ebpf_fuzzer_go_proto",
+        "//proto:ffi_go_proto",
     ],
 )
