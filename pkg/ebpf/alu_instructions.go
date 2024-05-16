@@ -39,11 +39,9 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, insclass pb.InsClass, dst 
 	}
 
 	return &pb.Instruction{
-		Opcode: &pb.Instruction_AlujmpOpcode{
-			AlujmpOpcode: &pb.AluJmpOpcode{
-				OperationCode: &pb.AluJmpOpcode_AluOpcode{
-					AluOpcode: oc,
-				},
+		Opcode: &pb.Instruction_AluOpcode{
+			AluOpcode: &pb.AluOpcode{
+				OperationCode:    oc,
 				Source:           srcType,
 				InstructionClass: insclass,
 			},

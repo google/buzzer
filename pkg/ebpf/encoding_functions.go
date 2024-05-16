@@ -32,26 +32,19 @@ func generatePoc(*pb.Instruction) []string {
 	return []string{}
 }
 
-func encodeAluJmpOpcode(op *pb.AluJmpOpcode) (uint8, error) {
-	opcode := uint8(0)
+func encodeAluJmpOpcode(opcode, insClass, source uint8) (uint8, error) {
+	result := uint8(0)
 
 	// The 3 least significant bits are the instruction class.
-	opcode |= (uint8(op.InstructionClass) & 0x07)
+	result |= (insClass & 0x07)
 
 	// The fourth bit is the source operand.
-	opcode |= (uint8(op.Source) & 0x08)
+	result |= (source & 0x08)
 
 	// Finally the 4 MSB are the operation code.
-	switch c := op.OperationCode.(type) {
-	case *pb.AluJmpOpcode_AluOpcode:
-		opcode |= (uint8(c.AluOpcode) & 0xF0)
-	case *pb.AluJmpOpcode_JmpOpcode:
-		opcode |= (uint8(c.JmpOpcode) & 0xF0)
-	default:
-		return 0, UnknownOperationCodeType
-	}
+	result |= (opcode & 0xF0)
 
-	return opcode, nil
+	return result, nil
 }
 
 func encodeMemOpcode(op *pb.MemOpcode) (uint8, error) {
@@ -78,8 +71,19 @@ func encodeInstruction(i *pb.Instruction) ([]uint64, error) {
 	var err error
 
 	switch c := i.Opcode.(type) {
-	case *pb.Instruction_AlujmpOpcode:
-		opcode, err = encodeAluJmpOpcode(c.AlujmpOpcode)
+	case *pb.Instruction_AluOpcode:
+		op := uint8(c.AluOpcode.OperationCode)
+		insClass := uint8(c.AluOpcode.InstructionClass)
+		src := uint8(c.AluOpcode.Source)
+		opcode, err = encodeAluJmpOpcode(op, insClass, src)
+		if err != nil {
+			return nil, err
+		}
+	case *pb.Instruction_JmpOpcode:
+		op := uint8(c.JmpOpcode.OperationCode)
+		insClass := uint8(c.JmpOpcode.InstructionClass)
+		src := uint8(c.JmpOpcode.Source)
+		opcode, err = encodeAluJmpOpcode(op, insClass, src)
 		if err != nil {
 			return nil, err
 		}

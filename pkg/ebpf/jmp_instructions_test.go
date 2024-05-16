@@ -310,21 +310,13 @@ func TestJmpOperationCorrectEncoding(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.testName, func(t *testing.T) {
 			instruction := tc.instruction
-			var opcode *pb.AluJmpOpcode
+			var opcode *pb.JmpOpcode
 			switch o := instruction.Opcode.(type) {
-			case *pb.Instruction_AlujmpOpcode:
-				opcode = o.AlujmpOpcode
+			case *pb.Instruction_JmpOpcode:
+				opcode = o.JmpOpcode
 			default:
 				t.Fatalf("could not convert opcode to jmp type, proto: %s", protobuf.MarshalTextString(instruction))
 
-			}
-
-			var operationCode pb.JmpOperationCode
-			switch o := opcode.OperationCode.(type) {
-			case *pb.AluJmpOpcode_JmpOpcode:
-				operationCode = o.JmpOpcode
-			default:
-				t.Fatalf("could not convert operation code to jmp type, proto: %s", protobuf.MarshalTextString(opcode))
 			}
 
 			t.Logf("Running test case %s", tc.testName)
@@ -352,8 +344,8 @@ func TestJmpOperationCorrectEncoding(t *testing.T) {
 				t.Fatalf("opcode.InstructionClass = %d, want %d", opcode.InstructionClass, tc.wantInstructionClass)
 			}
 
-			if operationCode != tc.wantOperationCode {
-				t.Fatalf("operationCode = %d, want %d", operationCode, tc.wantOperationCode)
+			if opcode.OperationCode != tc.wantOperationCode {
+				t.Fatalf("operationCode = %d, want %d", opcode.OperationCode, tc.wantOperationCode)
 			}
 
 			encodingArray, err := encodeInstruction(instruction)

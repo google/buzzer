@@ -39,11 +39,9 @@ func newJmpInstruction[T Src](oc pb.JmpOperationCode, insclass pb.InsClass, dst 
 	}
 
 	return &pb.Instruction{
-		Opcode: &pb.Instruction_AlujmpOpcode{
-			AlujmpOpcode: &pb.AluJmpOpcode{
-				OperationCode: &pb.AluJmpOpcode_JmpOpcode{
-					JmpOpcode: oc,
-				},
+		Opcode: &pb.Instruction_JmpOpcode{
+			JmpOpcode: &pb.JmpOpcode{
+				OperationCode:    oc,
 				Source:           srcType,
 				InstructionClass: insclass,
 			},
