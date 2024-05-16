@@ -99,18 +99,26 @@ enum StLdSize {
 }
 
 // This message should all fit in a single byte.
-message AluJmpOpcode {
+message AluOpcode {
   // 4 bits MSB
-  oneof operation_code {
-    AluOperationCode alu_opcode = 1;
-    JmpOperationCode jmp_opcode = 2;
-  }
+  AluOperationCode operation_code = 1;
 
   // 1 bit
-  SrcOperand source = 3;
+  SrcOperand source = 2;
 
   // 3 bits LSB
-  InsClass instruction_class = 4;
+  InsClass instruction_class = 3;
+}
+
+message JmpOpcode {
+  // 4 bits MSB
+  JmpOperationCode operation_code = 1;
+
+  // 1 bit
+  SrcOperand source = 2;
+
+  // 3 bits LSB
+  InsClass instruction_class = 3;
 }
 
 message MemOpcode {
@@ -126,20 +134,21 @@ message MemOpcode {
 
 message Instruction {
   oneof opcode {
-    AluJmpOpcode alujmp_opcode = 1;
-    MemOpcode mem_opcode = 2;
+    AluOpcode alu_opcode = 1;
+    JmpOpcode jmp_opcode = 2;
+    MemOpcode mem_opcode = 3;
   }
 
-  Reg dst_reg = 3;
-  Reg src_reg = 4;
+  Reg dst_reg = 4;
+  Reg src_reg = 5;
 
   // The real data type of this is int16, protobuf doesn't have support for it.
-  int32 offset = 5;
+  int32 offset = 6;
 
   // int32 is the right value for the immediate.
-  int32 immediate = 6;
+  int32 immediate = 7;
 
   // Some instructions have a "Pseudo instruction" after them. This is to
   // represent additional data.
-  uint64 pseudo_instruction = 7;
+  uint64 pseudo_instruction = 8;
 }
