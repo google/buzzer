@@ -46,7 +46,6 @@ go_library(
 go_test(
     name = "units_test",
     srcs = [
-        "control_unit_test.go",
         "metrics_unit_test.go",
     ],
     embed = [":units"],

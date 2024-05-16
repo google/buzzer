@@ -21,9 +21,6 @@ import (
 	"buzzer/pkg/strategies/strategies"
 )
 
-// RunMode are the modes of operation for the server.
-type RunMode string
-
 // StrategyInterface contains all the methods that a fuzzing strategy should
 // implement.
 type StrategyInterface interface {
@@ -34,13 +31,12 @@ type StrategyInterface interface {
 type ControlUnit struct {
 	strat StrategyInterface
 	ex    strategies.ExecutorInterface
-	rm    RunMode
 	cm    strategies.CoverageManager
 	rdy   bool
 }
 
 // Init prepares the control unit to be used.
-func (cu *ControlUnit) Init(executor strategies.ExecutorInterface, coverageManager strategies.CoverageManager, runMode, fuzzStrategyFlag string) error {
+func (cu *ControlUnit) Init(executor strategies.ExecutorInterface, coverageManager strategies.CoverageManager, fuzzStrategyFlag string) error {
 	cu.ex = executor
 
 	switch fuzzStrategyFlag {
