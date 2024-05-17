@@ -21,7 +21,7 @@ import (
 
 // GenerateRandomAluInstruction provides a random ALU operation with either
 // IMM or Reg src that will be applied to a random dst reg.
-func GenerateRandomAluInstruction() *pb.Instruction {
+func RandomAluInstruction() *pb.Instruction {
 	op := RandomAluOp()
 	dstReg := RandomRegister()
 	var insClass pb.InsClass

@@ -30,6 +30,7 @@ go_binary(
     ],
     static = "on",
     deps = [
+        "//pkg/strategies",
         "//pkg/units",
     ],
 )

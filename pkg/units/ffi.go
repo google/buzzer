@@ -15,6 +15,7 @@
 package units
 
 //#include <linux/bpf.h>
+//#include <stdint.h>
 //#include <stdlib.h>
 //struct bpf_result {
 //  char* serialized_proto;
@@ -22,6 +23,9 @@ package units
 //};
 //struct bpf_result load_bpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
 //struct bpf_result execute_bpf_program(void* serialized_proto, size_t length);
+//struct bpf_result get_map_elements(int map_fd, uint64_t map_size);
+//int create_bpf_map(size_t size);
+//void close_fd(int fd);
 import "C"
 
 import (
@@ -82,6 +86,21 @@ func executionProtoFromStruct(s *C.struct_bpf_result) (*fpb.ExecutionResult, err
 	return res, nil
 }
 
+func mapElementsProtoFromStruct(s *C.struct_bpf_result) (*fpb.MapElements, error) {
+	data, err := protoDataFromStruct(s)
+
+	if err != nil {
+		return nil, err
+	}
+
+	res := &fpb.MapElements{}
+	if err := proto.Unmarshal(data, res); err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
 // FFI is the unit that will talk to ebpf and run/validate programs.
 type FFI struct {
 	MetricsUnit *Metrics
@@ -115,9 +134,22 @@ func (e *FFI) RunProgram(executionRequest *fpb.ExecutionRequest) (*fpb.Execution
 		return nil, err
 	}
 	res := C.execute_bpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
-	exRes, err := executionProtoFromStruct(&res)
-	if err != nil {
-		return nil, err
-	}
-	return exRes, nil
+	return executionProtoFromStruct(&res)
+}
+
+// CreateMapArray creates an ebpf map of type array and returns its fd.
+// -1 means error.
+func (e *FFI) CreateMapArray(size uint64) int {
+	return int(C.create_bpf_map(C.ulong(size)))
+}
+
+// CloseFD closes the provided file descriptor.
+func (e *FFI) CloseFD(fd int) {
+	C.close_fd(C.int(fd))
+}
+
+// GetMapElements fetches the map elements of the given fd.
+func (e *FFI) GetMapElements(fd int, mapSize uint64) (*fpb.MapElements, error) {
+	res := C.get_map_elements(C.int(fd), C.ulong(mapSize))
+	return mapElementsProtoFromStruct(&res)
 }

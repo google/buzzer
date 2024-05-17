@@ -22,9 +22,16 @@ package(
 
 go_library(
     name = "strategies",
-    srcs = ["base.go"],
+    srcs = [
+        "base.go",
+        "pointer_arithmetic.go",
+    ],
     importpath = "buzzer/pkg/strategies/strategies",
     deps = [
         "//pkg/ebpf",
+        "//pkg/rand",
+        "//pkg/units",
+        "//proto:ebpf_go_proto",
+        "//proto:ffi_go_proto",
     ],
 )

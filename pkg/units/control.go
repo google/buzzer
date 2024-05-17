@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 
-	//"buzzer/pkg/strategies/strategies"
 	"buzzer/pkg/ebpf/ebpf"
 	epb "buzzer/proto/ebpf_go_proto"
 	fpb "buzzer/proto/ffi_go_proto"
@@ -47,6 +46,10 @@ type Strategy interface {
 	// OnError is used to determine if the fuzzer should continue on errors.
 	// true represents continue, false represents halt.
 	OnError(e error) bool
+
+	// IsFuzzingDone if true, buzzer will break out of the main fuzzing loop
+	// and return normally.
+	IsFuzzingDone() bool
 }
 
 // Control directs the execution of the fuzzer.
@@ -77,7 +80,7 @@ func (cu *Control) IsReady() bool {
 
 // RunFuzzer kickstars the fuzzer in the mode that was specified at Init time.
 func (cu *Control) RunFuzzer() error {
-	for {
+	for !cu.strat.IsFuzzingDone() {
 		prog, err := cu.strat.GenerateProgram(cu.ffi)
 		if err != nil {
 			fmt.Printf("Generate program error: %v\n", err)
@@ -105,7 +108,8 @@ func (cu *Control) RunFuzzer() error {
 			continue
 		}
 
-		if !validationResult.IsValid || !cu.strat.OnVerifyDone(cu.ffi, validationResult) {
+		if !cu.strat.OnVerifyDone(cu.ffi, validationResult) || !validationResult.IsValid {
+			cu.ffi.CloseFD(int(validationResult.ProgramFd))
 			continue
 		}
 
@@ -114,6 +118,7 @@ func (cu *Control) RunFuzzer() error {
 		}
 
 		exRes, err := cu.ffi.RunProgram(exReq)
+		cu.ffi.CloseFD(int(validationResult.ProgramFd))
 		if err != nil {
 			fmt.Printf("RunProgram error: %v\n", err)
 			if !cu.strat.OnError(err) {

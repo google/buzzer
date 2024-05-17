@@ -20,15 +20,6 @@ message ExecutionRequest {
   // Program file descriptor to execute.
   int64 prog_fd = 1;
 
-  // MapDescription holds a file descriptor to a map and a its size.
-  // The collection of MapDescriptions will be used to pull data from the
-  // maps after execution has been completed.
-  message MapDescription {
-    int64 map_fd = 1;
-    uint64 map_size = 2;
-  }
-  repeated MapDescription maps = 2;
-
   // Optional data to send over the network that can be accessed by the
   // ebpf program.
   bytes input_data = 3;
@@ -38,12 +29,12 @@ message ExecutionRequest {
 message ExecutionResult {
   bool did_succeed = 1;
   string error_message = 2;
+}
 
-  message MapElements {
-    int64 map_fd = 1;
-    repeated uint64 elements = 2;
-  }
-  repeated MapElements map_elements = 3;
+// Result from get_map_elements call, retrieves all the elements in a bpf map.
+message MapElements {
+  repeated uint64 elements = 1;
+  string error_message = 2;
 }
 
 // Results From feeding the program into a ebpf executor.
