@@ -15,7 +15,6 @@
 package units
 
 import (
-	"buzzer/pkg/strategies/strategies"
 	"strings"
 	"sync"
 )
@@ -28,7 +27,7 @@ type MetricsCollection struct {
 	// Metrics start here
 	programsVerified int
 	validPrograms    int
-	coverageManager  strategies.CoverageManager
+	coverageManager  *CoverageManager
 }
 
 func (mc *MetricsCollection) recordVerifiedProgram() {

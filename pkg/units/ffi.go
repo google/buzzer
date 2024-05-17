@@ -82,15 +82,15 @@ func executionProtoFromStruct(s *C.struct_bpf_result) (*fpb.ExecutionResult, err
 	return res, nil
 }
 
-// Executor is the unit that will talk to ebpf and run/validate programs.
-type Executor struct {
+// FFI is the unit that will talk to ebpf and run/validate programs.
+type FFI struct {
 	MetricsUnit *Metrics
 }
 
 // ValidateProgram passes the program through the bpf verifier without executing
 // it. Returns feedback to the generator so it can adjust the generation
 // settings.
-func (e *Executor) ValidateProgram(prog []uint64) (*fpb.ValidationResult, error) {
+func (e *FFI) ValidateProgram(prog []uint64) (*fpb.ValidationResult, error) {
 	if len(prog) == 0 {
 		return nil, fmt.Errorf("cannot run empty program")
 	}
@@ -109,7 +109,7 @@ func (e *Executor) ValidateProgram(prog []uint64) (*fpb.ValidationResult, error)
 }
 
 // RunProgram Runs the ebpf program and returns the execution results.
-func (e *Executor) RunProgram(executionRequest *fpb.ExecutionRequest) (*fpb.ExecutionResult, error) {
+func (e *FFI) RunProgram(executionRequest *fpb.ExecutionRequest) (*fpb.ExecutionResult, error) {
 	serializedProto, err := proto.Marshal(executionRequest)
 	if err != nil {
 		return nil, err
@@ -118,9 +118,6 @@ func (e *Executor) RunProgram(executionRequest *fpb.ExecutionRequest) (*fpb.Exec
 	exRes, err := executionProtoFromStruct(&res)
 	if err != nil {
 		return nil, err
-	}
-	if !exRes.GetDidSucceed() {
-		return nil, fmt.Errorf("Run program did not succeed")
 	}
 	return exRes, nil
 }

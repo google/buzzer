@@ -1,0 +1,132 @@
+// Copyright 2023 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Package units implements the business logic to make the fuzzer work
+package units
+
+import (
+	"errors"
+	"fmt"
+
+	//"buzzer/pkg/strategies/strategies"
+	"buzzer/pkg/ebpf/ebpf"
+	epb "buzzer/proto/ebpf_go_proto"
+	fpb "buzzer/proto/ffi_go_proto"
+)
+
+var (
+	NilStrategyError = errors.New("Strategy cannot be nil")
+)
+
+// StrategyInterface contains all the methods that a fuzzing strategy should
+// implement.
+type Strategy interface {
+	// GenerateProgram should return the instructions to feed the verifier.
+	GenerateProgram(ffi *FFI) ([]*epb.Instruction, error)
+
+	// OnVerifyDone process the results from the verifier. Here the strategy
+	// can also tell the fuzzer to continue with execution by returning true
+	// or start over and generate a new program.
+	OnVerifyDone(ffi *FFI, verificationResult *fpb.ValidationResult) bool
+
+	// OnExecuteDone should validate if the program behaved like the
+	// verifier expected, if that was not the case it should return false.
+	OnExecuteDone(ffi *FFI, executionResult *fpb.ExecutionResult) bool
+
+	// OnError is used to determine if the fuzzer should continue on errors.
+	// true represents continue, false represents halt.
+	OnError(e error) bool
+}
+
+// Control directs the execution of the fuzzer.
+type Control struct {
+	strat Strategy
+	ffi   *FFI
+	cm    *CoverageManager
+	rdy   bool
+}
+
+// Init prepares the control unit to be used.
+func (cu *Control) Init(ffi *FFI, coverageManager *CoverageManager, strat Strategy) error {
+
+	if strat == nil {
+		return NilStrategyError
+	}
+	cu.ffi = ffi
+	cu.cm = coverageManager
+	cu.strat = strat
+	cu.rdy = true
+	return nil
+}
+
+// IsReady indicates to the caller if the Control is initialized successully.
+func (cu *Control) IsReady() bool {
+	return cu.rdy
+}
+
+// RunFuzzer kickstars the fuzzer in the mode that was specified at Init time.
+func (cu *Control) RunFuzzer() error {
+	for {
+		prog, err := cu.strat.GenerateProgram(cu.ffi)
+		if err != nil {
+			fmt.Printf("Generate program error: %v\n", err)
+			if !cu.strat.OnError(err) {
+				return err
+			}
+			continue
+		}
+
+		encodedProg, err := ebpf.EncodeInstructions(prog)
+		if err != nil {
+			fmt.Printf("Encoding error: %v\n", err)
+			if !cu.strat.OnError(err) {
+				return err
+			}
+			continue
+		}
+
+		validationResult, err := cu.ffi.ValidateProgram(encodedProg)
+		if err != nil {
+			fmt.Printf("Validation error: %v\n", err)
+			if !cu.strat.OnError(err) {
+				return err
+			}
+			continue
+		}
+
+		if !validationResult.IsValid || !cu.strat.OnVerifyDone(cu.ffi, validationResult) {
+			continue
+		}
+
+		exReq := &fpb.ExecutionRequest{
+			ProgFd: validationResult.ProgramFd,
+		}
+
+		exRes, err := cu.ffi.RunProgram(exReq)
+		if err != nil {
+			fmt.Printf("RunProgram error: %v\n", err)
+			if !cu.strat.OnError(err) {
+				return err
+			}
+			continue
+		}
+
+		ok := cu.strat.OnExecuteDone(cu.ffi, exRes)
+		if !ok {
+			fmt.Println("Program produced unexpected results")
+			ebpf.GeneratePoc(prog, 0)
+		}
+	}
+	return nil
+}

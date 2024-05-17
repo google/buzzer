@@ -62,6 +62,19 @@ func encodeMemOpcode(op *pb.MemOpcode) (uint8, error) {
 	return opcode, nil
 }
 
+// EncodeInstructions transforms the given array to ebpf bytecode.
+func EncodeInstructions(instructions []*pb.Instruction) ([]uint64, error) {
+	result := []uint64{}
+	for _, instruction := range instructions {
+		encoding, err := encodeInstruction(instruction)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, encoding...)
+	}
+	return result, nil
+}
+
 // To understand what each part of the encoding mean, please refer to
 // http://shortn/_mFOBeQLg2s.
 func encodeInstruction(i *pb.Instruction) ([]uint64, error) {

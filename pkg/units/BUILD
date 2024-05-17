@@ -23,9 +23,9 @@ package(
 go_library(
     name = "units",
     srcs = [
-        "control_unit.go",
+        "control.go",
         "coverage_manager.go",
-        "executor_unit.go",
+        "ffi.go",
         "metrics_collection.go",
         "metrics_server.go",
         "metrics_unit.go",
@@ -36,7 +36,9 @@ go_library(
     cgo = 1,
     importpath = "buzzer/pkg/units/units",
     deps = [
+        "//pkg/ebpf",
         "//pkg/strategies",
+        "//proto:ebpf_go_proto",
         "//proto:ffi_go_proto",
         "@com_github_golang_protobuf//proto",
         "@com_github_google_safehtml//:safehtml",

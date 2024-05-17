@@ -22,7 +22,7 @@ import (
 
 func TestMetrics(t *testing.T) {
 	expectedKcovSize := uint64(42)
-	cm := &CoverageManagerImpl{
+	cm := &CoverageManager{
 		coverageCache:   make(map[uint64]string),
 		coverageInfoMap: make(map[string][]int),
 		addressToLineFunction: func(inputString string) (string, error) {

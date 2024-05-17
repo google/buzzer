@@ -21,7 +21,6 @@ import (
 	"sync"
 	"time"
 
-	"buzzer/pkg/strategies/strategies"
 	fpb "buzzer/proto/ffi_go_proto"
 )
 
@@ -141,7 +140,7 @@ func (mu *Metrics) init() {
 }
 
 // NewMetricsUnit Creates a new Central Metrics Unit.
-func NewMetricsUnit(threshold int, kcovSize uint64, vmLinuxPath, sourceFilesPath, metricsServerAddr string, metricsServerPort uint16, cm strategies.CoverageManager) *Metrics {
+func NewMetricsUnit(threshold int, kcovSize uint64, vmLinuxPath, sourceFilesPath, metricsServerAddr string, metricsServerPort uint16, cm *CoverageManager) *Metrics {
 	mc := &MetricsCollection{
 		coverageManager: cm,
 	}
