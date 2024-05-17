@@ -20,8 +20,8 @@ import (
 	"log"
 	"os/exec"
 
-	"buzzer/pkg/units/units"
 	"buzzer/pkg/strategies/strategies"
+	"buzzer/pkg/units/units"
 )
 
 // Flags that the binary can accept.
@@ -51,7 +51,7 @@ func main() {
 	controlUnit := units.Control{}
 	metricsUnit := units.NewMetricsUnit(*metricsThreshold, *coverageBufferSize, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort), coverageManager)
 
-	strategy := &strategies.PointerArithmetic{ IsFinished: false }
+	strategy := &strategies.PointerArithmetic{IsFinished: false}
 
 	if err := controlUnit.Init(&units.FFI{
 		MetricsUnit: metricsUnit,

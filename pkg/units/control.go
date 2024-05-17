@@ -108,7 +108,8 @@ func (cu *Control) RunFuzzer() error {
 			continue
 		}
 
-		if !validationResult.IsValid || !cu.strat.OnVerifyDone(cu.ffi, validationResult) {
+		if !cu.strat.OnVerifyDone(cu.ffi, validationResult) || !validationResult.IsValid {
+			cu.ffi.CloseFD(int(validationResult.ProgramFd))
 			continue
 		}
 
@@ -117,6 +118,7 @@ func (cu *Control) RunFuzzer() error {
 		}
 
 		exRes, err := cu.ffi.RunProgram(exReq)
+		cu.ffi.CloseFD(int(validationResult.ProgramFd))
 		if err != nil {
 			fmt.Printf("RunProgram error: %v\n", err)
 			if !cu.strat.OnError(err) {

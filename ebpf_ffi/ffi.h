@@ -46,7 +46,6 @@ void close_fd(int fd);
 // Serialized proto is of type ExecutionRequest.
 struct bpf_result execute_bpf_program(void *serialized_proto, size_t length);
 
-
 // Retrieves the elements of the specified map_fd, return value is of type
 // MapElements.
 struct bpf_result get_map_elements(int map_fd, uint64_t map_size);

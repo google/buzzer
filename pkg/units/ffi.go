@@ -134,7 +134,7 @@ func (e *FFI) RunProgram(executionRequest *fpb.ExecutionRequest) (*fpb.Execution
 		return nil, err
 	}
 	res := C.execute_bpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
-	return  executionProtoFromStruct(&res)
+	return executionProtoFromStruct(&res)
 }
 
 // CreateMapArray creates an ebpf map of type array and returns its fd.

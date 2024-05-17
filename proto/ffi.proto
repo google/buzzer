@@ -33,8 +33,8 @@ message ExecutionResult {
 
 // Result from get_map_elements call, retrieves all the elements in a bpf map.
 message MapElements {
-    repeated uint64 elements = 1;
-    string error_message = 2;
+  repeated uint64 elements = 1;
+  string error_message = 2;
 }
 
 // Results From feeding the program into a ebpf executor.

@@ -27,16 +27,16 @@ const (
 )
 
 const (
-	R0 = pb.Reg_R0
-	R1 = pb.Reg_R1
-	R2 = pb.Reg_R2
-	R3 = pb.Reg_R3
-	R4 = pb.Reg_R4
-	R5 = pb.Reg_R5
-	R6 = pb.Reg_R6
-	R7 = pb.Reg_R7
-	R8 = pb.Reg_R8
-	R9 = pb.Reg_R9
+	R0  = pb.Reg_R0
+	R1  = pb.Reg_R1
+	R2  = pb.Reg_R2
+	R3  = pb.Reg_R3
+	R4  = pb.Reg_R4
+	R5  = pb.Reg_R5
+	R6  = pb.Reg_R6
+	R7  = pb.Reg_R7
+	R8  = pb.Reg_R8
+	R9  = pb.Reg_R9
 	R10 = pb.Reg_R10
 )
 

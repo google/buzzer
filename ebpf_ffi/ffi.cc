@@ -43,8 +43,8 @@
 
 using ebpf_fuzzer::ExecutionRequest;
 using ebpf_fuzzer::ExecutionResult;
-using ebpf_fuzzer::ValidationResult;
 using ebpf_fuzzer::MapElements;
+using ebpf_fuzzer::ValidationResult;
 
 namespace ebpf_ffi {
 
