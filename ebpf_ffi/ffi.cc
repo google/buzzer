@@ -44,6 +44,7 @@
 using ebpf_fuzzer::ExecutionRequest;
 using ebpf_fuzzer::ExecutionResult;
 using ebpf_fuzzer::ValidationResult;
+using ebpf_fuzzer::MapElements;
 
 namespace ebpf_ffi {
 
@@ -106,22 +107,25 @@ void get_coverage_and_free_resources(struct coverage_data *cstruct,
   munmap(cstruct->coverage_buffer, cstruct->coverage_size * sizeof(uint64_t));
 }
 
-int get_map_elements(
-    const ExecutionRequest::MapDescription &map,
-    google::protobuf::RepeatedField<google::protobuf::uint64> *elements) {
-  for (uint64_t key = 0; key < (uint64_t)map.map_size(); key++) {
+// Retrieves all the elements in a bpf map, returns a serialized MapElements
+// proto message.
+struct bpf_result get_map_elements(int map_fd, uint64_t map_size) {
+  MapElements res;
+  auto elements = res.mutable_elements();
+  for (uint64_t key = 0; key < map_size; key++) {
     uint64_t element = 0;
-    union bpf_attr lookup_map = {.map_fd = static_cast<uint32_t>(map.map_fd()),
+    union bpf_attr lookup_map = {.map_fd = static_cast<uint32_t>(map_fd),
                                  .key = reinterpret_cast<uint64_t>(&key),
                                  .value = reinterpret_cast<uint64_t>(&element)};
     int err =
         syscall(SYS_bpf, BPF_MAP_LOOKUP_ELEM, &lookup_map, sizeof(lookup_map));
     if (err < 0) {
-      return err;
+      res.set_error_message(strerror(errno));
+      return serialize_proto(res);
     }
     elements->Add(element);
   }
-  return 0;
+  return serialize_proto(res);
 }
 
 struct bpf_result load_bpf_program(void *prog_buff, size_t size,
@@ -242,13 +246,6 @@ struct bpf_result execute_bpf_program(void *serialized_proto, size_t length) {
                         socks);
   }
 
-  for (auto map_description : execution_request.maps()) {
-    auto map_elements = execution_result.add_map_elements();
-    if (get_map_elements(map_description, map_elements->mutable_elements()) <
-        0) {
-      return return_error(strerror(errno), &execution_result, socks);
-    }
-  }
   close(socks[0]);
   close(socks[1]);
   execution_result.set_did_succeed(true);
