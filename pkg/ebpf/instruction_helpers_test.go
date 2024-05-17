@@ -15,31 +15,38 @@
 package ebpf
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
+
+	pb "buzzer/proto/ebpf_go_proto"
 )
 
 func TestInstructionChainHelperTest(t *testing.T) {
 	tests := []struct {
 		testName      string
-		operations    []Instruction
+		operations    []*pb.Instruction
 		expectedError error
 	}{
 		{
-			testName:      "Instruction chain no jumps",
-			operations:    []Instruction{Mov64(RegR0, 0), Mul64(RegR0, 10), Mov64(RegR0, RegR1), Exit()},
+			testName: "Instruction chain no jumps",
+			operations: []*pb.Instruction{
+				Mov64(pb.Reg_R0, 0),
+				Mul64(pb.Reg_R0, 10),
+				Mov64(pb.Reg_R0, pb.Reg_R1),
+				Exit()},
 			expectedError: nil,
 		},
 		{
-			testName:      "Instruction chain with jumps",
-			operations:    []Instruction{Mov64(RegR0, 0), JmpGT(RegR0, 0, 4), Mul64(RegR0, 10), JmpLT(RegR0, RegR1, 2), Jmp(1), Mov64(RegR0, RegR1), Exit()},
+			testName: "Instruction chain with jumps",
+			operations: []*pb.Instruction{
+				Mov64(pb.Reg_R0, 0),
+				JmpGT(pb.Reg_R0, 0, 4),
+				Mul64(pb.Reg_R0, 10),
+				JmpLT(pb.Reg_R0, pb.Reg_R1, 2),
+				Jmp(1),
+				Mov64(pb.Reg_R0,
+					pb.Reg_R1), Exit()},
 			expectedError: nil,
-		},
-		{
-			testName:      "Invalid instruction returns error",
-			operations:    []Instruction{Mov64(RegR0, uint32(0))},
-			expectedError: fmt.Errorf("Nil instruction at index 0, did you pass an unsigned int value?"),
 		},
 	}
 

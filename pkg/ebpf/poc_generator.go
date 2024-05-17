@@ -15,6 +15,7 @@
 package ebpf
 
 import (
+	pb "buzzer/proto/ebpf_go_proto"
 	"errors"
 	"fmt"
 	"os"
@@ -240,10 +241,10 @@ int execute_bpf_program(int prog_fd, int map_fd, int map_count, uint64_t* map_co
 
 // GeneratePoc generates a c program that can be used to reproduce fuzzer
 // test cases.
-func GeneratePoc(prog *Program) error {
+func GeneratePoc(instructions []*pb.Instruction, mapSize int) error {
 	macros := []string{}
-	for _, i := range prog.Instructions {
-		macros = append(macros, i.GeneratePoc()...)
+	for _, i := range instructions {
+		macros = append(macros, generatePoc(i)...)
 	}
 	pocString := ""
 	for i, m := range macros {
@@ -281,7 +282,7 @@ func GeneratePoc(prog *Program) error {
 		}
 
 		return 0;
-}`, prog.MapSize, pocString)
+}`, mapSize, pocString)
 
 	poc := cHeader + aluImmMacroDef + aluRegMacroDef + exitMacroDef + jumpRegMacroDef + jumpImmMacroDef + callMacroDef + loadMapFdDef + memOperationMacroDef + memImmOperationMacroDef + progLoadFunc + createMapFunc + executeProgramFunc + mainBody
 	f, err := os.CreateTemp("", "ebpf-poc-*.c")

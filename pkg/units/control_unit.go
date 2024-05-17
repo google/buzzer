@@ -18,15 +18,8 @@ package units
 import (
 	"fmt"
 
-	"buzzer/pkg/strategies/parse_verifier/parseverifier"
-	"buzzer/pkg/strategies/playground/playground"
-	"buzzer/pkg/strategies/pointer_arithmetic/pointerarithmetic"
-	"buzzer/pkg/strategies/stack_corruption/stackcorruption"
 	"buzzer/pkg/strategies/strategies"
 )
-
-// RunMode are the modes of operation for the server.
-type RunMode string
 
 // StrategyInterface contains all the methods that a fuzzing strategy should
 // implement.
@@ -38,27 +31,15 @@ type StrategyInterface interface {
 type ControlUnit struct {
 	strat StrategyInterface
 	ex    strategies.ExecutorInterface
-	rm    RunMode
 	cm    strategies.CoverageManager
 	rdy   bool
 }
 
 // Init prepares the control unit to be used.
-func (cu *ControlUnit) Init(executor strategies.ExecutorInterface, coverageManager strategies.CoverageManager, runMode, fuzzStrategyFlag string) error {
+func (cu *ControlUnit) Init(executor strategies.ExecutorInterface, coverageManager strategies.CoverageManager, fuzzStrategyFlag string) error {
 	cu.ex = executor
 
 	switch fuzzStrategyFlag {
-	case parseverifier.StrategyName:
-		cu.strat = &parseverifier.StrategyParseVerifierLog{}
-	case pointerarithmetic.StrategyName:
-		cu.strat = &pointerarithmetic.Strategy{
-			// 60 is an arbitrary number.
-			InstructionCount: 60,
-		}
-	case playground.StrategyName:
-		cu.strat = &playground.Strategy{}
-	case stackcorruption.StrategyName:
-		cu.strat = &stackcorruption.Strategy{}
 	default:
 		return fmt.Errorf("unknown fuzzing strategy: %s", fuzzStrategyFlag)
 	}

@@ -13,6 +13,8 @@ if [[ ! -z "${OVERRIDE_CLANG_FORMAT}" ]]; then
   CLANG_FORMAT="${OVERRIDE_CLANG_FORMAT}"
 fi
 
+echo "using ${CLANG_FORMAT} as clang format"
+
 find . -iname *.h -o -iname *.cc -o -iname *.proto | xargs "${CLANG_FORMAT}" -i
 gofmt -w -s .
 $GOPATH/bin/buildifier -r .

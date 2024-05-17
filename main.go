@@ -25,7 +25,6 @@ import (
 
 // Flags that the binary can accept.
 var (
-	runMode            = flag.String("run_mode", "standalone", "Mode to run the fuzzer. Possible values are: server, client, standalone (default: Standalone)")
 	fuzzStrat          = flag.String("fuzzing_strategy", "parse_verifier_log", "Strategy to use to fuzz ebpf")
 	coverageBufferSize = flag.Uint64("coverage_buffer_size", 64<<20, "Size of the buffer passed to kcov to get coverage addresses, the higher the number, the slower coverage collection will be")
 	metricsThreshold   = flag.Int("metrics_threshold", 200, "Collect detailed metrics (coverage) every `metrics_threshold` validated programs")
@@ -54,7 +53,7 @@ func main() {
 
 	if err := controlUnit.Init(&units.Executor{
 		MetricsUnit: metricsUnit,
-	}, coverageManager, *runMode, *fuzzStrat); err != nil {
+	}, coverageManager, *fuzzStrat); err != nil {
 		log.Fatalf("failed to init control unit: %v", err)
 	}
 

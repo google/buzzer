@@ -16,179 +16,41 @@ package ebpf
 
 import (
 	"buzzer/pkg/rand"
+	pb "buzzer/proto/ebpf_go_proto"
 )
-
-// The generators below take as parameter the program to generate instructions
-// into, this is so they can make sure the instructions generated use initialized
-// registers only. Therefore these instructions are more "safe" to use.
 
 // GenerateRandomAluInstruction provides a random ALU operation with either
 // IMM or Reg src that will be applied to a random dst reg.
-func GenerateRandomAluInstruction(prog *Program) Instruction {
+func GenerateRandomAluInstruction() *pb.Instruction {
 	op := RandomAluOp()
-
-	var dstReg uint8
-	if op == AluMov {
-		dstReg = uint8(rand.SharedRNG.RandRange(uint64(prog.MinRegister), uint64(prog.MaxRegister)))
-	} else {
-		dstReg = prog.GetRandomRegister()
-	}
-	dReg, _ := GetRegisterFromNumber(dstReg)
-
-	var insClass uint8
+	dstReg := RandomRegister()
+	var insClass pb.InsClass
 	if rand.SharedRNG.RandRange(0, 1) == 0 {
-		insClass = InsClassAlu
+		insClass = pb.InsClass_InsClassAlu
 	} else {
-		insClass = InsClassAlu64
+		insClass = pb.InsClass_InsClassAlu64
 	}
 
 	// Toss another coin to decide if we are going to do an imm alu
 	// operation or one that uses a src register.
-	var instr Instruction
+	var instr *pb.Instruction
 	if rand.SharedRNG.RandRange(0, 1) == 0 {
-		instr = generateImmAluInstruction(op, insClass, dReg, prog)
+		instr = generateImmAluInstruction(op, insClass, dstReg)
 	} else {
-		instr = generateRegAluInstruction(op, insClass, dReg, prog)
+		instr = generateRegAluInstruction(op, insClass, dstReg)
 	}
 
-	return instr
-}
-
-// RandomJumpOp generates a random jump operator.
-func RandomJumpOp() uint8 {
-	// https://docs.kernel.org/bpf/instruction-set.html#jump-instructions
-	return uint8(rand.SharedRNG.RandRange(0x00, 0x0d)) << 4
-}
-
-func RandomAluOp() uint8 {
-	// Shift by 4 bits because we need to respect the ebpf encoding:
-	// https://docs.kernel.org/bpf/instruction-set.html#id6
-	return uint8(rand.SharedRNG.RandRange(0x00, 0x0c)) << 4
-}
-
-// IsConditional determines if the operator is not an Exit, Call or JA
-// operation.
-func IsConditional(op uint8) bool {
-	return !(op == JmpExit || op == JmpCALL || op == JmpJA)
-}
-
-// GenerateRandomJmpRegInstruction generates a random jump operation where
-// the src operand is a random register. The generator functions tell the
-// instruction how to generate the true/false branches.
-func GenerateRandomJmpRegInstruction(prog *Program, trueBranchGenerator func(prog *Program) Instruction, falseBranchGenerator func(prog *Program) (Instruction, int16)) Instruction {
-	var op uint8
-	for {
-		op = RandomJumpOp()
-		if IsConditional(op) {
-			break
-		}
-	}
-
-	dstReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
-	srcReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
-	for srcReg == dstReg {
-		srcReg, _ = GetRegisterFromNumber(prog.GetRandomRegister())
-	}
-
-	return &JmpRegInstruction{
-		BaseInstruction: BaseInstruction{
-			Opcode:           op,
-			InstructionClass: InsClassJmp,
-			DstReg:           dstReg,
-		},
-		SrcReg: srcReg,
-	}
-
-}
-
-func generateImmAluInstruction(op, insClass uint8, dstReg *Register, prog *Program) Instruction {
-	value := int32(rand.SharedRNG.RandRange(0, 0xFFFFFFFF))
-	switch op {
-	case AluRsh, AluLsh, AluArsh:
-		var maxShift = int32(64)
-		if insClass == InsClassAlu {
-			maxShift = 32
-		}
-		value = value % maxShift
-		if value < 0 {
-			value *= -1
-		}
-	case AluNeg:
-		value = 0
-	case AluMov:
-		if !prog.IsRegisterInitialized(dstReg.RegisterNumber()) {
-			prog.MarkRegisterInitialized(dstReg.RegisterNumber())
-		}
-	}
-
-	return NewAluImmInstruction(op, insClass, dstReg, value)
-}
-
-func generateRegAluInstruction(op, insClass uint8, dstReg *Register, prog *Program) Instruction {
-	srcReg, _ := GetRegisterFromNumber(prog.GetRandomRegister())
-	// Negation is not supported with Register as src.
-	for op == AluNeg {
-		op = uint8(rand.SharedRNG.RandRange(0x00, 0x0c)) << 4
-	}
-
-	if op == AluMov && !prog.IsRegisterInitialized(dstReg.RegisterNumber()) {
-		prog.MarkRegisterInitialized(dstReg.RegisterNumber())
-	}
-
-	return NewAluRegInstruction(op, insClass, dstReg, srcReg)
-}
-
-// The generators below are more flexible to use but also provide less
-// guarantees on if the instruction will pass the verifier (e.g registers
-// might not be initialized yet)
-func RandomAluInstruction() Instruction {
-	op := RandomAluOp()
-
-	var insClass uint8
-	if rand.SharedRNG.OneOf(2) {
-		insClass = InsClassAlu64
-	} else {
-		insClass = InsClassAlu
-	}
-
-	dstReg := RandomRegister()
-
-	var src any
-
-	if rand.SharedRNG.OneOf(2) {
-		srcInt32 := int32(rand.SharedRNG.RandRange(0, 0xffffffff))
-		switch op {
-		case AluRsh, AluLsh, AluArsh:
-			var maxShift = int32(64)
-			if insClass == InsClassAlu {
-				maxShift = 32
-			}
-			srcInt32 %= maxShift
-			if srcInt32 < 0 {
-				srcInt32 *= -1
-			}
-		case AluNeg:
-			srcInt32 = 0
-		}
-		src = srcInt32
-	} else {
-		src = RandomRegister()
-		// Negation is not supported with Register as src.
-		for op == AluNeg {
-			op = uint8(rand.SharedRNG.RandRange(0x00, 0x0c)) << 4
-		}
-	}
-
-	instr := newAluInstruction(op, insClass, dstReg, src)
 	return instr
 }
 
 // RandomJmpInstruction generates a random jmp instruction that has an
 // offset of at most `maxOffset` this is to minimize the possibility of a jmp
 // out of the bounds of a program.
-func RandomJmpInstruction(maxOffset uint64) Instruction {
-	op := RandomJumpOp()
+func RandomJmpInstruction(maxOffset uint64) *pb.Instruction {
+	var op pb.JmpOperationCode
 
+	// Exit, Call or JA operations require special parameters (e.g an offset
+	// of 0), skip those for simplicity.
 	for {
 		op = RandomJumpOp()
 		if IsConditional(op) {
@@ -196,24 +58,72 @@ func RandomJmpInstruction(maxOffset uint64) Instruction {
 		}
 	}
 
-	var insClass uint8
+	var insClass pb.InsClass
 	if rand.SharedRNG.OneOf(2) {
-		insClass = InsClassJmp32
+		insClass = pb.InsClass_InsClassJmp32
 	} else {
-		insClass = InsClassJmp
+		insClass = pb.InsClass_InsClassJmp
 	}
 
 	dstReg := RandomRegister()
-
-	var src any
-
+	offset := int16(rand.SharedRNG.RandRange(1, maxOffset))
 	if rand.SharedRNG.OneOf(2) {
-		src = int32(rand.SharedRNG.RandRange(0, 0xffffffff))
+		src := int32(rand.SharedRNG.RandRange(0, 0xffffffff))
+		return newJmpInstruction(op, insClass, dstReg, src, offset)
 	} else {
-		src = RandomRegister()
+		src := RandomRegister()
+		return newJmpInstruction(op, insClass, dstReg, src, offset)
+	}
+}
+
+// RandomJumpOp generates a random jump operator.
+func RandomJumpOp() pb.JmpOperationCode {
+	// https://docs.kernel.org/bpf/instruction-set.html#jump-instructions
+	return pb.JmpOperationCode(rand.SharedRNG.RandRange(0x00, 0x0d) << 4)
+}
+
+func RandomAluOp() pb.AluOperationCode {
+	// Shift by 4 bits because we need to respect the ebpf encoding:
+	// https://docs.kernel.org/bpf/instruction-set.html#id6
+	return pb.AluOperationCode(rand.SharedRNG.RandRange(0x00, 0x0c) << 4)
+}
+
+// IsConditional determines if the operator is not an Exit, Call or JA
+// operation.
+func IsConditional(op pb.JmpOperationCode) bool {
+	return !(op == pb.JmpOperationCode_JmpExit || op == pb.JmpOperationCode_JmpCALL || op == pb.JmpOperationCode_JmpJA)
+}
+
+// RandomRegister returns a random register from R0 to R9.
+func RandomRegister() pb.Reg {
+	return pb.Reg(rand.SharedRNG.RandRange(0, 9))
+}
+
+func generateImmAluInstruction(op pb.AluOperationCode, insClass pb.InsClass, dstReg pb.Reg) *pb.Instruction {
+	value := int32(rand.SharedRNG.RandRange(0, 0xFFFFFFFF))
+	switch op {
+	case pb.AluOperationCode_AluRsh, pb.AluOperationCode_AluLsh, pb.AluOperationCode_AluArsh:
+		var maxShift = int32(64)
+		if insClass == pb.InsClass_InsClassAlu {
+			maxShift = 32
+		}
+		value = value % maxShift
+		if value < 0 {
+			value *= -1
+		}
+	case pb.AluOperationCode_AluNeg:
+		value = 0
 	}
 
-	offset := int16(rand.SharedRNG.RandRange(1, maxOffset))
-	instr := newJmpInstruction(op, insClass, dstReg, src, offset)
-	return instr
+	return newAluInstruction(op, insClass, dstReg, value)
+}
+
+func generateRegAluInstruction(op pb.AluOperationCode, insClass pb.InsClass, dstReg pb.Reg) *pb.Instruction {
+	srcReg := RandomRegister()
+	// Negation is not supported with Register as src.
+	for op == pb.AluOperationCode_AluNeg {
+		op = pb.AluOperationCode(rand.SharedRNG.RandRange(0x00, 0x0c) << 4)
+	}
+
+	return newAluInstruction(op, insClass, dstReg, srcReg)
 }
