@@ -119,8 +119,5 @@ func (e *FFI) RunProgram(executionRequest *fpb.ExecutionRequest) (*fpb.Execution
 	if err != nil {
 		return nil, err
 	}
-	if !exRes.GetDidSucceed() {
-		return nil, fmt.Errorf("Run program did not succeed")
-	}
 	return exRes, nil
 }

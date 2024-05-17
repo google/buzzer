@@ -53,7 +53,7 @@ func main() {
 
 	if err := controlUnit.Init(&units.FFI{
 		MetricsUnit: metricsUnit,
-	}, coverageManager, *fuzzStrat); err != nil {
+	}, coverageManager, nil); err != nil {
 		log.Fatalf("failed to init control unit: %v", err)
 	}
 
