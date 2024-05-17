@@ -27,8 +27,14 @@ import (
 // StrategyInterface contains all the methods that a fuzzing strategy should
 // implement.
 type StrategyInterface interface {
+	// GenerateProgram should return the instructions to feed the verifier.
 	GenerateProgram(ffi *FFI) ([]*epb.Instruction, error)
+
+	// OnVerifyDone process the results from the verifier.
 	OnVerifyDone(verificationResult *fpb.ValidationResult)
+
+	// OnExecuteDone should validate if the program behaved like the
+	// verifier expected, if that was not the case it should return false.
 	OnExecuteDone(executionResult *fpb.ExecutionResult) bool
 }
 
@@ -82,7 +88,7 @@ func (cu *Control) RunFuzzer() error {
 			continue
 		}
 
-		exReq := &fpb.ExecutionRequest {
+		exReq := &fpb.ExecutionRequest{
 			ProgFd: validationResult.ProgramFd,
 		}
 		exRes, err := cu.ffi.RunProgram(exReq)
