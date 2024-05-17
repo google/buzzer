@@ -25,7 +25,7 @@ import (
 
 // Flags that the binary can accept.
 var (
-	fuzzStrat          = flag.String("fuzzing_strategy", "parse_verifier_log", "Strategy to use to fuzz ebpf")
+	fuzzStrat          = flag.String("fuzzing_strategy", "", "Strategy to use to fuzz ebpf")
 	coverageBufferSize = flag.Uint64("coverage_buffer_size", 64<<20, "Size of the buffer passed to kcov to get coverage addresses, the higher the number, the slower coverage collection will be")
 	metricsThreshold   = flag.Int("metrics_threshold", 200, "Collect detailed metrics (coverage) every `metrics_threshold` validated programs")
 	vmLinuxPath        = flag.String("vmlinux_path", "/root/vmlinux", "Path to the linux image that will be passed to addr2line to get coverage info")
@@ -36,7 +36,7 @@ var (
 
 func main() {
 	flag.Parse()
-	coverageManager := units.NewCoverageManagerImpl(func(inputString string) (string, error) {
+	coverageManager := units.NewCoverageManager(func(inputString string) (string, error) {
 		cmd := exec.Command("/usr/bin/addr2line", "-e", *vmLinuxPath)
 		w, err := cmd.StdinPipe()
 		if err != nil {
@@ -48,10 +48,10 @@ func main() {
 		return string(outBytes), err
 	})
 
-	controlUnit := units.ControlUnit{}
+	controlUnit := units.Control{}
 	metricsUnit := units.NewMetricsUnit(*metricsThreshold, *coverageBufferSize, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort), coverageManager)
 
-	if err := controlUnit.Init(&units.Executor{
+	if err := controlUnit.Init(&units.FFI{
 		MetricsUnit: metricsUnit,
 	}, coverageManager, *fuzzStrat); err != nil {
 		log.Fatalf("failed to init control unit: %v", err)

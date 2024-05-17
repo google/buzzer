@@ -27,8 +27,8 @@ type CoverageInfo struct {
 	coveredLines []int
 }
 
-// CoverageManagerImpl deals with everything coverage related.
-type CoverageManagerImpl struct {
+// CoverageManager deals with everything coverage related.
+type CoverageManager struct {
 	coverageLock sync.Mutex
 
 	coverageCache   map[uint64]string
@@ -39,7 +39,7 @@ type CoverageManagerImpl struct {
 
 // ProcessCoverageAddresses converts raw coverage hex addresses into line
 // numbers and files, it also caches the results.
-func (cm *CoverageManagerImpl) ProcessCoverageAddresses(cov []uint64) (map[uint64]string, error) {
+func (cm *CoverageManager) ProcessCoverageAddresses(cov []uint64) (map[uint64]string, error) {
 	cm.coverageLock.Lock()
 	defer cm.coverageLock.Unlock()
 
@@ -110,7 +110,7 @@ func (cm *CoverageManagerImpl) ProcessCoverageAddresses(cov []uint64) (map[uint6
 
 // RecordCoverageLine records a new observed coverage line and adds it to the
 // corresponding file cache.
-func (cm *CoverageManagerImpl) recordCoverageLine(fileName, fullPath string, lineNumber int) {
+func (cm *CoverageManager) recordCoverageLine(fileName, fullPath string, lineNumber int) {
 	if linesForFile, ok := cm.coverageInfoMap[fullPath]; !ok {
 		cm.coverageInfoMap[fullPath] = []int{lineNumber}
 	} else {
@@ -119,12 +119,12 @@ func (cm *CoverageManagerImpl) recordCoverageLine(fileName, fullPath string, lin
 }
 
 // GetCoverageInfoMap returns the coverage info cache.
-func (cm *CoverageManagerImpl) GetCoverageInfoMap() *map[string][]int {
+func (cm *CoverageManager) GetCoverageInfoMap() *map[string][]int {
 	return &cm.coverageInfoMap
 }
 
-func NewCoverageManagerImpl(processingFunction func(string) (string, error)) *CoverageManagerImpl {
-	return &CoverageManagerImpl{
+func NewCoverageManager(processingFunction func(string) (string, error)) *CoverageManager {
+	return &CoverageManager{
 		coverageCache:         make(map[uint64]string),
 		coverageInfoMap:       make(map[string][]int),
 		addressToLineFunction: processingFunction,
