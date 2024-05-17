@@ -21,11 +21,11 @@ import (
 	"os/exec"
 
 	"buzzer/pkg/units/units"
+	"buzzer/pkg/strategies/strategies"
 )
 
 // Flags that the binary can accept.
 var (
-	fuzzStrat          = flag.String("fuzzing_strategy", "", "Strategy to use to fuzz ebpf")
 	coverageBufferSize = flag.Uint64("coverage_buffer_size", 64<<20, "Size of the buffer passed to kcov to get coverage addresses, the higher the number, the slower coverage collection will be")
 	metricsThreshold   = flag.Int("metrics_threshold", 200, "Collect detailed metrics (coverage) every `metrics_threshold` validated programs")
 	vmLinuxPath        = flag.String("vmlinux_path", "/root/vmlinux", "Path to the linux image that will be passed to addr2line to get coverage info")
@@ -51,9 +51,11 @@ func main() {
 	controlUnit := units.Control{}
 	metricsUnit := units.NewMetricsUnit(*metricsThreshold, *coverageBufferSize, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort), coverageManager)
 
+	strategy := &strategies.PointerArithmetic{ IsFinished: false }
+
 	if err := controlUnit.Init(&units.FFI{
 		MetricsUnit: metricsUnit,
-	}, coverageManager, nil); err != nil {
+	}, coverageManager, strategy); err != nil {
 		log.Fatalf("failed to init control unit: %v", err)
 	}
 

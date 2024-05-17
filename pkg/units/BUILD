@@ -37,7 +37,6 @@ go_library(
     importpath = "buzzer/pkg/units/units",
     deps = [
         "//pkg/ebpf",
-        "//pkg/strategies",
         "//proto:ebpf_go_proto",
         "//proto:ffi_go_proto",
         "@com_github_golang_protobuf//proto",
