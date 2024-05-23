@@ -28,10 +28,6 @@ type Src interface {
 	pb.Reg | int32 | int
 }
 
-func generatePoc(*pb.Instruction) []string {
-	return []string{}
-}
-
 func encodeAluJmpOpcode(opcode, insClass, source uint8) (uint8, error) {
 	result := uint8(0)
 
@@ -63,9 +59,9 @@ func encodeMemOpcode(op *pb.MemOpcode) (uint8, error) {
 }
 
 // EncodeInstructions transforms the given array to ebpf bytecode.
-func EncodeInstructions(instructions []*pb.Instruction) ([]uint64, error) {
+func EncodeInstructions(program *pb.Program) ([]uint64, error) {
 	result := []uint64{}
-	for _, instruction := range instructions {
+	for _, instruction := range program.Instructions {
 		encoding, err := encodeInstruction(instruction)
 		if err != nil {
 			return nil, err

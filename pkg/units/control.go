@@ -32,7 +32,7 @@ var (
 // implement.
 type Strategy interface {
 	// GenerateProgram should return the instructions to feed the verifier.
-	GenerateProgram(ffi *FFI) ([]*epb.Instruction, error)
+	GenerateProgram(ffi *FFI) (*epb.Program, error)
 
 	// OnVerifyDone process the results from the verifier. Here the strategy
 	// can also tell the fuzzer to continue with execution by returning true
@@ -130,7 +130,7 @@ func (cu *Control) RunFuzzer() error {
 		ok := cu.strat.OnExecuteDone(cu.ffi, exRes)
 		if !ok {
 			fmt.Println("Program produced unexpected results")
-			ebpf.GeneratePoc(prog, 0)
+			ebpf.GeneratePoc(prog)
 		}
 	}
 	return nil

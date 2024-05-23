@@ -157,3 +157,7 @@ message Instruction {
     Empty empty = 9;
   }
 }
+
+message Program {
+  repeated Instruction instructions = 1;
+}

@@ -24,7 +24,7 @@ type PointerArithmetic struct {
 }
 
 // GenerateProgram should return the instructions to feed the verifier.
-func (pa *PointerArithmetic) GenerateProgram(ffi *units.FFI) ([]*epb.Instruction, error) {
+func (pa *PointerArithmetic) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
 	pa.programCount += 1
 	fmt.Printf("Generated %d programs, %d were valid               \r", pa.programCount, pa.validProgramCount)
 
@@ -78,8 +78,6 @@ func (pa *PointerArithmetic) GenerateProgram(ffi *units.FFI) ([]*epb.Instruction
 
 		// Load a fd to the map.
 		LdMapByFd(R9, pa.mapFd),
-		JmpNE(R9, 0, 1),
-		Exit(),
 
 		// Begin by writing a value to the map without ptr arithmetic.
 		// 0 here is the index to the map element.
@@ -116,7 +114,10 @@ func (pa *PointerArithmetic) GenerateProgram(ffi *units.FFI) ([]*epb.Instruction
 	}
 	header = append(header, body...)
 	header = append(header, footer...)
-	return header, nil
+	p := &epb.Program{
+		Instructions: header,
+	}
+	return p, nil
 }
 
 // OnVerifyDone process the results from the verifier. Here the strategy
