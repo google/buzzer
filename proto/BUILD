@@ -34,6 +34,11 @@ go_proto_library(
     deps = [],
 )
 
+cc_proto_library(
+    name = "ebpf_cc_proto",
+    deps = [":ebpf_proto"],
+)
+
 proto_library(
     name = "ffi_proto",
     srcs = ["ffi.proto"],
