@@ -16,21 +16,20 @@ package ebpf
 
 import (
 	pb "buzzer/proto/ebpf_go_proto"
-	jsonpb "github.com/golang/protobuf/jsonpb"
 	"errors"
 	"fmt"
+	jsonpb "github.com/golang/protobuf/jsonpb"
 	"os"
 )
-
 
 // GeneratePoc generates a c program that can be used to reproduce fuzzer
 // test cases.
 func GeneratePoc(program *pb.Program) error {
 	m := &jsonpb.Marshaler{
-		OrigName: true,
-		EnumsAsInts: false,
+		OrigName:     true,
+		EnumsAsInts:  false,
 		EmitDefaults: true,
-		Indent: "   ",
+		Indent:       "   ",
 	}
 	textpbData, err := m.MarshalToString(program)
 	if err != nil {

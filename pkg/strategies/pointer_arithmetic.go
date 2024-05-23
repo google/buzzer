@@ -114,7 +114,7 @@ func (pa *PointerArithmetic) GenerateProgram(ffi *units.FFI) (*epb.Program, erro
 	}
 	header = append(header, body...)
 	header = append(header, footer...)
-	p := &epb.Program {
+	p := &epb.Program{
 		Instructions: header,
 	}
 	return p, nil
