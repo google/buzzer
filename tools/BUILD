@@ -12,9 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+
 package(
     default_visibility = [
         "//visibility:public",
+    ],
+)
+
+go_binary(
+    name = "ffi",
+    srcs = ["ffi.go"],
+    out = "ffi.so",
+    cgo = 1,
+    importpath = "buzzer/tools/ffi",
+    linkmode = "c-shared",
+    deps = [
+        "//pkg/ebpf",
+        "//proto:ebpf_go_proto",
+        "@com_github_golang_protobuf//jsonpb",
     ],
 )
 
@@ -22,6 +38,7 @@ cc_binary(
     name = "loader",
     srcs = ["loader.cc"],
     deps = [
+        ":ffi.cc",
         "//proto:ebpf_cc_proto",
         "@com_google_protobuf//:protobuf",
     ],
