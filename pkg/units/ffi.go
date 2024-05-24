@@ -21,11 +21,11 @@ package units
 //  char* serialized_proto;
 //  size_t size;
 //};
-//struct bpf_result load_bpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
-//struct bpf_result execute_bpf_program(void* serialized_proto, size_t length);
-//struct bpf_result get_map_elements(int map_fd, uint64_t map_size);
-//int create_bpf_map(size_t size);
-//void close_fd(int fd);
+//struct bpf_result ffi_load_bpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
+//struct bpf_result ffi_execute_bpf_program(void* serialized_proto, size_t length);
+//struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
+//int ffi_create_bpf_map(size_t size);
+//void ffi_close_fd(int fd);
 import "C"
 
 import (
@@ -118,7 +118,7 @@ func (e *FFI) ValidateProgram(prog []uint64) (*fpb.ValidationResult, error) {
 	if shouldCollect {
 		cbool = 1
 	}
-	bpfVerifyResult := C.load_bpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)) /*enable_coverage=*/, C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
+	bpfVerifyResult := C.ffi_load_bpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)) /*enable_coverage=*/, C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
 	res, err := validationProtoFromStruct(&bpfVerifyResult)
 	if err != nil {
 		return nil, err
@@ -133,23 +133,23 @@ func (e *FFI) RunProgram(executionRequest *fpb.ExecutionRequest) (*fpb.Execution
 	if err != nil {
 		return nil, err
 	}
-	res := C.execute_bpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
+	res := C.ffi_execute_bpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
 	return executionProtoFromStruct(&res)
 }
 
 // CreateMapArray creates an ebpf map of type array and returns its fd.
 // -1 means error.
 func (e *FFI) CreateMapArray(size uint64) int {
-	return int(C.create_bpf_map(C.ulong(size)))
+	return int(C.ffi_create_bpf_map(C.ulong(size)))
 }
 
 // CloseFD closes the provided file descriptor.
 func (e *FFI) CloseFD(fd int) {
-	C.close_fd(C.int(fd))
+	C.ffi_close_fd(C.int(fd))
 }
 
 // GetMapElements fetches the map elements of the given fd.
 func (e *FFI) GetMapElements(fd int, mapSize uint64) (*fpb.MapElements, error) {
-	res := C.get_map_elements(C.int(fd), C.ulong(mapSize))
+	res := C.ffi_get_map_elements(C.int(fd), C.ulong(mapSize))
 	return mapElementsProtoFromStruct(&res)
 }
