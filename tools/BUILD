@@ -23,10 +23,14 @@ package(
 go_binary(
     name = "ffi",
     srcs = ["ffi.go"],
-    out = "ffi.so",
+    out = "ffi.a",
     cgo = 1,
+    gc_linkopts = [
+        "-extldflags",
+        "-static",
+    ],
     importpath = "buzzer/tools/ffi",
-    linkmode = "c-shared",
+    linkmode = "c-archive",
     deps = [
         "//pkg/ebpf",
         "//proto:ebpf_go_proto",
@@ -37,8 +41,10 @@ go_binary(
 cc_binary(
     name = "loader",
     srcs = ["loader.cc"],
+    features = ["fully_static_link"],
     deps = [
         ":ffi.cc",
+        "//ebpf_ffi",
         "//proto:ebpf_cc_proto",
         "@com_google_protobuf//:protobuf",
     ],

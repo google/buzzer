@@ -21,7 +21,10 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
+#include <vector>
 
+// All the functions in this extern are FFIs intended to be invoked from go.
 extern "C" {
 // This struct is used to return the serialized proto containing the verify
 // results.
@@ -32,24 +35,37 @@ struct bpf_result {
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
-struct bpf_result load_bpf_program(void *prog_buff, size_t size,
-                                   int coverage_enabled,
-                                   uint64_t coverage_size);
+struct bpf_result ffi_load_bpf_program(void *prog_buff, size_t size,
+                                       int coverage_enabled,
+                                       uint64_t coverage_size);
 
 // Creates an ebpf map, returns the file descriptor to it.
-int create_bpf_map(size_t size);
+int ffi_create_bpf_map(size_t size);
 
 // Closes the given file descriptor, this is to free up resources.
-void close_fd(int fd);
+void ffi_close_fd(int fd);
 
 // Runs the specified ebpf program by sending some data to a socket.
 // Serialized proto is of type ExecutionRequest.
-struct bpf_result execute_bpf_program(void *serialized_proto, size_t length);
+struct bpf_result ffi_execute_bpf_program(void *serialized_proto,
+                                          size_t length);
 
 // Retrieves the elements of the specified map_fd, return value is of type
 // MapElements.
-struct bpf_result get_map_elements(int map_fd, uint64_t map_size);
+struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
 }
+
+// Actual implementation of load program. The split between ffi and
+// implementation is done so the impl code can be shared with other parts of the
+// codebase also written in C++.
+int load_bpf_program(void *prog_buff, size_t prog_size,
+                     std::string *verifier_log, std::string *error);
+bool get_map_elements(int map_fd, size_t map_size, std::vector<uint64_t> *res,
+                      std::string *error);
+int bpf_create_map(enum bpf_map_type map_type, unsigned int key_size,
+                   unsigned int value_size, unsigned int max_entries);
+bool execute_bpf_program(int prog_fd, uint8_t *input, int input_length,
+                         std::string *error_message);
 
 struct coverage_data {
   int fd;
