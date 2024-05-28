@@ -76,6 +76,90 @@ func RandomJmpInstruction(maxOffset uint64) *pb.Instruction {
 	}
 }
 
+// RandomSize is a helper function to be used in the RandomMemInstruction
+// functions. The result of this function should be one of the recognized
+// operation sizes of ebpf (https://www.kernel.org/doc/html/v5.18/bpf/instruction-set.html#:~:text=The%20size%20modifier%20is%20one%20of%3A)
+func RandomSize() pb.StLdSize {
+	size := rand.SharedRNG.RandInt() % 4
+	// The possible size values of instructions are
+	// W: 0x00
+	// H: 0x08
+	// B: 0x10
+	// DW: 0x18
+	// We can generate these values with a shift to the left of 3 bits.
+	size = size << 3
+	return pb.StLdSize(size)
+}
+
+func AlignmentForSize(s pb.StLdSize) int16 {
+	switch s {
+	case pb.StLdSize_StLdSizeB:
+		return 1
+	case pb.StLdSize_StLdSizeH:
+		return 2
+	case pb.StLdSize_StLdSizeW:
+		return 4
+	case pb.StLdSize_StLdSizeDW:
+		return 8
+	default:
+		// We shouldn't reach this.
+		return 0
+	}
+}
+
+func RandomOffset(s pb.StLdSize) int16 {
+	// Cap offsets to 512.
+	maxOffset := int16(512)
+	offset := int16(rand.SharedRNG.RandInt()) % maxOffset
+	for offset == 0 {
+		offset = int16(rand.SharedRNG.RandInt()) % maxOffset
+	}
+
+	if offset > 0 {
+		// Mem offsets from the stack can only be negative.
+		offset = offset * -1
+	}
+
+	// Align the offset according to the size.
+	for offset%AlignmentForSize(s) != 0 {
+		offset = offset - 1
+	}
+
+	return offset
+}
+
+// Returns a random store or load instruction to the stack.
+func RandomMemInstruction() *pb.Instruction {
+	if rand.SharedRNG.OneOf(2) {
+		return RandomStoreInstruction()
+	}
+
+	return RandomLoadInstruction()
+}
+
+func RandomStoreInstruction() *pb.Instruction {
+	size := RandomSize()
+	offset := RandomOffset(size)
+
+	// Decide if we are doing a Store from a register or a constant.
+	if rand.SharedRNG.OneOf(2) {
+		// Constant
+		imm := int32(rand.SharedRNG.RandInt())
+		return newStoreOperation(size, R10, imm, offset)
+	}
+
+	// Register
+	src := RandomRegister()
+	return newStoreOperation(size, R10, src, offset)
+}
+
+func RandomLoadInstruction() *pb.Instruction {
+	size := RandomSize()
+	offset := RandomOffset(size)
+	dst := RandomRegister()
+	return newLoadOperation(size, dst, R10, offset)
+}
+
 // RandomJumpOp generates a random jump operator.
 func RandomJumpOp() pb.JmpOperationCode {
 	// https://docs.kernel.org/bpf/instruction-set.html#jump-instructions
