@@ -91,7 +91,44 @@ func RandomSize() pb.StLdSize {
 	return pb.StLdSize(size)
 }
 
-// Returns a random store or load instruction.
+func AlignmentForSize(s pb.StLdSize) int16 {
+	switch s {
+	case pb.StLdSize_StLdSizeB:
+		return 1
+	case pb.StLdSize_StLdSizeH:
+		return 2
+	case pb.StLdSize_StLdSizeW:
+		return 4
+	case pb.StLdSize_StLdSizeDW:
+		return 8
+	default:
+		// We shouldn't reach this.
+		return 0
+	}
+}
+
+func RandomOffset(s pb.StLdSize) int16 {
+	// Cap offsets to 512.
+	maxOffset := int16(512)
+	offset := int16(rand.SharedRNG.RandInt()) % maxOffset
+	for offset == 0 {
+		offset = int16(rand.SharedRNG.RandInt()) % maxOffset
+	}
+
+	if offset > 0 {
+		// Mem offsets from the stackc an only be negative.
+		offset = offset * -1
+	}
+
+	// Align the offset according to the size.
+	for offset%AlignmentForSize(s) != 0 {
+		offset = offset - 1
+	}
+
+	return offset
+}
+
+// Returns a random store or load instruction to the stack.
 func RandomMemInstruction() *pb.Instruction {
 	if rand.SharedRNG.OneOf(2) {
 		return RandomStoreInstruction()
@@ -101,16 +138,26 @@ func RandomMemInstruction() *pb.Instruction {
 }
 
 func RandomStoreInstruction() *pb.Instruction {
-	/*
 	size := RandomSize()
-	dst := RandomRegister()
-	offset := int16(rand.SharedRNG.randInt())
-	*/
-	return nil
+	offset := RandomOffset(size)
+
+	// Decide if we are doing a Store from a register or a constant.
+	if rand.SharedRNG.OneOf(2) {
+		// Constant
+		imm := int32(rand.SharedRNG.RandInt())
+		return newStoreOperation(size, R10, imm, offset)
+	}
+
+	// Register
+	src := RandomRegister()
+	return newStoreOperation(size, R10, src, offset)
 }
 
 func RandomLoadInstruction() *pb.Instruction {
-	return nil
+	size := RandomSize()
+	offset := RandomOffset(size)
+	dst := RandomRegister()
+	return newLoadOperation(size, dst, R10, offset)
 }
 
 // RandomJumpOp generates a random jump operator.
