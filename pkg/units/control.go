@@ -50,6 +50,10 @@ type Strategy interface {
 	// IsFuzzingDone if true, buzzer will break out of the main fuzzing loop
 	// and return normally.
 	IsFuzzingDone() bool
+
+	// Name returns the name of the current strategy to be able
+	// to select it with the command line flag.
+	Name() string
 }
 
 // Control directs the execution of the fuzzer.

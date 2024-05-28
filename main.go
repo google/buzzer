@@ -17,6 +17,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os/exec"
 
@@ -28,14 +29,37 @@ import (
 var (
 	coverageBufferSize = flag.Uint64("coverage_buffer_size", 64<<20, "Size of the buffer passed to kcov to get coverage addresses, the higher the number, the slower coverage collection will be")
 	metricsThreshold   = flag.Int("metrics_threshold", 200, "Collect detailed metrics (coverage) every `metrics_threshold` validated programs")
+	strategyName       = flag.String("strategy", "playground", "Strategy to use for fuzzing")
 	vmLinuxPath        = flag.String("vmlinux_path", "/root/vmlinux", "Path to the linux image that will be passed to addr2line to get coverage info")
 	sourceFilesPath    = flag.String("src_path", "/root/sourceFiles", "The fuzzer will look for source files to visualize the coverage at this path")
 	metricsServerAddr  = flag.String("metrics_server_addr", "0.0.0.0", "Address that the metrics server will listen to at")
 	metricsServerPort  = flag.Uint("metrics_server_port", 8080, "Port that the metrics server will listen to at")
 )
 
+var (
+	strats = []units.Strategy{
+		strategies.NewPointerArithmeticStrategy(),
+		strategies.NewPlaygroundStrategy(),
+	}
+)
+
 func main() {
 	flag.Parse()
+	var strategy units.Strategy = nil
+	for _, s := range strats {
+		if s.Name() == *strategyName {
+			strategy = s
+			break
+		}
+	}
+	if strategy == nil {
+		fmt.Printf("Invalid strategy name %s, available strategies are: \n", *strategyName)
+		for _, s := range strats {
+			fmt.Printf("\t - %s\n", s.Name())
+		}
+		return
+	}
+	fmt.Printf("using strategy %s\n", strategy.Name())
 	coverageManager := units.NewCoverageManager(func(inputString string) (string, error) {
 		cmd := exec.Command("/usr/bin/addr2line", "-e", *vmLinuxPath)
 		w, err := cmd.StdinPipe()
@@ -50,8 +74,6 @@ func main() {
 
 	controlUnit := units.Control{}
 	metricsUnit := units.NewMetricsUnit(*metricsThreshold, *coverageBufferSize, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort), coverageManager)
-
-	strategy := &strategies.PointerArithmetic{IsFinished: false}
 
 	if err := controlUnit.Init(&units.FFI{
 		MetricsUnit: metricsUnit,
