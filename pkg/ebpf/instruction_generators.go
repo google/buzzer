@@ -116,7 +116,7 @@ func RandomOffset(s pb.StLdSize) int16 {
 	}
 
 	if offset > 0 {
-		// Mem offsets from the stackc an only be negative.
+		// Mem offsets from the stack can only be negative.
 		offset = offset * -1
 	}
 
