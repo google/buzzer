@@ -24,6 +24,7 @@ go_library(
     name = "strategies",
     srcs = [
         "base.go",
+        "playground.go",
         "pointer_arithmetic.go",
     ],
     importpath = "buzzer/pkg/strategies/strategies",

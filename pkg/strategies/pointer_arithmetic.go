@@ -14,10 +14,14 @@ var (
 	mapCreationFailed = errors.New("Unable to create map array")
 )
 
+func NewPointerArithmeticStrategy() *PointerArithmetic {
+	return &PointerArithmetic{isFinished: false}
+}
+
 // StrategyInterface contains all the methods that a fuzzing strategy should
 // implement.
 type PointerArithmetic struct {
-	IsFinished        bool
+	isFinished        bool
 	mapFd             int
 	programCount      int
 	validProgramCount int
@@ -155,5 +159,10 @@ func (pa *PointerArithmetic) OnError(e error) bool {
 // IsFuzzingDone if true, buzzer will break out of the main fuzzing loop
 // and return normally.
 func (pa *PointerArithmetic) IsFuzzingDone() bool {
-	return pa.IsFinished
+	return pa.isFinished
+}
+
+// StrategyName is used for strategy selection via runtime flags.
+func (pg *PointerArithmetic) Name() string {
+	return "pointer_arithmetic"
 }
