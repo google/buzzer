@@ -76,6 +76,43 @@ func RandomJmpInstruction(maxOffset uint64) *pb.Instruction {
 	}
 }
 
+// RandomSize is a helper function to be used in the RandomMemInstruction
+// functions. The result of this function should be one of the recognized
+// operation sizes of ebpf (https://www.kernel.org/doc/html/v5.18/bpf/instruction-set.html#:~:text=The%20size%20modifier%20is%20one%20of%3A)
+func RandomSize() pb.StLdSize {
+	size := rand.SharedRNG.RandInt() % 4
+	// The possible size values of instructions are
+	// W: 0x00
+	// H: 0x08
+	// B: 0x10
+	// DW: 0x18
+	// We can generate these values with a shift to the left of 3 bits.
+	size = size << 3
+	return pb.StLdSize(size)
+}
+
+// Returns a random store or load instruction.
+func RandomMemInstruction() *pb.Instruction {
+	if rand.SharedRNG.OneOf(2) {
+		return RandomStoreInstruction()
+	}
+
+	return RandomLoadInstruction()
+}
+
+func RandomStoreInstruction() *pb.Instruction {
+	/*
+	size := RandomSize()
+	dst := RandomRegister()
+	offset := int16(rand.SharedRNG.randInt())
+	*/
+	return nil
+}
+
+func RandomLoadInstruction() *pb.Instruction {
+	return nil
+}
+
 // RandomJumpOp generates a random jump operator.
 func RandomJumpOp() pb.JmpOperationCode {
 	// https://docs.kernel.org/bpf/instruction-set.html#jump-instructions
