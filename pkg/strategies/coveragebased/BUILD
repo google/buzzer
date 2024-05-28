@@ -12,31 +12,38 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
-load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 package(
     default_visibility = [
-        "//:__subpackages__",
+        "//visibility:public",
     ],
 )
 
-go_binary(
-    name = "buzzer",
-    srcs = ["main.go"],
-    gc_linkopts = [
-        "-linkmode=external",
-        "-extldflags=-static",
+go_library(
+    name = "coveragebased",
+    srcs = [
+        "coverage_based.go",
+        "heap.go",
     ],
-    static = "on",
+    importpath = "buzzer/pkg/strategies/coveragebased/coveragebased",
     deps = [
+        "//pkg/ebpf",
+        "//pkg/rand",
         "//pkg/strategies",
-        "//pkg/strategies/coveragebased",
         "//pkg/units",
+        "//proto:ebpf_go_proto",
+        "//proto:ffi_go_proto",
+        "@com_github_golang_protobuf//proto",
     ],
 )
 
-build_test(
-    name = "buzzer_build_test",
-    targets = ["//:buzzer"],
+go_test(
+    name = "coveragebased_test",
+    srcs = [
+        "heap_test.go",
+    ],
+    embed = [":coveragebased"],
+    importpath = "buzzer/pkg/strategies/coveragebased/coveragebased",
+    deps = [],
 )

@@ -91,6 +91,10 @@ void get_coverage_and_free_resources(struct coverage_data *cstruct,
   if (cstruct->fd == -1) return;
   uint64_t trace_size =
       __atomic_load_n(&cstruct->coverage_buffer[0], __ATOMIC_RELAXED);
+  if (!trace_size) {
+    int *a = NULL;
+    *a = 1337;
+  }
 
   auto *coverage_addresses = vres->mutable_coverage_address();
   absl::flat_hash_set<uint64_t> seen_address;
