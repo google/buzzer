@@ -6,60 +6,71 @@ import (
 	"buzzer/pkg/units/units"
 	epb "buzzer/proto/ebpf_go_proto"
 	fpb "buzzer/proto/ffi_go_proto"
-	protobuf "github.com/golang/protobuf/proto"
-	"fmt"
 	"errors"
-)
-
-// Begin with classic footer of map ptr arithmetic
-var defaultProg, _ = InstructionSequence(
-	Mov64(R0, 0),
-	Mov64(R1, 0),
-	Mov64(R2, 0),
-	Mov64(R2, 0),
-	Mov64(R4, 0),
-	Mov64(R5, 0),
-	Mov64(R6, 0),
-	Mov64(R7, 0),
-	Mov64(R8, 0),
-	Mov64(R9, 0),
+	"fmt"
+	protobuf "github.com/golang/protobuf/proto"
 )
 
 var (
 	mapCreationFailed = errors.New("Unable to create map array")
-	unknownOperation = errors.New("Unknown mutation operation")
+	unknownOperation  = errors.New("Unknown mutation operation")
 )
 
 const (
-	OPERATION_ADD = 0
+	OPERATION_ADD    = 0
 	OPERATION_MODIFY = 1
-	MAX_PROG_REUSE = 50
-	ALU_OPERATION = 0
-	JMP_OPERATION = 1
-	MEM_OPERATION = 2
+	MAX_PROG_REUSE   = 25
+	ALU_OPERATION    = 0
+	JMP_OPERATION    = 1
+	MEM_OPERATION    = 2
 )
 
 func NewCoverageBasedStrategy() *CoverageBased {
+	defaultProg, _ := InstructionSequence(
+		// Need to patch the fd on every run of prog generation.
+		LdMapByFd(R1, 0),
+		StW(R10, 0, -4),
+		Mov64(R2, R10),
+		Add64(R2, -4),
+		Call(MapLookup),
+		JmpNE(R0, 0, 1),
+		Exit(),
+		LdDW(R0, R0, 0),
+		Mov64(R1, int(rand.SharedRNG.RandInt())),
+		Mov64(R2, int(rand.SharedRNG.RandInt())),
+		Mov64(R3, int(rand.SharedRNG.RandInt())),
+		Mov64(R4, int(rand.SharedRNG.RandInt())),
+		Mov64(R5, int(rand.SharedRNG.RandInt())),
+		Mov64(R6, int(rand.SharedRNG.RandInt())),
+		Mov64(R7, int(rand.SharedRNG.RandInt())),
+		Mov64(R8, int(rand.SharedRNG.RandInt())),
+		Mov64(R9, int(rand.SharedRNG.RandInt())),
+	)
+	for i := 16; i <= 512; i += 8 {
+		defaultProg = append(defaultProg, StDW(R10, R0, int16(i*-1)))
+	}
 	return &CoverageBased{
-		isFinished: false,
-		pq: NewPriorityQueue(),
-		coverageHashTable: make(map[uint64]bool),
+		isFinished:           false,
+		pq:                   NewPriorityQueue(),
+		coverageHashTable:    make(map[uint64]bool),
 		fingerprintHashTable: make(map[uint64]bool),
-		programCount: 0,
-		validProgramCount: 0,
-		mapFd: -1,
+		programCount:         0,
+		validProgramCount:    0,
+		mapFd:                -1,
+		defaultProg:          defaultProg,
 	}
 }
 
 type CoverageBased struct {
-	isFinished        bool
-	pq *PriorityQueue
-	coverageHashTable map[uint64]bool
+	isFinished           bool
+	pq                   *PriorityQueue
+	coverageHashTable    map[uint64]bool
 	fingerprintHashTable map[uint64]bool
-	programCount      int
-	validProgramCount int
-	lastProgram []*epb.Instruction
-	mapFd int
+	programCount         int
+	validProgramCount    int
+	lastProgram          []*epb.Instruction
+	mapFd                int
+	defaultProg          []*epb.Instruction
 }
 
 func mapPtrArithmeticFooter(randomReg epb.Reg, mapFd int) ([]*epb.Instruction, error) {
@@ -114,25 +125,36 @@ func newRandomInstruction(maxJmp uint64) *epb.Instruction {
 	}
 }
 
-func handleAddInstruction(prog []*epb.Instruction) ([]*epb.Instruction, error){
-	pos := uint64(rand.SharedRNG.RandInt()) % uint64(len(prog) + 1)
+func handleAddInstruction(prog []*epb.Instruction) ([]*epb.Instruction, error) {
+	pos := uint64(rand.SharedRNG.RandInt()) % uint64(len(prog)+1)
 	var maxJmp uint64
 	if pos == 0 {
-		maxJmp = uint64(len(prog)-1)
+		if len(prog) > 0 {
+			maxJmp = uint64(len(prog) - 1)
+		} else {
+			maxJmp = 0
+		}
 		newInstr := newRandomInstruction(maxJmp)
 		return append([]*epb.Instruction{newInstr}, prog...), nil
 	} else if pos == uint64(len(prog)) {
 		newInstr := newRandomInstruction(0)
 		return append(prog, newInstr), nil
 	} else {
-		maxJmp = uint64(uint64(len(prog)) - pos - 1)
+		if len(prog) > 0 {
+			maxJmp = uint64(uint64(len(prog)) - pos - 1)
+		} else {
+			maxJmp = 0
+		}
 		newInstr := newRandomInstruction(maxJmp)
 		newProg := append(prog[:pos], newInstr)
 		return append(newProg, prog[pos:]...), nil
 	}
 }
 
-func handleModifyInstruction(prog []*epb.Instruction) ([]*epb.Instruction, error){
+func handleModifyInstruction(prog []*epb.Instruction) ([]*epb.Instruction, error) {
+	if len(prog) == 0 {
+		return handleAddInstruction(prog)
+	}
 	pos := uint64(rand.SharedRNG.RandInt()) % uint64(len(prog))
 	maxJmp := uint64(uint64(len(prog)) - pos - 1)
 	newInstr := newRandomInstruction(maxJmp)
@@ -140,27 +162,34 @@ func handleModifyInstruction(prog []*epb.Instruction) ([]*epb.Instruction, error
 	return prog, nil
 }
 
-func mutateProgram(prog []*epb.Instruction) ([]*epb.Instruction, error) {
+func mutateProgram(prog []*epb.Instruction, headSize int) ([]*epb.Instruction, error) {
+	progHead := prog[:headSize]
+	progBody := prog[headSize:]
 	operation := rand.SharedRNG.RandInt() % 2
+	var err error = nil
 	switch operation {
 	case OPERATION_ADD:
-		return handleAddInstruction(prog)
+		progBody, err = handleAddInstruction(progBody)
 	case OPERATION_MODIFY:
-		return handleModifyInstruction(prog)
+		progBody, err = handleModifyInstruction(progBody)
 	default:
 		return nil, unknownOperation
 	}
+	if err != nil {
+		return nil, err
+	}
+	return append(progHead, progBody...), nil
 }
 
 // GenerateProgram should return the instructions to feed the verifier.
 func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
 	fmt.Printf("Program count: %d, Valid Programs: %d, Queue len: %d\t\t\r", cv.programCount, cv.validProgramCount, cv.pq.Len())
-	cv.programCount = cv.programCount+1
+	cv.programCount = cv.programCount + 1
 
 	// If there are no programs in the queue, force a hard reset of the strategy (delete everything)
 	var progHead []*epb.Instruction
 	if cv.pq.IsEmpty() {
-		progHead = duplicateProgram(defaultProg)
+		progHead = duplicateProgram(cv.defaultProg)
 	} else {
 		cvTrace := cv.pq.Pop()
 		progHead = duplicateProgram(cvTrace.Program)
@@ -170,8 +199,8 @@ func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
 		}
 	}
 
-	mutatedProgram, err := mutateProgram(progHead)
-	cv.lastProgram = progHead
+	mutatedProgram, err := mutateProgram(progHead, len(cv.defaultProg))
+	cv.lastProgram = mutatedProgram
 	if err != nil {
 		return nil, err
 	}
@@ -184,6 +213,8 @@ func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
 	if cv.mapFd < 0 {
 		return nil, mapCreationFailed
 	}
+
+	mutatedProgram[0].Immediate = int32(cv.mapFd)
 
 	footer, err := mapPtrArithmeticFooter(RandomRegister(), cv.mapFd)
 	if err != nil {
@@ -203,11 +234,11 @@ func (cv *CoverageBased) OnVerifyDone(ffi *units.FFI, verificationResult *fpb.Va
 	if !verificationResult.IsValid {
 		return false
 	}
-	cv.validProgramCount = cv.validProgramCount+1
+	cv.validProgramCount = cv.validProgramCount + 1
 
 	if !verificationResult.DidCollectCoverage {
 		fmt.Printf("Warning: Failed to collect coverage %s\n\t\t\t\t", protobuf.MarshalTextString(verificationResult))
-		cv.isFinished = true
+		//cv.isFinished = true
 		return false
 	}
 
@@ -239,10 +270,10 @@ func (cv *CoverageBased) OnVerifyDone(ffi *units.FFI, verificationResult *fpb.Va
 
 	if newAddr || newFingerPrint {
 		cv.pq.Push(&CoverageTrace{
-			Program: cv.lastProgram,
+			Program:           cv.lastProgram,
 			CoverageSignature: fingerPrint,
-			CoverageSize: uint64(len(verificationResult.CoverageAddress)),
-			UsageCount: 0,
+			CoverageSize:      uint64(len(verificationResult.CoverageAddress)),
+			UsageCount:        0,
 		})
 		fmt.Printf("Pushed new program with signature %02x and coverage size: %d, queue length: %d\t\t\t\t\t\n", fingerPrint, len(verificationResult.CoverageAddress), cv.pq.Len())
 		return true
@@ -256,7 +287,9 @@ func (cv *CoverageBased) OnVerifyDone(ffi *units.FFI, verificationResult *fpb.Va
 // verifier expected, if that was not the case it should return false.
 func (cv *CoverageBased) OnExecuteDone(ffi *units.FFI, executionResult *fpb.ExecutionResult) bool {
 	mapEl, _ := ffi.GetMapElements(cv.mapFd, 1)
-	return mapEl.Elements[0] == 0xCAFE
+	valid := mapEl.Elements[0] == 0xCAFE
+	cv.isFinished = !valid
+	return valid
 }
 
 // OnError is used to determine if the fuzzer should continue on errors.

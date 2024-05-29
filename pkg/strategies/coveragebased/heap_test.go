@@ -6,21 +6,21 @@ import (
 
 func TestHeap(t *testing.T) {
 	t.Run("Test heap order", func(t *testing.T) {
-		item1 := &CoverageTrace {
-			Program: nil,
+		item1 := &CoverageTrace{
+			Program:           nil,
 			CoverageSignature: 0xcafe,
-			CoverageSize: 1,
+			CoverageSize:      1,
 		}
 
-		item2 := &CoverageTrace {
-			Program: nil,
+		item2 := &CoverageTrace{
+			Program:           nil,
 			CoverageSignature: 0xcafd,
-			CoverageSize: 0,
+			CoverageSize:      0,
 		}
-		item3 := &CoverageTrace {
-			Program: nil,
+		item3 := &CoverageTrace{
+			Program:           nil,
 			CoverageSignature: 0xbaca,
-			CoverageSize: 1337,
+			CoverageSize:      1337,
 		}
 
 		pq := NewPriorityQueue()

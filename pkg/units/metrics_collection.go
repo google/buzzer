@@ -96,7 +96,7 @@ func (mc *MetricsCollection) processVerifierLog(vres *fpb.ValidationResult) {
 
 	// The verifier error is in the second to last line of the log.
 	// There is an extra new line at the end, this is why the -3
-	verifierError := logSplits[len(logSplits)-3]
+	verifierError := logSplits[0]
 
 	if _, ok := mc.verifierVerdicts[verifierError]; !ok {
 		mc.verifierVerdicts[verifierError] = 1

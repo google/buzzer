@@ -6,10 +6,10 @@ import (
 )
 
 type CoverageTrace struct {
-	Program []*epb.Instruction
+	Program           []*epb.Instruction
 	CoverageSignature uint64
-	CoverageSize uint64
-	UsageCount int
+	CoverageSize      uint64
+	UsageCount        int
 }
 
 type PriorityQueueContainer []*CoverageTrace
@@ -17,25 +17,25 @@ type PriorityQueueContainer []*CoverageTrace
 func (pq PriorityQueueContainer) Len() int { return len(pq) }
 
 func (pq PriorityQueueContainer) Less(i, j int) bool {
-    return pq[i].CoverageSize > pq[j].CoverageSize // Higher priority is a larger value
+	return pq[i].CoverageSize > pq[j].CoverageSize // Higher priority is a larger value
 }
 
 func (pq PriorityQueueContainer) Swap(i, j int) {
-    pq[i], pq[j] = pq[j], pq[i]
+	pq[i], pq[j] = pq[j], pq[i]
 }
 
 func (pq *PriorityQueueContainer) Push(x interface{}) {
-    item := x.(*CoverageTrace)
-    *pq = append(*pq, item)
+	item := x.(*CoverageTrace)
+	*pq = append(*pq, item)
 }
 
 func (pq *PriorityQueueContainer) Pop() interface{} {
-    old := *pq
-    n := len(old)
-    item := old[n-1]
-    old[n-1] = nil  // avoid memory leak
-    *pq = old[0 : n-1]
-    return item
+	old := *pq
+	n := len(old)
+	item := old[n-1]
+	old[n-1] = nil // avoid memory leak
+	*pq = old[0 : n-1]
+	return item
 }
 
 type PriorityQueue struct {
@@ -62,7 +62,7 @@ func (pq *PriorityQueue) IsEmpty() bool {
 }
 
 func NewPriorityQueue() *PriorityQueue {
-	return &PriorityQueue {
+	return &PriorityQueue{
 		pq: &PriorityQueueContainer{},
 	}
 }
