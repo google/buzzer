@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/google/safehtml"
 )
@@ -47,6 +48,39 @@ type fileCoverageInfo struct {
 	CoveredLines int
 	FileExists   bool
 	Coverage     []lineInfo
+}
+
+func (ms *MetricsServer) handleLatestLog(w http.ResponseWriter, req *http.Request) {
+	log := ms.metricsCollection.getLatestLog()
+	fmt.Fprintf(w, "<html>\n<table>\n<tr>\n<td>\n")
+	logLines := strings.Split(log, "\n")
+	for _, line := range logLines {
+		fmt.Fprintf(w, "%s<br>", line)
+	}
+	fmt.Fprintf(w, "</td>\n</tr>\n</table>\n</html>\n")
+}
+
+func (ms *MetricsServer) handleVerifierErrors(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintf(w, "<html>\n<table>\n")
+	verdicts := ms.metricsCollection.getVerifierVerdicts()
+	keys := make([]string, 0, len(verdicts))
+	for key := range verdicts {
+		keys = append(keys, key)
+	}
+	sort.SliceStable(keys, func(i, j int) bool {
+		return verdicts[keys[i]] > verdicts[keys[j]]
+	})
+	fmt.Fprintf(w, "<tr>\n")
+	fmt.Fprintf(w, "<td> <b>Verdict</b> </td>\n")
+	fmt.Fprintf(w, "<td> <b>Count</b> </td>\n")
+	fmt.Fprintf(w, "</tr>\n")
+	for _, k := range keys {
+		fmt.Fprintf(w, "<tr>\n")
+		fmt.Fprintf(w, "<td> %s </td>\n", k)
+		fmt.Fprintf(w, "<td> %d </td>\n", verdicts[k])
+		fmt.Fprintf(w, "</tr>\n")
+	}
+	fmt.Fprintf(w, "</table>\n</html>\n")
 }
 
 func (ms *MetricsServer) handleFileCoverage(w http.ResponseWriter, req *http.Request) {
@@ -186,7 +220,9 @@ func (ms *MetricsServer) handleIndex(w http.ResponseWriter, req *http.Request) {
 }
 
 func (ms *MetricsServer) serve() {
-	http.HandleFunc("/general", ms.handleIndex)
+	http.HandleFunc("/", ms.handleIndex)
 	http.HandleFunc("/fileCoverage", ms.handleFileCoverage)
+	http.HandleFunc("/latestLog", ms.handleLatestLog)
+	http.HandleFunc("/verifierErrors", ms.handleVerifierErrors)
 	http.ListenAndServe(fmt.Sprintf("%s:%d", ms.host, ms.port), nil)
 }

@@ -17,6 +17,8 @@ package units
 import (
 	"strings"
 	"sync"
+
+	fpb "buzzer/proto/ffi_go_proto"
 )
 
 // MetricsCollection Holds the actual metrics that have been collected so far
@@ -25,9 +27,11 @@ type MetricsCollection struct {
 	metricsLock sync.Mutex
 
 	// Metrics start here
-	programsVerified int
-	validPrograms    int
-	coverageManager  *CoverageManager
+	programsVerified  int
+	validPrograms     int
+	coverageManager   *CoverageManager
+	latestVerifierLog string
+	verifierVerdicts  map[string]int
 }
 
 func (mc *MetricsCollection) recordVerifiedProgram() {
@@ -69,4 +73,46 @@ func (mc *MetricsCollection) getMetrics() (int, int, []CoverageInfo) {
 		covArray = append(covArray, covInfo)
 	}
 	return mc.programsVerified, mc.validPrograms, covArray
+}
+
+// processVerifierLog serves to get metrics out of what the verifier has
+// judged from the programs.
+func (mc *MetricsCollection) processVerifierLog(vres *fpb.ValidationResult) {
+	mc.metricsLock.Lock()
+	defer mc.metricsLock.Unlock()
+	log := vres.GetVerifierLog()
+	if len(log) == 0 {
+		return
+	}
+	mc.latestVerifierLog = log
+
+	if vres.IsValid {
+		// If it the program is valid, no need to record any verifier
+		// error message.
+		return
+	}
+
+	logSplits := strings.Split(log, "\n")
+
+	// The verifier error is in the second to last line of the log.
+	// There is an extra new line at the end, this is why the -3
+	verifierError := logSplits[len(logSplits)-3]
+
+	if _, ok := mc.verifierVerdicts[verifierError]; !ok {
+		mc.verifierVerdicts[verifierError] = 1
+	} else {
+		mc.verifierVerdicts[verifierError] += 1
+	}
+}
+
+func (mc *MetricsCollection) getLatestLog() string {
+	mc.metricsLock.Lock()
+	defer mc.metricsLock.Unlock()
+	return mc.latestVerifierLog
+}
+
+func (mc *MetricsCollection) getVerifierVerdicts() map[string]int {
+	mc.metricsLock.Lock()
+	defer mc.metricsLock.Unlock()
+	return mc.verifierVerdicts
 }

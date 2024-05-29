@@ -91,6 +91,7 @@ func (mu *Metrics) validationResultProcessingRoutine() {
 		if err != nil {
 			fmt.Printf("%q\n", err)
 		}
+		mu.metricsCollection.processVerifierLog(vres)
 	}
 }
 
@@ -120,14 +121,6 @@ func (mu *Metrics) RecordVerificationResults(vr *fpb.ValidationResult) {
 		mu.metricsCollection.recordValidProgram()
 	}
 
-	if !mu.shouldCollectDetailedInfo() {
-		return
-	}
-
-	if !vr.GetDidCollectCoverage() {
-		return
-	}
-
 	mu.enqueueValidationResult(vr)
 }
 
@@ -142,7 +135,8 @@ func (mu *Metrics) init() {
 // NewMetricsUnit Creates a new Central Metrics Unit.
 func NewMetricsUnit(threshold int, kcovSize uint64, vmLinuxPath, sourceFilesPath, metricsServerAddr string, metricsServerPort uint16, cm *CoverageManager) *Metrics {
 	mc := &MetricsCollection{
-		coverageManager: cm,
+		coverageManager:  cm,
+		verifierVerdicts: make(map[string]int),
 	}
 	ms := &MetricsServer{
 		host:              metricsServerAddr,
