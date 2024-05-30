@@ -144,10 +144,18 @@ func RandomMemInstruction() *pb.Instruction {
 
 func RandomAtomicInstruction() *pb.Instruction {
 	src := RandomRegister()
-	validSizes := []pb.StLdSize{pb.StLdSize_StLdSizeW, pb.StLdSize_StLdSizeDW}
+	validSizes := []pb.StLdSize{
+		pb.StLdSize_StLdSizeW,
+		pb.StLdSize_StLdSizeDW,
+	}
 	size := validSizes[rand.SharedRNG.RandInt()%2]
 	offset := RandomOffset(size)
-	validOperations := []pb.AluOperationCode{pb.AluOperationCode_AluAdd, pb.AluOperationCode_AluAnd, pb.AluOperationCode_AluOr, pb.AluOperationCode_AluXor}
+	validOperations := []pb.AluOperationCode{
+		pb.AluOperationCode_AluAdd,
+		pb.AluOperationCode_AluAnd,
+		pb.AluOperationCode_AluOr,
+		pb.AluOperationCode_AluXor,
+	}
 	operation := validOperations[rand.SharedRNG.RandInt()%4]
 	return newAtomicInstruction(R10, src, size, offset, int32(operation))
 }
