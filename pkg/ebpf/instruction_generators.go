@@ -130,11 +130,34 @@ func RandomOffset(s pb.StLdSize) int16 {
 
 // Returns a random store or load instruction to the stack.
 func RandomMemInstruction() *pb.Instruction {
-	if rand.SharedRNG.OneOf(2) {
+	t := rand.SharedRNG.RandInt() % 3
+	switch t {
+	case 0:
 		return RandomStoreInstruction()
+	case 1:
+		return RandomLoadInstruction()
+	default:
+		return RandomAtomicInstruction()
 	}
 
-	return RandomLoadInstruction()
+}
+
+func RandomAtomicInstruction() *pb.Instruction {
+	src := RandomRegister()
+	validSizes := []pb.StLdSize{
+		pb.StLdSize_StLdSizeW,
+		pb.StLdSize_StLdSizeDW,
+	}
+	size := validSizes[rand.SharedRNG.RandInt()%2]
+	offset := RandomOffset(size)
+	validOperations := []pb.AluOperationCode{
+		pb.AluOperationCode_AluAdd,
+		pb.AluOperationCode_AluAnd,
+		pb.AluOperationCode_AluOr,
+		pb.AluOperationCode_AluXor,
+	}
+	operation := validOperations[rand.SharedRNG.RandInt()%4]
+	return newAtomicInstruction(R10, src, size, offset, int32(operation))
 }
 
 func RandomStoreInstruction() *pb.Instruction {
