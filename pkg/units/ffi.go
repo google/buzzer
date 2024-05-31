@@ -26,6 +26,7 @@ package units
 //struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
 //int ffi_create_bpf_map(size_t size);
 //void ffi_close_fd(int fd);
+//int ffi_update_map_element(int map_fd, int key, uint64_t value);
 import "C"
 
 import (
@@ -152,4 +153,10 @@ func (e *FFI) CloseFD(fd int) {
 func (e *FFI) GetMapElements(fd int, mapSize uint64) (*fpb.MapElements, error) {
 	res := C.ffi_get_map_elements(C.int(fd), C.ulong(mapSize))
 	return mapElementsProtoFromStruct(&res)
+}
+
+// SetMapElement sets the elemnt specified by `key` to `value` in the map
+// described by `fd`
+func (e *FFI) SetMapElement(fd int, key uint32, value uint64) int {
+	return int(C.ffi_update_map_element(C.int(fd), C.int(key), C.ulong(value)))
 }
