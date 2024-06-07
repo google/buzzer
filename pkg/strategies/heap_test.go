@@ -1,4 +1,4 @@
-package coveragebased
+package strategies
 
 import (
 	"testing"
