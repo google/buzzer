@@ -1,4 +1,4 @@
-package coveragebased
+package strategies
 
 import (
 	. "buzzer/pkg/ebpf/ebpf"
@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	mapCreationFailed = errors.New("Unable to create map array")
-	unknownOperation  = errors.New("Unknown mutation operation")
+	unknownOperation = errors.New("Unknown mutation operation")
 )
 
+// These constants are used to decide which type of operations to generate.
 const (
 	OPERATION_ADD    = 0
 	OPERATION_MODIFY = 1
@@ -25,7 +25,11 @@ const (
 	MEM_OPERATION    = 2
 )
 
+// Factory method to create a new coverage based strategy.
 func NewCoverageBasedStrategy() *CoverageBased {
+
+	// The default program simply initializes the registers to a random
+	// value as well as all stack locations from -8 to -512.
 	defaultProg, _ := InstructionSequence(
 		// Need to patch the fd on every run of prog generation.
 		LdMapByFd(R1, 0),
@@ -61,6 +65,10 @@ func NewCoverageBasedStrategy() *CoverageBased {
 	}
 }
 
+// CoverageBased is a strategy that seeks to maximize the number of verifier
+// lines of code covered.
+// Note that for this strategy to work properly you need to run buzzer with
+// the flag `-metricsThreshold=1`.
 type CoverageBased struct {
 	isFinished           bool
 	pq                   *PriorityQueue
@@ -99,6 +107,7 @@ func mapPtrArithmeticFooter(randomReg epb.Reg, mapFd int) ([]*epb.Instruction, e
 	)
 }
 
+// Returns a deep copy of the program.
 func duplicateProgram(prog []*epb.Instruction) []*epb.Instruction {
 	ret := []*epb.Instruction{}
 	for _, ins := range prog {
@@ -186,7 +195,7 @@ func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
 	fmt.Printf("Program count: %d, Valid Programs: %d, Queue len: %d\t\t\r", cv.programCount, cv.validProgramCount, cv.pq.Len())
 	cv.programCount = cv.programCount + 1
 
-	// If there are no programs in the queue, force a hard reset of the strategy (delete everything)
+	// If there are no programs in the queue, reuse the default program.
 	var progHead []*epb.Instruction
 	if cv.pq.IsEmpty() {
 		progHead = duplicateProgram(cv.defaultProg)

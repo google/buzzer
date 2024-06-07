@@ -21,7 +21,6 @@ import (
 	"log"
 	"os/exec"
 
-	"buzzer/pkg/strategies/coveragebased/coveragebased"
 	"buzzer/pkg/strategies/strategies"
 	"buzzer/pkg/units/units"
 )
@@ -41,7 +40,7 @@ var (
 	strats = []units.Strategy{
 		strategies.NewPointerArithmeticStrategy(),
 		strategies.NewPlaygroundStrategy(),
-		coveragebased.NewCoverageBasedStrategy(),
+		strategies.NewCoverageBasedStrategy(),
 	}
 )
 

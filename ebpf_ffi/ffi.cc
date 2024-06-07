@@ -91,10 +91,6 @@ void get_coverage_and_free_resources(struct coverage_data *cstruct,
   if (cstruct->fd == -1) return;
   uint64_t trace_size =
       __atomic_load_n(&cstruct->coverage_buffer[0], __ATOMIC_RELAXED);
-  if (!trace_size) {
-    int *a = NULL;
-    *a = 1337;
-  }
 
   auto *coverage_addresses = vres->mutable_coverage_address();
   absl::flat_hash_set<uint64_t> seen_address;
@@ -166,7 +162,7 @@ int load_bpf_program(void *prog_buff, size_t prog_size,
   attr.license = (uint64_t) "GPL";
   attr.log_size = ebpf_ffi::kLogBuffSize;
   attr.log_buf = (uint64_t)log_buf;
-  attr.log_level = 4;
+  attr.log_level = 2;
 
   int program_fd = syscall(SYS_bpf, BPF_PROG_LOAD, &attr, sizeof(attr));
   if (program_fd < 0) {
