@@ -162,7 +162,7 @@ int load_bpf_program(void *prog_buff, size_t prog_size,
   attr.license = (uint64_t) "GPL";
   attr.log_size = ebpf_ffi::kLogBuffSize;
   attr.log_buf = (uint64_t)log_buf;
-  attr.log_level = 3;
+  attr.log_level = 2;
 
   int program_fd = syscall(SYS_bpf, BPF_PROG_LOAD, &attr, sizeof(attr));
   if (program_fd < 0) {
