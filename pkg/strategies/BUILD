@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 package(
     default_visibility = [
@@ -24,6 +24,8 @@ go_library(
     name = "strategies",
     srcs = [
         "base.go",
+        "coverage_based.go",
+        "heap.go",
         "playground.go",
         "pointer_arithmetic.go",
     ],
@@ -34,5 +36,16 @@ go_library(
         "//pkg/units",
         "//proto:ebpf_go_proto",
         "//proto:ffi_go_proto",
+        "@com_github_golang_protobuf//proto",
     ],
+)
+
+go_test(
+    name = "strategies_test",
+    srcs = [
+        "heap_test.go",
+    ],
+    embed = [":strategies"],
+    importpath = "buzzer/pkg/strategies/strategies/strategies",
+    deps = [],
 )

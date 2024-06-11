@@ -162,7 +162,7 @@ int load_bpf_program(void *prog_buff, size_t prog_size,
   attr.license = (uint64_t) "GPL";
   attr.log_size = ebpf_ffi::kLogBuffSize;
   attr.log_buf = (uint64_t)log_buf;
-  attr.log_level = 3;
+  attr.log_level = 2;
 
   int program_fd = syscall(SYS_bpf, BPF_PROG_LOAD, &attr, sizeof(attr));
   if (program_fd < 0) {
@@ -295,3 +295,13 @@ bool execute_bpf_program(int prog_fd, uint8_t *input, int input_length,
 }
 
 void ffi_close_fd(int prog_fd) { close(prog_fd); }
+
+int ffi_update_map_element(int map_fd, int key, uint64_t value) {
+  union bpf_attr attr = {
+      .map_fd = (unsigned int)map_fd,
+      .key = (unsigned long)&key,
+      .value = (unsigned long)&value,
+      .flags = 0,  // No flags needed for a simple update
+  };
+  return syscall(SYS_bpf, BPF_MAP_UPDATE_ELEM, &attr, sizeof(attr));
+}

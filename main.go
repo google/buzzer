@@ -40,6 +40,7 @@ var (
 	strats = []units.Strategy{
 		strategies.NewPointerArithmeticStrategy(),
 		strategies.NewPlaygroundStrategy(),
+		strategies.NewCoverageBasedStrategy(),
 	}
 )
 
