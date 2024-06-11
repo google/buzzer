@@ -21,7 +21,7 @@ type Playground struct {
 // GenerateProgram should return the instructions to feed the verifier.
 func (pg *Playground) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
 	insn, err := InstructionSequence(
-		Mov64(R0, 0),
+		Mov64(R0, int64(0x123456789ABCDEF0)),
 		Exit(),
 	)
 	if err != nil {

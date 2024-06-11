@@ -23,16 +23,49 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, insclass pb.InsClass, dst 
 	var srcReg pb.Reg
 	var imm int32
 	switch any(src).(type) {
-	case pb.Reg:
+    case pb.Reg:
 		srcType = pb.SrcOperand_RegSrc
 		srcReg = any(src).(pb.Reg)
 		imm = 0
-	case int:
+    case int:
 		srcType = pb.SrcOperand_Immediate
 		srcReg = pb.Reg_R0
 		intImm := any(src).(int)
 		imm = int32(intImm)
-	default:
+    case int64:
+        upper := int32(src >> 32)
+		return &pb.Instruction{
+			Opcode: &pb.Instruction_MemOpcode{
+				MemOpcode: &pb.MemOpcode {
+					Mode:			pb.StLdMode_StLdModeIMM,
+					Size:			pb.StLdSize_StLdSizeDW,
+					InstructionClass:	pb.InsClass_InsClassLd,
+				},
+			},
+			DstReg:		pb.Reg_R0,
+			SrcReg:		pb.Reg_R0,
+			Offset:		0,
+			Immediate:	int32(src),
+			PseudoInstruction: &pb.Instruction_PseudoValue{
+		       PseudoValue: &pb.Instruction{
+		          Opcode: &pb.Instruction_MemOpcode{
+			         MemOpcode: &pb.MemOpcode{
+                        Mode:             0,
+				        Size:             0,
+				        InstructionClass: 0,
+			         },
+		          },
+		          DstReg:    0,
+		          SrcReg:    0,
+		          Offset:    0,
+		          Immediate: upper,
+		          PseudoInstruction: &pb.Instruction_Empty{
+			         Empty: &pb.Empty{},
+		          },
+               },
+            },
+        }
+    default:
 		srcType = pb.SrcOperand_Immediate
 		srcReg = pb.Reg_R0
 		imm = any(src).(int32)
@@ -44,8 +77,8 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, insclass pb.InsClass, dst 
 				OperationCode:    oc,
 				Source:           srcType,
 				InstructionClass: insclass,
-			},
-		},
+            },
+        },
 		DstReg:    dst,
 		SrcReg:    srcReg,
 		Offset:    0,
