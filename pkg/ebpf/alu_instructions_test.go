@@ -739,66 +739,66 @@ func TestAluInstructionGenerationAndEncoding(t *testing.T) {
 }
 func TestMov64(t *testing.T) {
 	t.Run("Encoding Mov64 with immediate value as source", func(t *testing.T) {
-            imm := int64(0x123456789ABCDEF0)
-            imm_w := int32(imm >> 32)
-            instruction := Mov64(pb.Reg_R9, imm)
-			var opcode *pb.MemOpcode
-			switch o := instruction.Opcode.(type) {
-			case *pb.Instruction_MemOpcode:
-				opcode = o.MemOpcode
-			default:
-				t.Fatalf("could not convert opcode to alu type, proto: %s", protobuf.MarshalTextString(instruction))
+		imm := int64(0x123456789ABCDEF0)
+		imm_w := int32(imm >> 32)
+		instruction := Mov64(pb.Reg_R9, imm)
+		var opcode *pb.MemOpcode
+		switch o := instruction.Opcode.(type) {
+		case *pb.Instruction_MemOpcode:
+			opcode = o.MemOpcode
+		default:
+			t.Fatalf("could not convert opcode to alu type, proto: %s", protobuf.MarshalTextString(instruction))
 
-			}
+		}
 
-			t.Logf("Running test case %s", "Encoding Mov64 with immediate value as source")
-			if instruction.DstReg != pb.Reg_R0 {
-				t.Fatalf("instruction.dstReg = %d, want %d", instruction.DstReg, pb.Reg_R9)
-			}
+		t.Logf("Running test case %s", "Encoding Mov64 with immediate value as source")
+		if instruction.DstReg != pb.Reg_R0 {
+			t.Fatalf("instruction.dstReg = %d, want %d", instruction.DstReg, pb.Reg_R9)
+		}
 
-			if instruction.SrcReg != pb.Reg_R0 {
-				t.Fatalf("instruction.srcReg = %d, want %d", instruction.SrcReg, pb.Reg_R0)
-			}
+		if instruction.SrcReg != pb.Reg_R0 {
+			t.Fatalf("instruction.srcReg = %d, want %d", instruction.SrcReg, pb.Reg_R0)
+		}
 
-			if instruction.Offset != 0 {
-				t.Fatalf("instruction.dstReg = %d, want %d", instruction.Offset, 0)
-			}
+		if instruction.Offset != 0 {
+			t.Fatalf("instruction.dstReg = %d, want %d", instruction.Offset, 0)
+		}
 
-			if instruction.Immediate != int32(imm) {
-				t.Fatalf("instruction.Immediate = %d, want %d", instruction.Immediate, int32(imm))
-			}
-           
-            pseudoValueImm := int32(0)
-            switch o := instruction.PseudoInstruction.(type) {
-			case *pb.Instruction_PseudoValue:
-                pseudoValueImm = o.PseudoValue.Immediate
-			default:
-				t.Fatalf("could not convert PseudoValue to Instruction type, proto: %s", protobuf.MarshalTextString(instruction))
-			}
-            
-            if pseudoValueImm  != imm_w {
-                t.Fatalf("instruction.PseudoInstruction.Immediate = %d, want %d", pseudoValueImm, imm_w)    
-            }
+		if instruction.Immediate != int32(imm) {
+			t.Fatalf("instruction.Immediate = %d, want %d", instruction.Immediate, int32(imm))
+		}
 
-			if opcode.Size != pb.StLdSize_StLdSizeDW {
-				t.Fatalf("opcode.Size = %d, want %d", opcode.Size, pb.StLdSize_StLdSizeDW)
-			}
+		pseudoValueImm := int32(0)
+		switch o := instruction.PseudoInstruction.(type) {
+		case *pb.Instruction_PseudoValue:
+			pseudoValueImm = o.PseudoValue.Immediate
+		default:
+			t.Fatalf("could not convert PseudoValue to Instruction type, proto: %s", protobuf.MarshalTextString(instruction))
+		}
 
-			if opcode.InstructionClass != pb.InsClass_InsClassLd {
-				t.Fatalf("opcode.InstructionClass = %d, want %d", opcode.InstructionClass, pb.InsClass_InsClassLd)
-			}
+		if pseudoValueImm != imm_w {
+			t.Fatalf("instruction.PseudoInstruction.Immediate = %d, want %d", pseudoValueImm, imm_w)
+		}
 
-			if opcode.Mode != pb.StLdMode_StLdModeIMM {
-				t.Fatalf("operationCode = %d, want %d", opcode.Mode, pb.StLdMode_StLdModeIMM)
-			}
+		if opcode.Size != pb.StLdSize_StLdSizeDW {
+			t.Fatalf("opcode.Size = %d, want %d", opcode.Size, pb.StLdSize_StLdSizeDW)
+		}
 
-			encodingArray, err := encodeInstruction(instruction)
-			if err != nil {
-				t.Fatalf("unexpected error when ecoding: %v", err)
-			}
-            
-			if !reflect.DeepEqual(encodingArray, []uint64{0x9abcdef000000018, 0x1234567800000000}) {
-				t.Fatalf("instruction.generateBytecode() = %x, want %x", encodingArray, []uint64{0x9abcdef000000018, 0x1234567800000000})
-			}
+		if opcode.InstructionClass != pb.InsClass_InsClassLd {
+			t.Fatalf("opcode.InstructionClass = %d, want %d", opcode.InstructionClass, pb.InsClass_InsClassLd)
+		}
+
+		if opcode.Mode != pb.StLdMode_StLdModeIMM {
+			t.Fatalf("operationCode = %d, want %d", opcode.Mode, pb.StLdMode_StLdModeIMM)
+		}
+
+		encodingArray, err := encodeInstruction(instruction)
+		if err != nil {
+			t.Fatalf("unexpected error when ecoding: %v", err)
+		}
+
+		if !reflect.DeepEqual(encodingArray, []uint64{0x9abcdef000000018, 0x1234567800000000}) {
+			t.Fatalf("instruction.generateBytecode() = %x, want %x", encodingArray, []uint64{0x9abcdef000000018, 0x1234567800000000})
+		}
 	})
 }

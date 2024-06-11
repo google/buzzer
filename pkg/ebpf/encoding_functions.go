@@ -124,11 +124,11 @@ func encodeInstruction(i *pb.Instruction) ([]uint64, error) {
 	result := []uint64{encoding}
 	switch p := i.PseudoInstruction.(type) {
 	case *pb.Instruction_PseudoValue:
-        resultPseudoValue, err := encodeInstruction(p.PseudoValue)
-        if err != nil {
-            return nil, err
-        }
-        result = append(result, resultPseudoValue[0])
+		resultPseudoValue, err := encodeInstruction(p.PseudoValue)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, resultPseudoValue[0])
 	}
 	return result, nil
 }

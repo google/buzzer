@@ -114,16 +114,16 @@ func newLoadImmOperation(size pb.StLdSize, dst pb.Reg, src pb.Reg, offset int16,
 		SrcReg: src,
 		// Oh protobuf why don't you have int16 support?, need to cast
 		// this to int32 to make golang happy.
-		Offset:            int32(offset),
-		Immediate:         imm,
-	    PseudoInstruction: &pb.Instruction_Empty{
+		Offset:    int32(offset),
+		Immediate: imm,
+		PseudoInstruction: &pb.Instruction_Empty{
 			Empty: &pb.Empty{},
 		},
 	}
 
 	if pseudoIns.Immediate == 0 {
 		ret.PseudoInstruction = &pb.Instruction_PseudoValue{
-            PseudoValue: pseudoIns,
+			PseudoValue: pseudoIns,
 		}
 	}
 
