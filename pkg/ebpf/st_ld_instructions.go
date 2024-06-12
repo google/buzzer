@@ -121,7 +121,7 @@ func newLoadImmOperation(size pb.StLdSize, dst pb.Reg, src pb.Reg, offset int16,
 		},
 	}
 
-	if pseudoIns.Immediate == 0 {
+	if pseudoIns != nil {
 		ret.PseudoInstruction = &pb.Instruction_PseudoValue{
 			PseudoValue: pseudoIns,
 		}

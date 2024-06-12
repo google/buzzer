@@ -123,6 +123,8 @@ func encodeInstruction(i *pb.Instruction) ([]uint64, error) {
 
 	result := []uint64{encoding}
 	switch p := i.PseudoInstruction.(type) {
+	// For instructions requiring wide encoding, like 64-bit immediates, we
+	// use PseudoValue
 	case *pb.Instruction_PseudoValue:
 		resultPseudoValue, err := encodeInstruction(p.PseudoValue)
 		if err != nil {

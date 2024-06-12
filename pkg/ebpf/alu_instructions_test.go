@@ -742,6 +742,10 @@ func TestMov64(t *testing.T) {
 		imm := int64(0x123456789ABCDEF0)
 		imm_w := int32(imm >> 32)
 		instruction := Mov64(pb.Reg_R9, imm)
+
+		// MemOpcode is used since Mov64, which utilizes wide encoding,
+		// splits the 64-bit immediate into two instructions. Thus, the first
+		// instruction loads the lower bits of the immediate value.
 		var opcode *pb.MemOpcode
 		switch o := instruction.Opcode.(type) {
 		case *pb.Instruction_MemOpcode:
@@ -752,7 +756,7 @@ func TestMov64(t *testing.T) {
 		}
 
 		t.Logf("Running test case %s", "Encoding Mov64 with immediate value as source")
-		if instruction.DstReg != pb.Reg_R0 {
+		if instruction.DstReg != pb.Reg_R9 {
 			t.Fatalf("instruction.dstReg = %d, want %d", instruction.DstReg, pb.Reg_R9)
 		}
 
@@ -797,8 +801,9 @@ func TestMov64(t *testing.T) {
 			t.Fatalf("unexpected error when ecoding: %v", err)
 		}
 
-		if !reflect.DeepEqual(encodingArray, []uint64{0x9abcdef000000018, 0x1234567800000000}) {
-			t.Fatalf("instruction.generateBytecode() = %x, want %x", encodingArray, []uint64{0x9abcdef000000018, 0x1234567800000000})
+		// The encoding was manually calculated
+		if !reflect.DeepEqual(encodingArray, []uint64{0x9abcdef000000918, 0x1234567800000000}) {
+			t.Fatalf("instruction.generateBytecode() = %x, want %x", encodingArray, []uint64{0x9abcdef000000918, 0x1234567800000000})
 		}
 	})
 }
