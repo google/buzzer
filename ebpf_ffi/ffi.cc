@@ -159,7 +159,7 @@ int load_bpf_program(void *prog_buff, size_t prog_size,
   attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;
   attr.insns = (uint64_t)insn;
   attr.insn_cnt = (prog_size * sizeof(uint64_t)) / (sizeof(struct bpf_insn));
-  attr.license = (uint64_t)"GPL";
+  attr.license = (uint64_t) "GPL";
   attr.log_size = ebpf_ffi::kLogBuffSize;
   attr.log_buf = (uint64_t)log_buf;
   attr.log_level = 2;

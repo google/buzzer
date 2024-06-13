@@ -738,7 +738,7 @@ func TestAluInstructionGenerationAndEncoding(t *testing.T) {
 	}
 }
 func TestMov64(t *testing.T) {
-	t.Run("Encoding Mov64 with immediate value as source", func(t *testing.T) {
+	t.Run("Encoding Mov64 with 64-bit immediate value as source", func(t *testing.T) {
 		imm := int64(0x123456789ABCDEF0)
 		imm_w := int32(imm >> 32)
 		instruction := Mov64(pb.Reg_R9, imm)
@@ -804,6 +804,54 @@ func TestMov64(t *testing.T) {
 		// The encoding was manually calculated
 		if !reflect.DeepEqual(encodingArray, []uint64{0x9abcdef000000918, 0x1234567800000000}) {
 			t.Fatalf("instruction.generateBytecode() = %x, want %x", encodingArray, []uint64{0x9abcdef000000918, 0x1234567800000000})
+		}
+	})
+	t.Run("Encoding Mov64 with int immediate value as source", func(t *testing.T) {
+		instruction := Mov64(pb.Reg_R9, int(-65535))
+		var opcode *pb.AluOpcode
+		switch o := instruction.Opcode.(type) {
+		case *pb.Instruction_AluOpcode:
+			opcode = o.AluOpcode
+		default:
+			t.Fatalf("could not convert opcode to alu type, proto: %s", protobuf.MarshalTextString(instruction))
+
+		}
+
+		t.Logf("Running test case %s", "Encoding Mov64 with int immediate valu as source")
+		if instruction.DstReg != pb.Reg_R9 {
+			t.Fatalf("instruction.dstReg = %d, want %d", instruction.DstReg, pb.Reg_R9)
+		}
+
+		if instruction.SrcReg != pb.Reg_R0 {
+			t.Fatalf("instruction.srcReg = %d, want %d", instruction.SrcReg, pb.Reg_R0)
+		}
+
+		if instruction.Offset != 0 {
+			t.Fatalf("instruction.dstReg = %d, want %d", instruction.Offset, 0)
+		}
+
+		if instruction.Immediate != int32(-65535) {
+			t.Fatalf("instruction.Immediate = %d, want %d", instruction.Immediate, int32(-65535))
+		}
+
+		if opcode.Source != pb.SrcOperand_Immediate {
+			t.Fatalf("opcode.Src = %d, want %d", opcode.Source, pb.SrcOperand_Immediate)
+		}
+
+		if opcode.InstructionClass != pb.InsClass_InsClassAlu64 {
+			t.Fatalf("opcode.InstructionClass = %d, want %d", opcode.InstructionClass, pb.InsClass_InsClassAlu64)
+		}
+
+		if opcode.OperationCode != pb.AluOperationCode_AluMov {
+			t.Fatalf("operationCode = %d, want %d", opcode.OperationCode, pb.AluOperationCode_AluMov)
+		}
+
+		encodingArray, err := encodeInstruction(instruction)
+		if err != nil {
+			t.Fatalf("unexpected error when ecoding: %v", err)
+		}
+		if !reflect.DeepEqual(encodingArray, []uint64{0xffff0001000009b7}) {
+			t.Fatalf("instruction.generateBytecode() = %x, want %x", encodingArray, []uint64{0xffff0001000009b7})
 		}
 	})
 }
