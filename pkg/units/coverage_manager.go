@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type CoverageInfo struct {
@@ -33,8 +34,18 @@ type CoverageManager struct {
 
 	coverageCache   map[uint64]string
 	coverageInfoMap map[string][]int
+	coverageHistory map[time.Time]int
+	lastMaxCoverage int
 
 	addressToLineFunction func(string) (string, error)
+}
+
+// GetCoverageHistory returns the record of how many lines of coverage have
+// we got with buzzer.
+func (cm *CoverageManager) GetCoverageHistory() map[time.Time]int {
+	cm.coverageLock.Lock()
+	defer cm.coverageLock.Unlock()
+	return cm.coverageHistory
 }
 
 // ProcessCoverageAddresses converts raw coverage hex addresses into line
@@ -48,6 +59,12 @@ func (cm *CoverageManager) ProcessCoverageAddresses(cov []uint64) (map[uint64]st
 		if _, ok := cm.coverageCache[address]; !ok {
 			unknownAddr = append(unknownAddr, address)
 		}
+	}
+
+	// Only record increases of coverage based on the sum of known and unknown addresses.
+	if cm.lastMaxCoverage < len(unknownAddr)+len(cm.coverageCache) {
+		cm.lastMaxCoverage = len(unknownAddr) + len(cm.coverageCache)
+		cm.coverageHistory[time.Now()] = cm.lastMaxCoverage
 	}
 
 	convertAddresses := func() map[uint64]string {
@@ -127,6 +144,8 @@ func NewCoverageManager(processingFunction func(string) (string, error)) *Covera
 	return &CoverageManager{
 		coverageCache:         make(map[uint64]string),
 		coverageInfoMap:       make(map[string][]int),
+		coverageHistory:       make(map[time.Time]int),
+		lastMaxCoverage:       0,
 		addressToLineFunction: processingFunction,
 	}
 }

@@ -78,6 +78,15 @@ go_repository(
 )
 
 go_repository(
+    name = "com_github_go_echarts_go_echarts",
+    build_file_proto_mode = "disable_global",
+    importpath = "github.com/go-echarts/go-echarts/v2/",
+    remote = "https://github.com/go-echarts/go-echarts.git",
+    tag = "v2.3.3",
+    vcs = "git",
+)
+
+go_repository(
     name = "com_github_golang_protobuf",
     build_file_proto_mode = "disable_global",
     importpath = "github.com/golang/protobuf",

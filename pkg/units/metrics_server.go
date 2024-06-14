@@ -23,7 +23,11 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
+	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/opts"
+	"github.com/go-echarts/go-echarts/v2/types"
 	"github.com/google/safehtml"
 )
 
@@ -219,8 +223,52 @@ func (ms *MetricsServer) handleIndex(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "</html>\n")
 }
 
+func (ms *MetricsServer) handleCoverageGraph(w http.ResponseWriter, _ *http.Request) {
+	// create a new line instance
+	line := charts.NewLine()
+	// set some global options like Title/Legend/ToolTip or anything else
+	line.SetGlobalOptions(
+		charts.WithInitializationOpts(opts.Initialization{Theme: types.ThemeWesteros}),
+		charts.WithTitleOpts(opts.Title{
+			Title:    "Coverage over time",
+			Subtitle: "",
+		}),
+		charts.WithTooltipOpts(opts.Tooltip{Show: true, Trigger: "axis"}),
+	)
+
+	covHistory := ms.metricsCollection.getCoverageHistory()
+
+	coverageTimes := []time.Time{}
+
+	// Since range in golang doesn't guarantee to iterate the maps in the
+	// order which they were introduced, we need to sort the map by key
+	// (time)
+	for covTime := range covHistory {
+		coverageTimes = append(coverageTimes, covTime)
+	}
+
+	sort.SliceStable(coverageTimes, func(i, j int) bool {
+		return coverageTimes[i].UnixNano() < coverageTimes[j].UnixNano()
+	})
+	coverageData := []opts.LineData{}
+	for _, t := range coverageTimes {
+		coverageData = append(coverageData, opts.LineData{Value: covHistory[t]})
+	}
+
+	// Put data into instance
+	line.SetXAxis(coverageTimes).
+		AddSeries("Coverage", coverageData).
+		SetSeriesOptions(
+			charts.WithLineChartOpts(opts.LineChart{
+				ShowSymbol: true,
+			}),
+		)
+	line.Render(w)
+}
+
 func (ms *MetricsServer) serve() {
 	http.HandleFunc("/", ms.handleIndex)
+	http.HandleFunc("/coverageGraph", ms.handleCoverageGraph)
 	http.HandleFunc("/fileCoverage", ms.handleFileCoverage)
 	http.HandleFunc("/latestLog", ms.handleLatestLog)
 	http.HandleFunc("/verifierErrors", ms.handleVerifierErrors)
