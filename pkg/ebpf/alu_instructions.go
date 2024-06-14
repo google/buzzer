@@ -32,6 +32,51 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, insclass pb.InsClass, dst 
 		srcReg = pb.Reg_R0
 		intImm := any(src).(int)
 		imm = int32(intImm)
+		/*
+		   Currenty, only the Mov64 instruction in the ALU instruction set handles
+		   64-bit immediate values. It achieves this by using the wide instruction encoding.
+
+		   https://docs.kernel.org/bpf/standardization/instruction-set.html#bit-immediate-instructions
+		*/
+	case int64:
+		if oc == pb.AluOperationCode_AluMov {
+			upper := int32(src >> 32)
+			return &pb.Instruction{
+				Opcode: &pb.Instruction_MemOpcode{
+					MemOpcode: &pb.MemOpcode{
+						Mode:             pb.StLdMode_StLdModeIMM,
+						Size:             pb.StLdSize_StLdSizeDW,
+						InstructionClass: pb.InsClass_InsClassLd,
+					},
+				},
+				DstReg:    dst,
+				SrcReg:    pb.Reg_R0,
+				Offset:    0,
+				Immediate: int32(src),
+				PseudoInstruction: &pb.Instruction_PseudoValue{
+					PseudoValue: &pb.Instruction{
+						Opcode: &pb.Instruction_MemOpcode{
+							MemOpcode: &pb.MemOpcode{
+								Mode:             0,
+								Size:             0,
+								InstructionClass: 0,
+							},
+						},
+						DstReg:    0,
+						SrcReg:    0,
+						Offset:    0,
+						Immediate: upper,
+						PseudoInstruction: &pb.Instruction_Empty{
+							Empty: &pb.Empty{},
+						},
+					},
+				},
+			}
+		} else {
+			srcType = pb.SrcOperand_Immediate
+			srcReg = pb.Reg_R0
+			imm = any(src).(int32)
+		}
 	default:
 		srcType = pb.SrcOperand_Immediate
 		srcReg = pb.Reg_R0
@@ -191,6 +236,12 @@ func Xor[T Src](dstReg pb.Reg, src T) *pb.Instruction {
 // Mov64 Creates a new 64 bit Mov instruction that is either imm or reg depending
 // on the data type of src
 func Mov64[T Src](dstReg pb.Reg, src T) *pb.Instruction {
+	// The ALU instruction requires explicit indication of int64 if the
+	// instruction has a 64-bit immediate value. Otherwise, it will interpret
+	// the value as an int
+	if int(int32(src)) != int(int64(src)) {
+		return newAluInstruction(pb.AluOperationCode_AluMov, pb.InsClass_InsClassAlu64, dstReg, int64(src))
+	}
 	return newAluInstruction(pb.AluOperationCode_AluMov, pb.InsClass_InsClassAlu64, dstReg, src)
 }
 
