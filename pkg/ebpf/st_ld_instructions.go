@@ -100,7 +100,7 @@ func newLoadOperation(size pb.StLdSize, dst pb.Reg, src pb.Reg, offset int16) *p
 	}
 }
 
-func newLoadImmOperation(size pb.StLdSize, dst pb.Reg, src pb.Reg, offset int16, imm int32, pseudoIns *uint64) *pb.Instruction {
+func newLoadImmOperation(size pb.StLdSize, dst pb.Reg, src pb.Reg, offset int16, imm int32, pseudoIns *pb.Instruction) *pb.Instruction {
 	class := pb.InsClass_InsClassLd
 	ret := &pb.Instruction{
 		Opcode: &pb.Instruction_MemOpcode{
@@ -114,18 +114,16 @@ func newLoadImmOperation(size pb.StLdSize, dst pb.Reg, src pb.Reg, offset int16,
 		SrcReg: src,
 		// Oh protobuf why don't you have int16 support?, need to cast
 		// this to int32 to make golang happy.
-		Offset:            int32(offset),
-		Immediate:         imm,
-		PseudoInstruction: nil,
+		Offset:    int32(offset),
+		Immediate: imm,
+		PseudoInstruction: &pb.Instruction_Empty{
+			Empty: &pb.Empty{},
+		},
 	}
 
 	if pseudoIns != nil {
 		ret.PseudoInstruction = &pb.Instruction_PseudoValue{
-			PseudoValue: *pseudoIns,
-		}
-	} else {
-		ret.PseudoInstruction = &pb.Instruction_Empty{
-			Empty: &pb.Empty{},
+			PseudoValue: pseudoIns,
 		}
 	}
 
@@ -153,8 +151,23 @@ func LdB(dst pb.Reg, src pb.Reg, offset int16) *pb.Instruction {
 }
 
 func LdMapByFd(dst pb.Reg, fd int) *pb.Instruction {
-	pseudoIns := uint64(0)
-	return newLoadImmOperation(pb.StLdSize_StLdSizeDW, dst, PseudoMapFD, UnusedField, int32(fd), &pseudoIns)
+	pseudoIns := &pb.Instruction{
+		Opcode: &pb.Instruction_MemOpcode{
+			MemOpcode: &pb.MemOpcode{
+				Mode:             0,
+				Size:             0,
+				InstructionClass: 0,
+			},
+		},
+		DstReg:    0,
+		SrcReg:    0,
+		Offset:    0,
+		Immediate: 0,
+		PseudoInstruction: &pb.Instruction_Empty{
+			Empty: &pb.Empty{},
+		},
+	}
+	return newLoadImmOperation(pb.StLdSize_StLdSizeDW, dst, PseudoMapFD, UnusedField, int32(fd), pseudoIns)
 }
 
 func newAtomicInstruction(dst, src pb.Reg, size pb.StLdSize, offset int16, operation int32) *pb.Instruction {
