@@ -72,6 +72,10 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, insclass pb.InsClass, dst 
 					},
 				},
 			}
+		} else {
+			srcType = pb.SrcOperand_Immediate
+			srcReg = pb.Reg_R0
+			imm = any(src).(int32)
 		}
 	default:
 		srcType = pb.SrcOperand_Immediate
