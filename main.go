@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"runtime"
 
 	"buzzer/pkg/strategies/strategies"
 	"buzzer/pkg/units/units"
@@ -46,6 +47,7 @@ var (
 
 func main() {
 	flag.Parse()
+	fmt.Printf("version: %s\n", runtime.Version())
 	var strategy units.Strategy = nil
 	for _, s := range strats {
 		if s.Name() == *strategyName {
