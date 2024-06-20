@@ -6,12 +6,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: bazelbuild/setup-bazelisk@v2
-    - name: Mount bazel cache 
-      uses: actions/cache@v3
-      with:
-        path: "~/.cache/bazel"
-        key: bazel
     - name: Set up Clang
       uses: egor-tensin/setup-clang@v1
       with:

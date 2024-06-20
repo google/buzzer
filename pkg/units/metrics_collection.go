@@ -17,6 +17,7 @@ package units
 import (
 	"strings"
 	"sync"
+	"time"
 
 	fpb "buzzer/proto/ffi_go_proto"
 )
@@ -50,6 +51,12 @@ func (mc *MetricsCollection) getProgramsVerified() int {
 	mc.metricsLock.Lock()
 	defer mc.metricsLock.Unlock()
 	return mc.programsVerified
+}
+
+func (mc *MetricsCollection) getCoverageHistory() map[time.Time]int {
+	mc.metricsLock.Lock()
+	defer mc.metricsLock.Unlock()
+	return mc.coverageManager.GetCoverageHistory()
 }
 
 func (mc *MetricsCollection) getMetrics() (int, int, []CoverageInfo) {
