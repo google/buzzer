@@ -16,197 +16,240 @@ package cbpf
 
 import (
 	pb "buzzer/proto/cbpf_go_proto"
-	"fmt"
-	"reflect"
 	"testing"
 )
 
 func TestAluInstructionGenerationAndEncoding(t *testing.T) {
 	testK := int32(65535)
 	tests := []struct {
-		testName     string
-		instruction  *pb.Instruction
-		wantJmpTrue  int32
-		wantJmpFalse int32
-		wantK        int32
-		// The values for expected encoding are calculated manually
-		wantEncoding string
+		testName             string
+		instruction          *pb.Instruction
+		wantInstructionClass int32
+		wantSrc              int32
+		wantOperationCode    int32
+		wantJmpTrue          int32
+		wantJmpFalse         int32
+		wantK                int32
 	}{
 		{
-			testName:     "Add with Register as Source",
-			instruction:  Add(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x0c, 0, 0, 0x00000001}",
+			testName:             "Add with Register as Source",
+			instruction:          Add(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluAdd),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "Add with Int as Source",
-			instruction:  Add(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x04, 0, 0, 0x0000ffff}",
+			testName:             "Add with Int as Source",
+			instruction:          Add(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluAdd),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "Sub Register as Source",
-			instruction:  Sub(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x1c, 0, 0, 0x00000001}",
+			testName:             "Sub Register as Source",
+			instruction:          Sub(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluSub),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "Sub with Int as Source",
-			instruction:  Sub(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x14, 0, 0, 0x0000ffff}",
+			testName:             "Sub with Int as Source",
+			instruction:          Sub(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluSub),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "Mul with Register as Source",
-			instruction:  Mul(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x2c, 0, 0, 0x00000001}",
+			testName:             "Mul with Register as Source",
+			instruction:          Mul(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluMul),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "Mul with Int as Source",
-			instruction:  Mul(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x24, 0, 0, 0x0000ffff}",
+			testName:             "Mul with Int as Source",
+			instruction:          Mul(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluMul),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "Div with Register as Source",
-			instruction:  Div(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x3c, 0, 0, 0x00000001}",
+			testName:             "Div with Register as Source",
+			instruction:          Div(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluDiv),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "Div with Int as Source",
-			instruction:  Div(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x34, 0, 0, 0x0000ffff}",
+			testName:             "Div with Int as Source",
+			instruction:          Div(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluDiv),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "OR with Register as Source",
-			instruction:  Or(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x4c, 0, 0, 0x00000001}",
+			testName:             "Or with Register as Source",
+			instruction:          Or(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluOr),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "OR with Int as Source",
-			instruction:  Or(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x44, 0, 0, 0x0000ffff}",
+			testName:             "Or with Int as Source",
+			instruction:          Or(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluOr),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "And with Register as Source",
-			instruction:  And(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x5c, 0, 0, 0x00000001}",
+			testName:             "And with Register as Source",
+			instruction:          And(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluAnd),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "And with Int as Source",
-			instruction:  And(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x54, 0, 0, 0x0000ffff}",
+			testName:             "And with Int as Source",
+			instruction:          And(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluAnd),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "Lsh with Register as Source",
-			instruction:  Lsh(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x6c, 0, 0, 0x00000001}",
+			testName:             "Lsh with Register as Source",
+			instruction:          Lsh(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluLsh),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "Lsh with Int as Source",
-			instruction:  Lsh(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x64, 0, 0, 0x0000ffff}",
+			testName:             "Lsh with Int as Source",
+			instruction:          Lsh(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluLsh),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "Rsh with Register as Source",
-			instruction:  Rsh(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x7c, 0, 0, 0x00000001}",
+			testName:             "Rsh with Register as Source",
+			instruction:          Rsh(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluRsh),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "Rsh with Int as Source",
-			instruction:  Rsh(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x74, 0, 0, 0x0000ffff}",
+			testName:             "Rsh with Int as Source",
+			instruction:          Rsh(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluRsh),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "Neg with Register as Source",
-			instruction:  Neg(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x8c, 0, 0, 0x00000001}",
+			testName:             "Neg with Register as Source",
+			instruction:          Neg(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluNeg),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "Neg with Int as Source",
-			instruction:  Neg(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x84, 0, 0, 0x0000ffff}",
+			testName:             "Neg with Int as Source",
+			instruction:          Neg(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluNeg),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "Mod with Register as Source",
-			instruction:  Mod(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0x9c, 0, 0, 0x00000001}",
+			testName:             "Mod with Register as Source",
+			instruction:          Mod(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluMod),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "Mod with Int as Source",
-			instruction:  Mod(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0x94, 0, 0, 0x0000ffff}",
+			testName:             "Mod with Int as Source",
+			instruction:          Mod(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluMod),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 		{
-			testName:     "Xor with Register as Source",
-			instruction:  Xor(X),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        int32(X),
-			wantEncoding: "{0xac, 0, 0, 0x00000001}",
+			testName:             "Xor with Register as Source",
+			instruction:          Xor(X),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.AluOperationCode_AluXor),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                int32(X),
 		},
 		{
-			testName:     "Xor with Int as Source",
-			instruction:  Xor(testK),
-			wantJmpTrue:  0,
-			wantJmpFalse: 0,
-			wantK:        testK,
-			wantEncoding: "{0xa4, 0, 0, 0x0000ffff}",
+			testName:             "Xor with Int as Source",
+			instruction:          Xor(testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassAlu),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.AluOperationCode_AluXor),
+			wantJmpTrue:          0,
+			wantJmpFalse:         0,
+			wantK:                testK,
 		},
 	}
 
@@ -214,6 +257,19 @@ func TestAluInstructionGenerationAndEncoding(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			instruction := tc.instruction
 			t.Logf("Running test case %s", tc.testName)
+
+			if (instruction.Opcode & 0x07) != tc.wantInstructionClass {
+				t.Fatalf("instrcution.Opcode Class = %d, want %d", instruction.Opcode&0x07, tc.wantInstructionClass)
+			}
+
+			if (instruction.Opcode & 0x08) != tc.wantSrc {
+				t.Fatalf("instrcution.Opcode Source = %d, want %d", instruction.Opcode&0x08, tc.wantSrc)
+			}
+
+			if (instruction.Opcode & 0xf0) != tc.wantOperationCode {
+				t.Fatalf("instrcution.Opcode Code = %d, want %d", instruction.Opcode&0xf0, tc.wantOperationCode)
+			}
+
 			if instruction.Jt != tc.wantJmpTrue {
 				t.Fatalf("instruction.jt = %d, want %d", instruction.Jt, tc.wantJmpTrue)
 			}
@@ -224,15 +280,6 @@ func TestAluInstructionGenerationAndEncoding(t *testing.T) {
 
 			if instruction.K != tc.wantK {
 				t.Fatalf("instruction.k = %d, want %d", instruction.K, tc.wantK)
-			}
-
-			op := fmt.Sprintf("%02x", int16(instruction.Opcode))
-			jt := fmt.Sprintf("%x", int8(instruction.Jt))
-			jf := fmt.Sprintf("%x", int8(instruction.Jf))
-			k := fmt.Sprintf("%08x", int32(instruction.K))
-			encoding := "{0x" + op + ", " + jt + ", " + jf + ", 0x" + k + "}"
-			if !reflect.DeepEqual(encoding, tc.wantEncoding) {
-				t.Fatalf("instruction = %s, want %s", encoding, tc.wantEncoding)
 			}
 		})
 	}

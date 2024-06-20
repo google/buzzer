@@ -16,67 +16,89 @@ package cbpf
 
 import (
 	pb "buzzer/proto/cbpf_go_proto"
-	"fmt"
-	"reflect"
 	"testing"
 )
 
 func TestJmpInstructionGenerationAndEncoding(t *testing.T) {
 	testK := int32(65535)
 	tests := []struct {
-		testName     string
-		instruction  *pb.Instruction
-		wantJmpTrue  int32
-		wantJmpFalse int32
-		wantK        int32
-		// The values for expected encoding are calculated manually
-		wantEncoding string
+		testName             string
+		instruction          *pb.Instruction
+		wantInstructionClass int32
+		wantSrc              int32
+		wantOperationCode    int32
+		wantJmpTrue          int32
+		wantJmpFalse         int32
+		wantK                int32
 	}{
 		{
-			testName:     "Encoding JmpJA Instruction",
-			instruction:  JmpJA(1),
-			wantJmpTrue:  1,
-			wantJmpFalse: 0,
-			wantK:        0,
-			wantEncoding: "{0x05, 1, 0, 0x00000000}",
+			testName:             "Encoding JmpJA Instruction",
+			instruction:          JmpJA(1),
+			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.JmpOperationCode_JmpJA),
+			wantJmpTrue:          1,
+			wantJmpFalse:         0,
+			wantK:                0,
 		},
 		{
-			testName:     "Encoding JmpEQ Instruction",
-			instruction:  JmpEQ(1, 2, testK),
-			wantJmpTrue:  1,
-			wantJmpFalse: 2,
-			wantK:        testK,
-			wantEncoding: "{0x15, 1, 2, 0x0000ffff}",
+			testName:             "Encoding JmpEQ Instruction",
+			instruction:          JmpEQ(1, 2, testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.JmpOperationCode_JmpJEQ),
+			wantJmpTrue:          1,
+			wantJmpFalse:         2,
+			wantK:                testK,
 		},
 		{
-			testName:     "Encoding JmpGT Instruction",
-			instruction:  JmpGT(1, 2, testK),
-			wantJmpTrue:  1,
-			wantJmpFalse: 2,
-			wantK:        testK,
-			wantEncoding: "{0x25, 1, 2, 0x0000ffff}",
+			testName:             "Encoding JmpGT Instruction",
+			instruction:          JmpGT(1, 2, testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.JmpOperationCode_JmpJGT),
+			wantJmpTrue:          1,
+			wantJmpFalse:         2,
+			wantK:                testK,
 		},
 		{
-			testName:     "Encoding JmpGE Instruction",
-			instruction:  JmpGE(1, 2, testK),
-			wantJmpTrue:  1,
-			wantJmpFalse: 2,
-			wantK:        testK,
-			wantEncoding: "{0x35, 1, 2, 0x0000ffff}",
+			testName:             "Encoding JmpGE Instruction",
+			instruction:          JmpGE(1, 2, testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.JmpOperationCode_JmpJGE),
+			wantJmpTrue:          1,
+			wantJmpFalse:         2,
+			wantK:                testK,
 		},
 		{
-			testName:     "Encoding JmpSET Instruction",
-			instruction:  JmpSET(1, 2, testK),
-			wantJmpTrue:  1,
-			wantJmpFalse: 2,
-			wantK:        testK,
-			wantEncoding: "{0x45, 1, 2, 0x0000ffff}",
+			testName:             "Encoding JmpSET Instruction",
+			instruction:          JmpSET(1, 2, testK),
+			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
+			wantSrc:              int32(pb.SrcOperand_Immediate),
+			wantOperationCode:    int32(pb.JmpOperationCode_JmpJSET),
+			wantJmpTrue:          1,
+			wantJmpFalse:         2,
+			wantK:                testK,
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.testName, func(t *testing.T) {
 			instruction := tc.instruction
 			t.Logf("Running test case %s", tc.testName)
+
+			if (instruction.Opcode & 0x07) != tc.wantInstructionClass {
+				t.Fatalf("instrcution.Opcode Class = %d, want %d", instruction.Opcode&0x07, tc.wantInstructionClass)
+			}
+
+			if (instruction.Opcode & 0x08) != tc.wantSrc {
+				t.Fatalf("instrcution.Opcode Source = %d, want %d", instruction.Opcode&0x08, tc.wantSrc)
+			}
+
+			if (instruction.Opcode & 0xf0) != tc.wantOperationCode {
+				t.Fatalf("instrcution.Opcode Code = %d, want %d", instruction.Opcode&0xf0, tc.wantOperationCode)
+			}
+
 			if instruction.Jt != tc.wantJmpTrue {
 				t.Fatalf("instruction.jt = %d, want %d", instruction.Jt, tc.wantJmpTrue)
 			}
@@ -89,14 +111,6 @@ func TestJmpInstructionGenerationAndEncoding(t *testing.T) {
 				t.Fatalf("instruction.k = %d, want %d", instruction.K, tc.wantK)
 			}
 
-			op := fmt.Sprintf("%02x", int16(instruction.Opcode))
-			jt := fmt.Sprintf("%x", int8(instruction.Jt))
-			jf := fmt.Sprintf("%x", int8(instruction.Jf))
-			k := fmt.Sprintf("%08x", int32(instruction.K))
-			encoding := "{0x" + op + ", " + jt + ", " + jf + ", 0x" + k + "}"
-			if !reflect.DeepEqual(encoding, tc.wantEncoding) {
-				t.Fatalf("instruction = %s, want %s", encoding, tc.wantEncoding)
-			}
 		})
 	}
 }
