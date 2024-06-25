@@ -56,3 +56,21 @@ cc_proto_library(
     name = "ffi_cc_proto",
     deps = [":ffi_proto"],
 )
+
+proto_library(
+    name = "cbpf_proto",
+    srcs = ["cbpf.proto"],
+    deps = [],
+)
+
+go_proto_library(
+    name = "cbpf_go_proto",
+    importpath = "buzzer/proto/cbpf_go_proto",
+    protos = [":cbpf_proto"],
+    deps = [],
+)
+
+cc_proto_library(
+    name = "cbpf_cc_proto",
+    deps = [":cbpf_proto"],
+)

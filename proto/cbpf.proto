@@ -1,0 +1,135 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+// Most of the things here represent the encoding documented at
+// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html
+package cbpf;
+
+message Empty {}
+
+enum Reg {
+  // RegA is the accumulator register. RegA is always the
+  // destination register of ALU operations.
+  A = 0x00;
+  // RegX is the indirection register, used by LoadIndirect
+  // operations.
+  X = 0x01;
+}
+
+enum AluOperationCode {
+  AluAdd = 0x00;
+  AluSub = 0x10;
+  AluMul = 0x20;
+  AluDiv = 0x30;
+  AluOr = 0x40;
+  AluAnd = 0x50;
+  AluLsh = 0x60;
+  AluRsh = 0x70;
+  AluNeg = 0x80;
+  AluMod = 0x90;
+  AluXor = 0xa0;
+}
+
+enum JmpOperationCode {
+  JmpJA = 0x00;
+  JmpJEQ = 0x10;
+  JmpJGT = 0x20;
+  JmpJGE = 0x30;
+  JmpJSET = 0x40;
+}
+
+enum SrcOperand {
+  Immediate = 0x00;
+  RegSrc = 0x08;
+}
+
+enum InsClass {
+  InsClassLd = 0x00;
+  InsClassLdx = 0x01;
+  InsClassSt = 0x02;
+  InsClassStx = 0x03;
+  InsClassAlu = 0x04;
+  InsClassJmp = 0x05;
+  InsClassRet = 0x06;
+  InsClassMisc = 0x07;
+}
+
+enum StLdMode {
+  StLdModeIMM = 0x00;
+  StLdModeABS = 0x20;
+  StLdModeIND = 0x40;
+  StLdModeMEM = 0x60;
+  StLdModeLEN = 0x80;
+  StLdModeMSH = 0xa0;
+}
+
+enum StLdSize {
+  StLdSizeW = 0x00;
+  StLdSizeH = 0x08;
+  StLdSizeB = 0x10;
+}
+
+// This message should all fit in a single byte.
+message AluOpcode {
+  // 4 bits MSB
+  AluOperationCode operation_code = 1;
+
+  // 1 bit
+  SrcOperand source = 2;
+
+  // 3 bits LSB
+  InsClass instruction_class = 3;
+}
+
+message JmpOpcode {
+  // 4 bits MSB
+  JmpOperationCode operation_code = 1;
+
+  // 1 bit
+  SrcOperand source = 2;
+
+  // 3 bits LSB
+  InsClass instruction_class = 3;
+}
+
+message MemOpcode {
+  // 3 bits MSB
+  StLdMode mode = 1;
+
+  // 2 bits
+  StLdSize size = 2;
+
+  // 3 bits LSB
+  InsClass instruction_class = 3;
+}
+
+message Instruction {
+  // 16 bits for opcode
+  int32 opcode = 1;
+
+  // 8 bits for Jmp true
+  int32 jt = 2;
+  // 8 bits for Jmp false
+  int32 jf = 3;
+
+  // 32 bits for miscellaneous argument that can be interpreted in different
+  // ways depending on the given instruction in opcode
+  int32 k = 4;
+}
+
+message Program {
+  repeated Instruction instructions = 1;
+}
