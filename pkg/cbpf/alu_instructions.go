@@ -43,6 +43,63 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, src T) *pb.Instruction {
 
 	// Finally the 4 MSB are the operation code.
 	opcode |= int32(oc & 0xF0)
+
+	return &pb.Instruction{
+		Opcode: opcode,
+		Jt:     0,
+		Jf:     0,
+		K:      k,
+	}
+}
+
+func Ret[T Src](src T) *pb.Instruction {
+	var srcType pb.SrcOperand
+	var k int32
+	switch any(src).(type) {
+	case pb.Reg:
+		srcType = pb.SrcOperand_RegSrc
+		k = int32(pb.Reg_A)
+	case int32:
+		srcType = pb.SrcOperand_Immediate
+		k = int32(src)
+	}
+	opcode := int32(0)
+
+	opcode |= int32(pb.InsClass_InsClassRet & 0x07)
+
+	opcode |= int32(srcType & 0x18)
+
+	opcode |= int32(0x00 & 0xF0)
+
+	return &pb.Instruction{
+		Opcode: opcode,
+		Jt:     0,
+		Jf:     0,
+		K:      k,
+	}
+}
+
+func Misc(reg pb.Reg) *pb.Instruction {
+	var k int32
+	var oc int32
+	switch reg {
+	case pb.Reg_A:
+		// TAX
+		oc = int32(0x00)
+		k = int32(pb.Reg_A)
+	case pb.Reg_X:
+		// TXA
+		oc = int32(0x80)
+		k = int32(pb.Reg_X)
+	}
+	opcode := int32(0)
+
+	opcode |= int32(pb.InsClass_InsClassMisc & 0x07)
+
+	opcode |= int32(0x00 & 0x08)
+
+	opcode |= int32(oc & 0xF8)
+
 	return &pb.Instruction{
 		Opcode: opcode,
 		Jt:     0,
