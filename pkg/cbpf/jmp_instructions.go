@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,16 +18,30 @@ import (
 	pb "buzzer/proto/cbpf_go_proto"
 )
 
-func newJmpInstruction(oc pb.JmpOperationCode, jmpTrue int32,
-	jmpFalse int32, fieldK int32) *pb.Instruction {
-
+func newJmpInstruction[T Src](oc pb.JmpOperationCode, jmpTrue, jmpFalse int32, src T) *pb.Instruction {
+	var srcType pb.SrcOperand
+	var k int32
+	switch any(src).(type) {
+	case pb.Reg:
+		srcType = pb.SrcOperand_RegSrc
+		k = int32(pb.Reg_X)
+	case int32:
+		srcType = pb.SrcOperand_Immediate
+		k = int32(src)
+	default:
+		return nil
+	}
+	/*
+	   The opcode field is divided into three parts, for more information go to:
+	   https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
+	*/
 	opcode := int32(0)
 
 	// The 3 least significant bits are the instruction class.
 	opcode |= (int32(pb.InsClass_InsClassJmp) & 0x07)
 
 	// The fourth bit is the source operand.
-	opcode |= (int32(pb.SrcOperand_Immediate) & 0x08)
+	opcode |= (int32(srcType) & 0x08)
 
 	// Finally the 4 MSB are the operation code.
 	opcode |= (int32(oc) & 0xF0)
@@ -36,7 +50,7 @@ func newJmpInstruction(oc pb.JmpOperationCode, jmpTrue int32,
 		Opcode: opcode,
 		Jt:     jmpTrue,
 		Jf:     jmpFalse,
-		K:      fieldK,
+		K:      k,
 	}
 }
 
@@ -44,18 +58,18 @@ func JmpJA(jmpTrue int32) *pb.Instruction {
 	return newJmpInstruction(pb.JmpOperationCode_JmpJA, jmpTrue, int32(UnusedField), int32(UnusedField))
 }
 
-func JmpEQ(jmpTrue int32, jmpFalse int32, k int32) *pb.Instruction {
+func JmpEQ[T Src](jmpTrue, jmpFalse int32, k T) *pb.Instruction {
 	return newJmpInstruction(pb.JmpOperationCode_JmpJEQ, jmpTrue, jmpFalse, k)
 }
 
-func JmpGT(jmpTrue int32, jmpFalse int32, k int32) *pb.Instruction {
+func JmpGT[T Src](jmpTrue, jmpFalse int32, k T) *pb.Instruction {
 	return newJmpInstruction(pb.JmpOperationCode_JmpJGT, jmpTrue, jmpFalse, k)
 }
 
-func JmpGE(jmpTrue int32, jmpFalse int32, k int32) *pb.Instruction {
+func JmpGE[T Src](jmpTrue, jmpFalse int32, k T) *pb.Instruction {
 	return newJmpInstruction(pb.JmpOperationCode_JmpJGE, jmpTrue, jmpFalse, k)
 }
 
-func JmpSET(jmpTrue int32, jmpFalse int32, k int32) *pb.Instruction {
+func JmpSET[T Src](jmpTrue, jmpFalse int32, k T) *pb.Instruction {
 	return newJmpInstruction(pb.JmpOperationCode_JmpJSET, jmpTrue, jmpFalse, k)
 }

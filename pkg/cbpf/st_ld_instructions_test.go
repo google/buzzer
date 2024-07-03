@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -197,16 +197,25 @@ func TestStLdInstructionGenerationAndEncoding(t *testing.T) {
 			instruction := tc.instruction
 			t.Logf("Running test case %s", tc.testName)
 
-			if (instruction.Opcode & 0x07) != tc.wantClass {
-				t.Fatalf("instrcution.Opcode Class = %d, want %d", instruction.Opcode&0x07, tc.wantClass)
+			// The 3 LSB are the instruction class
+			ocClass := instruction.Opcode & 0x07
+
+			// The next 2 bit is the size
+			ocSize := instruction.Opcode & 0x18
+
+			// The 3 MSB are the operation mode
+			ocMode := instruction.Opcode & 0xe0
+
+			if ocClass != tc.wantClass {
+				t.Fatalf("instruction.Opcode Class = %d, want %d", ocClass, tc.wantClass)
 			}
 
-			if (instruction.Opcode & 0x18) != tc.wantSize {
-				t.Fatalf("instrcution.Opcode Size = %d, want %d", instruction.Opcode&0x18, tc.wantSize)
+			if ocSize != tc.wantSize {
+				t.Fatalf("instruction.Opcode Size = %d, want %d", ocSize, tc.wantSize)
 			}
 
-			if (instruction.Opcode & 0xe0) != tc.wantMode {
-				t.Fatalf("instrcution.Opcode Mode = %d, want %d", instruction.Opcode&0xe0, tc.wantMode)
+			if ocMode != tc.wantMode {
+				t.Fatalf("instruction.Opcode Mode = %d, want %d", ocMode, tc.wantMode)
 			}
 
 			if instruction.Jt != tc.wantJmpTrue {

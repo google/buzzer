@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,10 +18,6 @@ import (
 	pb "buzzer/proto/cbpf_go_proto"
 )
 
-type Src interface {
-	pb.Reg | int32
-}
-
 func newAluInstruction[T Src](oc pb.AluOperationCode, src T) *pb.Instruction {
 	var srcType pb.SrcOperand
 	var k int32
@@ -32,7 +28,13 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, src T) *pb.Instruction {
 	case int32:
 		srcType = pb.SrcOperand_Immediate
 		k = int32(src)
+	default:
+		return nil
 	}
+	/*
+	   The opcode field is divided into three parts, for more information go to:
+	   https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
+	*/
 	opcode := int32(0)
 
 	// The 3 least significant bits are the instruction class.
@@ -52,6 +54,8 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, src T) *pb.Instruction {
 	}
 }
 
+// The Instruction Class ret is only use to represent a single ret operation.
+// Ret instruction copies the src to return register and performs function exit
 func Ret[T Src](src T) *pb.Instruction {
 	var srcType pb.SrcOperand
 	var k int32
@@ -63,12 +67,19 @@ func Ret[T Src](src T) *pb.Instruction {
 		srcType = pb.SrcOperand_Immediate
 		k = int32(src)
 	}
+	/*
+	   The opcode field is divided into three parts, for more information go to:
+	   https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
+	*/
 	opcode := int32(0)
 
+	// The 3 least significant bits are the instruction class ret
 	opcode |= int32(pb.InsClass_InsClassRet & 0x07)
 
+	// The fourth bit is the source operand
 	opcode |= int32(srcType & 0x18)
 
+	// Finally the 4 MSB are 0
 	opcode |= int32(0x00 & 0xF0)
 
 	return &pb.Instruction{
@@ -84,20 +95,27 @@ func Misc(reg pb.Reg) *pb.Instruction {
 	var oc int32
 	switch reg {
 	case pb.Reg_A:
-		// TAX
+		// TAX, copy A into X
 		oc = int32(0x00)
 		k = int32(pb.Reg_A)
 	case pb.Reg_X:
-		// TXA
+		// TXA, copy X into A
 		oc = int32(0x80)
 		k = int32(pb.Reg_X)
 	}
+	/*
+	   The opcode field is divided into three parts, for more information go to:
+	   https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
+	*/
 	opcode := int32(0)
 
+	// The 3 least significant bits are the instruction class misc
 	opcode |= int32(pb.InsClass_InsClassMisc & 0x07)
 
+	// The fourth bit is set to 0
 	opcode |= int32(0x00 & 0x08)
 
+	// Finally the 4 MSB are defined if it as TAX or TXA operation
 	opcode |= int32(oc & 0xF8)
 
 	return &pb.Instruction{

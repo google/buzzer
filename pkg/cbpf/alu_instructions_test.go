@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -298,16 +298,25 @@ func TestAluInstructionGenerationAndEncoding(t *testing.T) {
 			instruction := tc.instruction
 			t.Logf("Running test case %s", tc.testName)
 
-			if (instruction.Opcode & 0x07) != tc.wantInstructionClass {
-				t.Fatalf("instrcution.Opcode Class = %d, want %d", instruction.Opcode&0x07, tc.wantInstructionClass)
+			// The LSB are the instruction class
+			ocClass := instruction.Opcode & 0x07
+
+			// The fourth bit is the source operand
+			ocSrc := instruction.Opcode & 0x08
+
+			// The 4 MSB are the operation code
+			ocCode := instruction.Opcode & 0xf0
+
+			if ocClass != tc.wantInstructionClass {
+				t.Fatalf("instruction.Opcode Class = %d, want %d", ocClass, tc.wantInstructionClass)
 			}
 
-			if (instruction.Opcode & 0x08) != tc.wantSrc {
-				t.Fatalf("instrcution.Opcode Source = %d, want %d", instruction.Opcode&0x08, tc.wantSrc)
+			if ocSrc != tc.wantSrc {
+				t.Fatalf("instruction.Opcode Source = %d, want %d", ocSrc, tc.wantSrc)
 			}
 
-			if (instruction.Opcode & 0xf0) != tc.wantOperationCode {
-				t.Fatalf("instrcution.Opcode Code = %d, want %d", instruction.Opcode&0xf0, tc.wantOperationCode)
+			if ocCode != tc.wantOperationCode {
+				t.Fatalf("instruction.Opcode Code = %d, want %d", ocCode, tc.wantOperationCode)
 			}
 
 			if instruction.Jt != tc.wantJmpTrue {

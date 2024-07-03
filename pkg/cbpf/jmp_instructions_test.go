@@ -1,4 +1,4 @@
-// Copyright 2023 Google LLC
+// Copyright 2024 Google LLC
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -42,7 +42,17 @@ func TestJmpInstructionGenerationAndEncoding(t *testing.T) {
 			wantK:                0,
 		},
 		{
-			testName:             "Encoding JmpEQ Instruction",
+			testName:             "Encoding JmpEQ Instruction with Register as source",
+			instruction:          JmpEQ(1, 2, X),
+			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.JmpOperationCode_JmpJEQ),
+			wantJmpTrue:          1,
+			wantJmpFalse:         2,
+			wantK:                int32(X),
+		},
+		{
+			testName:             "Encoding JmpEQ Instruction with Int as source",
 			instruction:          JmpEQ(1, 2, testK),
 			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
 			wantSrc:              int32(pb.SrcOperand_Immediate),
@@ -52,7 +62,17 @@ func TestJmpInstructionGenerationAndEncoding(t *testing.T) {
 			wantK:                testK,
 		},
 		{
-			testName:             "Encoding JmpGT Instruction",
+			testName:             "Encoding JmpGT Instruction with Register as source",
+			instruction:          JmpGT(1, 2, X),
+			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.JmpOperationCode_JmpJGT),
+			wantJmpTrue:          1,
+			wantJmpFalse:         2,
+			wantK:                int32(X),
+		},
+		{
+			testName:             "Encoding JmpGT Instruction with Int as source",
 			instruction:          JmpGT(1, 2, testK),
 			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
 			wantSrc:              int32(pb.SrcOperand_Immediate),
@@ -62,7 +82,17 @@ func TestJmpInstructionGenerationAndEncoding(t *testing.T) {
 			wantK:                testK,
 		},
 		{
-			testName:             "Encoding JmpGE Instruction",
+			testName:             "Encoding JmpGE Instruction with Register as source",
+			instruction:          JmpGE(1, 2, X),
+			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.JmpOperationCode_JmpJGE),
+			wantJmpTrue:          1,
+			wantJmpFalse:         2,
+			wantK:                int32(X),
+		},
+		{
+			testName:             "Encoding JmpGE Instruction with Int as source",
 			instruction:          JmpGE(1, 2, testK),
 			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
 			wantSrc:              int32(pb.SrcOperand_Immediate),
@@ -72,7 +102,17 @@ func TestJmpInstructionGenerationAndEncoding(t *testing.T) {
 			wantK:                testK,
 		},
 		{
-			testName:             "Encoding JmpSET Instruction",
+			testName:             "Encoding JmpSET Instruction with Register as source",
+			instruction:          JmpSET(1, 2, X),
+			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
+			wantSrc:              int32(pb.SrcOperand_RegSrc),
+			wantOperationCode:    int32(pb.JmpOperationCode_JmpJSET),
+			wantJmpTrue:          1,
+			wantJmpFalse:         2,
+			wantK:                int32(X),
+		},
+		{
+			testName:             "Encoding JmpSET Instruction with Int as source",
 			instruction:          JmpSET(1, 2, testK),
 			wantInstructionClass: int32(pb.InsClass_InsClassJmp),
 			wantSrc:              int32(pb.SrcOperand_Immediate),
@@ -87,16 +127,25 @@ func TestJmpInstructionGenerationAndEncoding(t *testing.T) {
 			instruction := tc.instruction
 			t.Logf("Running test case %s", tc.testName)
 
-			if (instruction.Opcode & 0x07) != tc.wantInstructionClass {
-				t.Fatalf("instrcution.Opcode Class = %d, want %d", instruction.Opcode&0x07, tc.wantInstructionClass)
+			// The LSB are the instruction class
+			ocClass := instruction.Opcode & 0x07
+
+			// The fourth bit is the source operand
+			ocSrc := instruction.Opcode & 0x08
+
+			// The 4 MSB are the operation code
+			ocCode := instruction.Opcode & 0xf0
+
+			if ocClass != tc.wantInstructionClass {
+				t.Fatalf("instruction.Opcode Class = %d, want %d", ocClass, tc.wantInstructionClass)
 			}
 
-			if (instruction.Opcode & 0x08) != tc.wantSrc {
-				t.Fatalf("instrcution.Opcode Source = %d, want %d", instruction.Opcode&0x08, tc.wantSrc)
+			if ocSrc != tc.wantSrc {
+				t.Fatalf("instruction.Opcode Source = %d, want %d", ocSrc, tc.wantSrc)
 			}
 
-			if (instruction.Opcode & 0xf0) != tc.wantOperationCode {
-				t.Fatalf("instrcution.Opcode Code = %d, want %d", instruction.Opcode&0xf0, tc.wantOperationCode)
+			if ocCode != tc.wantOperationCode {
+				t.Fatalf("instruction.Opcode Code = %d, want %d", ocCode, tc.wantOperationCode)
 			}
 
 			if instruction.Jt != tc.wantJmpTrue {
