@@ -31,10 +31,8 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, src T) *pb.Instruction {
 	default:
 		return nil
 	}
-	/*
-	   The opcode field is divided into three parts, for more information go to:
-	   https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
-	*/
+	// The opcode field is divided into three parts, for more information go to:
+	// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
 	opcode := int32(0)
 
 	// The 3 least significant bits are the instruction class.
@@ -67,10 +65,8 @@ func Ret[T Src](src T) *pb.Instruction {
 		srcType = pb.SrcOperand_Immediate
 		k = int32(src)
 	}
-	/*
-	   The opcode field is divided into three parts, for more information go to:
-	   https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
-	*/
+	// The opcode field is divided into three parts, for more information go to:
+	// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
 	opcode := int32(0)
 
 	// The 3 least significant bits are the instruction class ret
@@ -103,10 +99,8 @@ func Misc(reg pb.Reg) *pb.Instruction {
 		oc = int32(0x80)
 		k = int32(pb.Reg_X)
 	}
-	/*
-	   The opcode field is divided into three parts, for more information go to:
-	   https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
-	*/
+	// The opcode field is divided into three parts, for more information go to:
+	// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
 	opcode := int32(0)
 
 	// The 3 least significant bits are the instruction class misc

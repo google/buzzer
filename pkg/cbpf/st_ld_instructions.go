@@ -19,6 +19,9 @@ import (
 )
 
 func newStoreLoadOperation(mode pb.StLdMode, size pb.StLdSize, class pb.InsClass, jmpTrue, jmpFalse, fieldK int32) *pb.Instruction {
+
+	// The opcode field is divided into three parts, for more information go to:
+	// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
 	opcode := int32(0)
 
 	// The 3 LSB are the instruction class.
