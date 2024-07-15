@@ -17,12 +17,42 @@
 #ifndef EBPF_FUZZER_EBPF_FFI_FFI_H_
 #define EBPF_FUZZER_EBPF_FFI_FFI_H_
 
+#include <arpa/inet.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <linux/bpf.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/syscall.h>
+#include <unistd.h>
 
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <unordered_set>
 #include <vector>
+
+#include "absl/container/flat_hash_set.h"
+#include "absl/strings/escaping.h"
+#include "google/protobuf/message.h"
+#include "google/protobuf/repeated_field.h"
+#include "proto/ffi.pb.h"
+
+#define KCOV_INIT_TRACE _IOR('c', 1, uint64_t)
+#define KCOV_ENABLE _IO('c', 100)
+#define KCOV_DISABLE _IO('c', 101)
+
+#define KCOV_TRACE_PC 0
+#define KCOV_TRACE_CMP 1
+
+using ebpf_fuzzer::CbpfExecutionRequest;
+using ebpf_fuzzer::ExecutionRequest;
+using ebpf_fuzzer::ExecutionResult;
+using ebpf_fuzzer::MapElements;
+using ebpf_fuzzer::ValidationResult;
 
 // All the functions in this extern are FFIs intended to be invoked from go.
 extern "C" {
@@ -33,11 +63,18 @@ struct bpf_result {
   size_t size;
 };
 
-// Loads a bpf program specified by |prog_buff| with |size| and returns struct
-// with a serialized ValidationResult proto.
-struct bpf_result ffi_load_bpf_program(void *prog_buff, size_t size,
-                                       int coverage_enabled,
-                                       uint64_t coverage_size);
+bpf_result serialize_proto(const google::protobuf::Message &proto);
+
+void enable_coverage(struct coverage_data *coverage_info);
+
+void get_coverage_and_free_resources(struct coverage_data *cstruct,
+                                     ValidationResult *vres);
+
+bool execute_error(std::string *error_message, const char *strerr,
+                   int *sockets);
+
+struct bpf_result return_error(std::string error_message,
+                               ExecutionResult *result);
 
 // Creates an ebpf map, returns the file descriptor to it.
 int ffi_create_bpf_map(size_t size);
@@ -45,34 +82,10 @@ int ffi_create_bpf_map(size_t size);
 // Closes the given file descriptor, this is to free up resources.
 void ffi_close_fd(int fd);
 
-// Runs the specified ebpf program by sending some data to a socket.
-// Serialized proto is of type ExecutionRequest.
-struct bpf_result ffi_execute_bpf_program(void *serialized_proto,
-                                          size_t length);
-
-// Retrieves the elements of the specified map_fd, return value is of type
-// MapElements.
-struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
-
-// Sets the value at key |key| in the map described by |map_fd| to |value|.
-int ffi_update_map_element(int map_fd, int key, uint64_t value);
-}
-
-// Actual implementation of load program. The split between ffi and
-// implementation is done so the impl code can be shared with other parts of the
-// codebase also written in C++.
-int load_bpf_program(void *prog_buff, size_t prog_size,
-                     std::string *verifier_log, std::string *error);
-bool get_map_elements(int map_fd, size_t map_size, std::vector<uint64_t> *res,
-                      std::string *error);
-int bpf_create_map(enum bpf_map_type map_type, unsigned int key_size,
-                   unsigned int value_size, unsigned int max_entries);
-bool execute_bpf_program(int prog_fd, uint8_t *input, int input_length,
-                         std::string *error_message);
-
 struct coverage_data {
   int fd;
   uint64_t coverage_size;
   uint64_t *coverage_buffer;
 };
+}
 #endif  // EBPF_FUZZER_EBPF_FFI_FFI_H_

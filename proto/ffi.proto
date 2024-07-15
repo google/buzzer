@@ -25,6 +25,16 @@ message ExecutionRequest {
   bytes input_data = 3;
 }
 
+message CbpfExecutionRequest {
+  // Program pair sockets
+  int64 socket_parent = 1;
+  int64 socket_child = 2;
+
+  // Optional data to send over the network that can be accessed by the
+  // ebpf program.
+  bytes input_data = 3;
+}
+
 // Results from Executing the ebpf program.
 message ExecutionResult {
   bool did_succeed = 1;
@@ -47,4 +57,6 @@ message ValidationResult {
   int64 coverage_size = 6;
   int64 coverage_buffer = 7;
   repeated uint64 coverage_address = 8;
+  int64 socket_parent = 9;
+  int64 socket_child = 10;
 }

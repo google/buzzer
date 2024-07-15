@@ -6,6 +6,7 @@ import (
 	"buzzer/pkg/units/units"
 	epb "buzzer/proto/ebpf_go_proto"
 	fpb "buzzer/proto/ffi_go_proto"
+	pb "buzzer/proto/program_go_proto"
 	"errors"
 	"fmt"
 	protobuf "github.com/golang/protobuf/proto"
@@ -191,7 +192,7 @@ func mutateProgram(prog []*epb.Instruction, headSize int) ([]*epb.Instruction, e
 }
 
 // GenerateProgram should return the instructions to feed the verifier.
-func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
+func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	fmt.Printf("Program count: %d, Valid Programs: %d, Queue len: %d\t\t\r", cv.programCount, cv.validProgramCount, cv.pq.Len())
 	cv.programCount = cv.programCount + 1
 
@@ -229,10 +230,13 @@ func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	return &epb.Program{
-		Instructions: append(mutatedProgram, footer...),
-	}, nil
+	prog := &pb.Program{}
+	prog.Program = &pb.Program_Ebpf{
+		Ebpf: &epb.Program{
+			Instructions: append(mutatedProgram, footer...),
+		},
+	}
+	return prog, nil
 }
 
 // OnVerifyDone process the results from the verifier. Here the strategy

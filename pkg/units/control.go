@@ -16,12 +16,13 @@
 package units
 
 import (
-	"errors"
-	"fmt"
-
 	"buzzer/pkg/ebpf/ebpf"
+	cpb "buzzer/proto/cbpf_go_proto"
 	epb "buzzer/proto/ebpf_go_proto"
 	fpb "buzzer/proto/ffi_go_proto"
+	pb "buzzer/proto/program_go_proto"
+	"errors"
+	"fmt"
 )
 
 var (
@@ -32,7 +33,7 @@ var (
 // implement.
 type Strategy interface {
 	// GenerateProgram should return the instructions to feed the verifier.
-	GenerateProgram(ffi *FFI) (*epb.Program, error)
+	GenerateProgram(ffi *FFI) (*pb.Program, error)
 
 	// OnVerifyDone process the results from the verifier. Here the strategy
 	// can also tell the fuzzer to continue with execution by returning true
@@ -94,48 +95,132 @@ func (cu *Control) RunFuzzer() error {
 			continue
 		}
 
-		encodedProg, err := ebpf.EncodeInstructions(prog)
-		if err != nil {
-			fmt.Printf("Encoding error: %v\n", err)
-			if !cu.strat.OnError(err) {
-				return err
+		switch p := prog.Program.(type) {
+		case *pb.Program_Cbpf:
+			err := cu.runCbpfFuzzer(p.Cbpf)
+			if err != nil {
+				if !cu.strat.OnError(err) {
+					return err
+				}
+				continue
 			}
-			continue
-		}
 
-		validationResult, err := cu.ffi.ValidateProgram(encodedProg)
-		if err != nil {
-			fmt.Printf("Validation error: %v\n", err)
-			if !cu.strat.OnError(err) {
-				return err
+		case *pb.Program_Ebpf:
+			err := cu.runEbpfFuzzer(p.Ebpf)
+			if err != nil {
+				if !cu.strat.OnError(err) {
+					return err
+				}
+				continue
 			}
-			continue
 		}
 
-		if !cu.strat.OnVerifyDone(cu.ffi, validationResult) || !validationResult.IsValid {
-			cu.ffi.CloseFD(int(validationResult.ProgramFd))
-			continue
-		}
-
-		exReq := &fpb.ExecutionRequest{
-			ProgFd: validationResult.ProgramFd,
-		}
-
-		exRes, err := cu.ffi.RunProgram(exReq)
-		cu.ffi.CloseFD(int(validationResult.ProgramFd))
-		if err != nil {
-			fmt.Printf("RunProgram error: %v\n", err)
-			if !cu.strat.OnError(err) {
-				return err
-			}
-			continue
-		}
-
-		ok := cu.strat.OnExecuteDone(cu.ffi, exRes)
-		if !ok {
-			fmt.Println("Program produced unexpected results")
-			ebpf.GeneratePoc(prog)
-		}
 	}
 	return nil
+}
+
+func (cu *Control) runEbpfFuzzer(prog *epb.Program) error {
+	encodedProg, err := ebpf.EncodeInstructions(prog)
+	if err != nil {
+		fmt.Printf("Encoding error: %v\n", err)
+		if !cu.strat.OnError(err) {
+			return err
+		}
+	}
+
+	validationResult, err := cu.ffi.ValidateEbpfProgram(encodedProg)
+	if err != nil {
+		fmt.Printf("Validation error: %v\n", err)
+		if !cu.strat.OnError(err) {
+			return err
+		}
+		return nil
+	}
+
+	if !cu.strat.OnVerifyDone(cu.ffi, validationResult) || !validationResult.IsValid {
+		cu.ffi.CloseFD(int(validationResult.ProgramFd))
+		return nil
+	}
+
+	exReq := &fpb.ExecutionRequest{
+		ProgFd: validationResult.ProgramFd,
+	}
+
+	exRes, err := cu.ffi.RunEbpfProgram(exReq)
+	cu.ffi.CloseFD(int(validationResult.ProgramFd))
+	if err != nil {
+		fmt.Printf("RunProgram error: %v\n", err)
+		if !cu.strat.OnError(err) {
+			return err
+		}
+		return nil
+	}
+
+	ok := cu.strat.OnExecuteDone(cu.ffi, exRes)
+	if !ok {
+		fmt.Println("Program produced unexpected results")
+		ebpf.GeneratePoc(prog)
+	}
+	return nil
+}
+
+func (cu *Control) runCbpfFuzzer(prog *cpb.Program) error {
+	// TODO Encoding
+	/*
+		   	encodedProg, err := cbpf.EncodeInstructions(prog)
+				if err != nil {
+					fmt.Printf("Encoding error: %v\n", err)
+					if !cu.strat.OnError(err) {
+						return err
+					}
+					continue
+				}
+	*/
+	encodedProg := encodeCbpfInstructions(prog)
+	validationResult, err := cu.ffi.ValidateCbpfProgram(encodedProg)
+	if err != nil {
+		fmt.Printf("Validation error: %v\n", err)
+		if !cu.strat.OnError(err) {
+			return err
+		}
+		return nil
+	}
+
+	if !cu.strat.OnVerifyDone(cu.ffi, validationResult) || !validationResult.IsValid {
+		cu.ffi.CloseFD(int(validationResult.ProgramFd))
+		return nil
+	}
+
+	exReq := &fpb.CbpfExecutionRequest{
+		SocketParent: validationResult.SocketParent,
+		SocketChild:  validationResult.SocketChild,
+	}
+
+	exRes, err := cu.ffi.RunCbpfProgram(exReq)
+	if err != nil {
+		fmt.Printf("RunProgram error: %v\n", err)
+		if !cu.strat.OnError(err) {
+			return err
+		}
+		return nil
+	}
+
+	ok := cu.strat.OnExecuteDone(cu.ffi, exRes)
+	if !ok {
+		fmt.Println("Program produced unexpected results")
+	}
+	return nil
+}
+
+func encodeCbpfInstructions(program *cpb.Program) [][]int32 {
+	result := [][]int32{}
+	for _, instruction := range program.Instructions {
+		ins := [][]int32{{instruction.Opcode,
+			instruction.Jt,
+			instruction.Jf,
+			instruction.K},
+		}
+		result = append(result, ins...)
+	}
+	return result
 }
