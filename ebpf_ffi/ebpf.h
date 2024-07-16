@@ -55,7 +55,7 @@ int ffi_create_bpf_map(size_t size);
 // MapElements.
 struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
 
-bool execute_bpf_program(int prog_fd, uint8_t *input, int input_length,
+bool execute_ebpf_program(int prog_fd, uint8_t *input, int input_length,
                          std::string *error_message);
 
 /// Runs the specified ebpf program by sending some data to a socket.
