@@ -24,7 +24,7 @@ extern "C" {
 // Actual implementation of load program. The split between ffi and
 // implementation is done so the impl code can be shared with other parts of the
 // codebase also written in C++.
-int *load_cbpf_program(void *prog_buff, std::string *error);
+void load_cbpf_program(void *prog_buff, std::string *error, int *socks);
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
@@ -34,7 +34,7 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
 bool execute_cbpf_program(int prog_fd, uint8_t *input, int input_length,
                           std::string *error_message);
 
-// Runs the specified ebpf program by sending some data to a socket.
+// Runs the specified cbpf program by sending some data to a socket.
 // Serialized proto is of type ExecutionRequest.
 struct bpf_result ffi_execute_cbpf_program(void *serialized_proto,
                                            size_t length);

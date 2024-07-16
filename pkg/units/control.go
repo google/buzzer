@@ -165,17 +165,6 @@ func (cu *Control) runEbpfFuzzer(prog *epb.Program) error {
 }
 
 func (cu *Control) runCbpfFuzzer(prog *cpb.Program) error {
-	// TODO Encoding
-	/*
-		   	encodedProg, err := cbpf.EncodeInstructions(prog)
-				if err != nil {
-					fmt.Printf("Encoding error: %v\n", err)
-					if !cu.strat.OnError(err) {
-						return err
-					}
-					continue
-				}
-	*/
 	encodedProg := encodeCbpfInstructions(prog)
 	validationResult, err := cu.ffi.ValidateCbpfProgram(encodedProg)
 	if err != nil {

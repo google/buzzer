@@ -27,44 +27,44 @@ namespace cbpf_ffi {
 constexpr size_t kLogBuffSize = 100000000;
 }  // namespace cbpf_ffi
 
-int *load_cbpf_program(void *prog_buff, std::string *error) {
-  int socks[2] = {};
+void load_cbpf_program(void *prog_buff, std::string *error, int *socks) {
   if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) != 0) {
     *error = strerror(errno);
   }
 
+  // cBPF programs have two relevant structures: sock_filter, and sock_fprog
+  // https://www.kernel.org/doc/html/latest/networking/filter.html#structure
   struct sock_filter *insn = (struct sock_filter *)prog_buff;
-
   struct sock_fprog program;
-  program.len = sizeof((struct sock_filter *)insn) / sizeof(insn[0]);
+  int size = sizeof(insn);
+  program.len = size / sizeof(insn[0]);
   program.filter = insn;
 
   if (setsockopt(socks[0], SOL_SOCKET, SO_ATTACH_FILTER, &program,
                  sizeof(program)) < 0) {
     *error = strerror(errno);
   }
-
-  return socks;
 }
 
 struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
                                         uint64_t coverage_size) {
   std::string error_message;
+
   struct coverage_data cover;
   memset(&cover, 0, sizeof(struct coverage_data));
   cover.fd = -1;
   cover.coverage_size = coverage_size;
   if (coverage_enabled) enable_coverage(&cover);
 
-  int *sockets = load_cbpf_program(prog_buff, &error_message);
+  int socks[2] = {};
+  load_cbpf_program(prog_buff, &error_message, socks);
 
   ValidationResult vres;
   if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
 
   // Start building the validation result proto.
-  vres.set_socket_parent(sockets[0]);
-  vres.set_socket_child(sockets[1]);
-
+  vres.set_socket_parent(socks[0]);
+  vres.set_socket_child(socks[1]);
   if (cover.fd != -1) {
     vres.set_did_collect_coverage(true);
     vres.set_coverage_size(cover.coverage_size);
@@ -73,7 +73,7 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
     vres.set_did_collect_coverage(false);
   }
 
-  if (sockets[0] < 0) {
+  if (socks[0] < 0) {
     // Return why we failed to load the program.
     vres.set_bpf_error(error_message);
     vres.set_is_valid(false);
@@ -111,6 +111,7 @@ struct bpf_result ffi_execute_cbpf_program(void *serialized_proto,
 
   int socket_parent = execution_request.socket_parent();
   int socket_child = execution_request.socket_child();
+
   uint8_t *data;
   uint8_t backup_data[4] = {0xAA, 0xAA, 0xAA, 0xAA};
   data = backup_data;
