@@ -31,10 +31,8 @@ func newJmpInstruction[T Src](oc pb.JmpOperationCode, jmpTrue, jmpFalse int32, s
 	default:
 		return nil
 	}
-	/*
-	   The opcode field is divided into three parts, for more information go to:
-	   https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
-	*/
+	// The opcode field is divided into three parts, for more information go to:
+	// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
 	opcode := int32(0)
 
 	// The 3 least significant bits are the instruction class.
