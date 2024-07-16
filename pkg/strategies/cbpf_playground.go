@@ -17,26 +17,12 @@ type Cbpf_Playground struct {
 	isFinished bool
 }
 
-func CbpfInstructionSequence(instructions ...*cpb.Instruction) ([]*cpb.Instruction, error) {
-	for index, inst := range instructions {
-		if inst == nil {
-			return nil, fmt.Errorf("Nil instruction at index %d, did you pass an unsigned int value?", index)
-		}
-	}
-	return instructions, nil
-}
-
 func (pg *Cbpf_Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
-	insn, err := CbpfInstructionSequence(
-		Add(int32(1)),
-		Ret(int32(0)),
-	)
-	if err != nil {
-		return nil, err
-	}
-	prog := &pb.Program{}
-	prog.Program = &pb.Program_Cbpf{
-		Cbpf: &cpb.Program{Instructions: insn},
+	insn := []*cpb.Instruction{Ret(1), Ret(0)}
+	prog := &pb.Program{
+		Program: &pb.Program_Cbpf{
+			Cbpf: &cpb.Program{Instructions: insn},
+		},
 	}
 	return prog, nil
 }
@@ -48,6 +34,7 @@ func (pg *Cbpf_Playground) OnVerifyDone(ffi *units.FFI, verificationResult *fpb.
 }
 
 func (pg *Cbpf_Playground) OnExecuteDone(ffi *units.FFI, executionResult *fpb.ExecutionResult) bool {
+	fmt.Println(executionResult)
 	return true
 }
 

@@ -122,10 +122,10 @@ func (pa *PointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, error
 	p := &epb.Program{
 		Instructions: header,
 	}
-	prog := &pb.Program{}
-	prog.Program = &pb.Program_Ebpf{
-		Ebpf: p,
-	}
+	prog := &pb.Program{
+		Program: &pb.Program_Ebpf{
+			Ebpf: p,
+		}}
 	return prog, nil
 }
 

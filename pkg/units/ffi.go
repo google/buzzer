@@ -145,7 +145,7 @@ func (e *FFI) ValidateEbpfProgram(prog []uint64) (*fpb.ValidationResult, error) 
 	if shouldCollect {
 		cbool = 1
 	}
-	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)) /*enable_coverage=*/, C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
+	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)), C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
 	res, err := validationProtoFromStruct(&bpfVerifyResult)
 	if err != nil {
 		return nil, err
@@ -177,7 +177,7 @@ func (e *FFI) ValidateCbpfProgram(prog [][]int32) (*fpb.ValidationResult, error)
 	if shouldCollect {
 		cbool = 1
 	}
-	bpfVerifyResult := C.ffi_load_cbpf_program(unsafe.Pointer(&prog[0][0]), C.ulong(len(prog)) /*enable_coverage=*/, C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
+	bpfVerifyResult := C.ffi_load_cbpf_program(unsafe.Pointer(&prog[0][0]), C.ulong(len(prog)), C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
 	res, err := validationProtoFromStruct(&bpfVerifyResult)
 	if err != nil {
 		return nil, err

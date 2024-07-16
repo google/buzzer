@@ -17,7 +17,7 @@ package cbpf
 import pb "buzzer/proto/cbpf_go_proto"
 
 type Src interface {
-	pb.Reg | int32
+	pb.Reg | int32 | int
 }
 
 const (

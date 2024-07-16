@@ -230,10 +230,11 @@ func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	prog := &pb.Program{}
-	prog.Program = &pb.Program_Ebpf{
-		Ebpf: &epb.Program{
-			Instructions: append(mutatedProgram, footer...),
+	prog := &pb.Program{
+		Program: &pb.Program_Ebpf{
+			Ebpf: &epb.Program{
+				Instructions: append(mutatedProgram, footer...),
+			},
 		},
 	}
 	return prog, nil

@@ -20,30 +20,32 @@
 #include <linux/kernel.h>
 #include <netpacket/packet.h>
 
-namespace cbpf_ffi {
-
-// This constant was determined arbitrarily, the number of 0's has incremented
-// when the size was no longer enough for the verifier logs.
-constexpr size_t kLogBuffSize = 100000000;
-}  // namespace cbpf_ffi
-
-void load_cbpf_program(void *prog_buff, std::string *error, int *socks) {
-  if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) != 0) {
+bool load_cbpf_program(void *prog_buff, std::string *error, int *socks) {
+  if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) < 0) {
     *error = strerror(errno);
+    return false;
   }
-
   // cBPF programs have two relevant structures: sock_filter, and sock_fprog
   // https://www.kernel.org/doc/html/latest/networking/filter.html#structure
   struct sock_filter *insn = (struct sock_filter *)prog_buff;
   struct sock_fprog program;
   int size = sizeof(insn);
+  printf("%d", size);
   program.len = size / sizeof(insn[0]);
   program.filter = insn;
-
   if (setsockopt(socks[0], SOL_SOCKET, SO_ATTACH_FILTER, &program,
                  sizeof(program)) < 0) {
     *error = strerror(errno);
+    return false;
   }
+  return true;
+}
+
+struct bpf_result validation_error(std::string error_message,
+                                   ValidationResult *vres) {
+  vres->set_bpf_error(error_message);
+  vres->set_is_valid(false);
+  return serialize_proto(*vres);
 }
 
 struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
@@ -56,10 +58,14 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
   cover.coverage_size = coverage_size;
   if (coverage_enabled) enable_coverage(&cover);
 
-  int socks[2] = {};
-  load_cbpf_program(prog_buff, &error_message, socks);
-
   ValidationResult vres;
+
+  int socks[2] = {-1, -1};
+  if (!load_cbpf_program(prog_buff, &error_message, socks)) {
+    // Return why we failed to load the program.
+    return validation_error(error_message, &vres);
+  }
+
   if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
 
   // Start building the validation result proto.
@@ -75,22 +81,24 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
 
   if (socks[0] < 0) {
     // Return why we failed to load the program.
-    vres.set_bpf_error(error_message);
-    vres.set_is_valid(false);
-  } else {
-    vres.set_is_valid(true);
+    return validation_error(error_message, &vres);
   }
+  vres.set_is_valid(true);
 
   return serialize_proto(vres);
 }
 
 bool execute_cbpf_program(int socket_parent, int socket_child, uint8_t *input,
-                          int input_length, std::string *error_message) {
-  if (write(socket_child, input, input_length) != input_length) {
+                          uint8_t *output, int input_length,
+                          std::string *error_message) {
+  if (write(socket_parent, input, input_length) != input_length) {
     *error_message = "Could not write all data to socket";
     return false;
   }
 
+  if (read(socket_child, output, input_length) != input_length) {
+    *error_message = "Could not read all data to socket";
+  }
   close(socket_parent);
   close(socket_child);
 
@@ -110,7 +118,13 @@ struct bpf_result ffi_execute_cbpf_program(void *serialized_proto,
   }
 
   int socket_parent = execution_request.socket_parent();
+  if (socket_parent < 0) {
+    return return_error("Invalid socket parent", &execution_result);
+  }
   int socket_child = execution_request.socket_child();
+  if (socket_child < 0) {
+    return return_error("Invalid socket child", &execution_result);
+  }
 
   uint8_t *data;
   uint8_t backup_data[4] = {0xAA, 0xAA, 0xAA, 0xAA};
@@ -121,11 +135,19 @@ struct bpf_result ffi_execute_cbpf_program(void *serialized_proto,
     data_size = execution_request.input_data().length();
   }
 
+  uint8_t *read_data;
+  uint8_t backup_read_data[data_size + 1];
+  read_data = backup_read_data;
+
+  memset(read_data, 0x00, data_size + 1);
   std::string error_message;
-  if (!execute_cbpf_program(socket_parent, socket_child, data, data_size,
-                            &error_message)) {
+  if (!execute_cbpf_program(socket_parent, socket_child, data, read_data,
+                            data_size, &error_message)) {
     return return_error(error_message, &execution_result);
   }
+
+  std::string string_data = (const char *)read_data;
+  execution_result.set_output_data(string_data);
 
   execution_result.set_did_succeed(true);
   return serialize_proto(execution_result);

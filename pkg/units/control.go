@@ -97,7 +97,7 @@ func (cu *Control) RunFuzzer() error {
 
 		switch p := prog.Program.(type) {
 		case *pb.Program_Cbpf:
-			err := cu.runCbpfFuzzer(p.Cbpf)
+			err := cu.runCbpf(p.Cbpf)
 			if err != nil {
 				if !cu.strat.OnError(err) {
 					return err
@@ -106,7 +106,7 @@ func (cu *Control) RunFuzzer() error {
 			}
 
 		case *pb.Program_Ebpf:
-			err := cu.runEbpfFuzzer(p.Ebpf)
+			err := cu.runEbpf(p.Ebpf)
 			if err != nil {
 				if !cu.strat.OnError(err) {
 					return err
@@ -119,7 +119,7 @@ func (cu *Control) RunFuzzer() error {
 	return nil
 }
 
-func (cu *Control) runEbpfFuzzer(prog *epb.Program) error {
+func (cu *Control) runEbpf(prog *epb.Program) error {
 	encodedProg, err := ebpf.EncodeInstructions(prog)
 	if err != nil {
 		fmt.Printf("Encoding error: %v\n", err)
@@ -164,7 +164,7 @@ func (cu *Control) runEbpfFuzzer(prog *epb.Program) error {
 	return nil
 }
 
-func (cu *Control) runCbpfFuzzer(prog *cpb.Program) error {
+func (cu *Control) runCbpf(prog *cpb.Program) error {
 	encodedProg := encodeCbpfInstructions(prog)
 	validationResult, err := cu.ffi.ValidateCbpfProgram(encodedProg)
 	if err != nil {

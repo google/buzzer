@@ -27,10 +27,10 @@ func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	prog := &pb.Program{}
-	prog.Program = &pb.Program_Ebpf{
-		Ebpf: &epb.Program{Instructions: insn},
-	}
+	prog := &pb.Program{
+		Program: &pb.Program_Ebpf{
+			Ebpf: &epb.Program{Instructions: insn},
+		}}
 	return prog, nil
 }
 
