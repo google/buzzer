@@ -86,7 +86,7 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
 
 bool execute_cbpf_program(int socket_parent, int socket_child, uint8_t *input,
                           int input_length, std::string *error_message) {
-  if (write(socket_parent, input, input_length) != input_length) {
+  if (write(socket_child, input, input_length) != input_length) {
     *error_message = "Could not write all data to socket";
     return false;
   }
