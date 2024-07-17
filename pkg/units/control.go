@@ -16,6 +16,7 @@
 package units
 
 import (
+	"buzzer/pkg/cbpf/cbpf"
 	"buzzer/pkg/ebpf/ebpf"
 	cpb "buzzer/proto/cbpf_go_proto"
 	epb "buzzer/proto/ebpf_go_proto"
@@ -24,13 +25,6 @@ import (
 	"errors"
 	"fmt"
 )
-
-type filter struct {
-	opcode uint16
-	jt     uint8
-	jf     uint8
-	k      uint32
-}
 
 var (
 	NilStrategyError = errors.New("Strategy cannot be nil")
@@ -188,8 +182,8 @@ func (cu *Control) runCbpf(prog *cpb.Program) error {
 	}
 
 	exReq := &fpb.CbpfExecutionRequest{
-		SocketParent: validationResult.SocketParent,
-		SocketChild:  validationResult.SocketChild,
+		SocketWrite: validationResult.SocketWrite,
+		SocketRead:  validationResult.SocketRead,
 	}
 
 	exRes, err := cu.ffi.RunCbpfProgram(exReq)
@@ -208,14 +202,16 @@ func (cu *Control) runCbpf(prog *cpb.Program) error {
 	return nil
 }
 
-func encodeCbpfInstructions(program *cpb.Program) []filter {
-	result := []filter{}
+// Encode proto program instructions into their correct structure.
+// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#structure
+func encodeCbpfInstructions(program *cpb.Program) []cbpf.Filter {
+	result := []cbpf.Filter{}
 	for _, instruction := range program.Instructions {
-		ins := filter{
-			opcode: uint16(instruction.Opcode),
-			jt:     uint8(instruction.Jt),
-			jf:     uint8(instruction.Jf),
-			k:      uint32(instruction.K),
+		ins := cbpf.Filter{
+			Opcode: uint16(instruction.Opcode),
+			Jt:     uint8(instruction.Jt),
+			Jf:     uint8(instruction.Jf),
+			K:      uint32(instruction.K),
 		}
 
 		result = append(result, ins)

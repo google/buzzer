@@ -27,8 +27,8 @@ message ExecutionRequest {
 
 message CbpfExecutionRequest {
   // Program pair sockets
-  int64 socket_parent = 1;
-  int64 socket_child = 2;
+  int64 socket_write = 1;
+  int64 socket_read = 2;
 
   // Optional data to send over the network that can be accessed by the
   // cbpf program.
@@ -58,6 +58,6 @@ message ValidationResult {
   int64 coverage_size = 6;
   int64 coverage_buffer = 7;
   repeated uint64 coverage_address = 8;
-  int64 socket_parent = 9;  // cbpf only
-  int64 socket_child = 10;  // cbpf only
+  int64 socket_write = 9;  // cbpf only
+  int64 socket_read = 10;  // cbpf only
 }

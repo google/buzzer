@@ -32,12 +32,12 @@ package units
 import "C"
 
 import (
+	"buzzer/pkg/cbpf/cbpf"
+	fpb "buzzer/proto/ffi_go_proto"
 	"encoding/base64"
 	"fmt"
-	"unsafe"
-
-	fpb "buzzer/proto/ffi_go_proto"
 	"github.com/golang/protobuf/proto"
+	"unsafe"
 )
 
 // Takes the results returned by the c FFI and reconstructs the result proto.
@@ -168,7 +168,7 @@ func (e *FFI) RunEbpfProgram(executionRequest *fpb.ExecutionRequest) (*fpb.Execu
 // ValidateProgram passes the program through the bpf verifier without executing
 // it. Returns feedback to the generator so it can adjust the generation
 // settings.
-func (e *FFI) ValidateCbpfProgram(prog []filter) (*fpb.ValidationResult, error) {
+func (e *FFI) ValidateCbpfProgram(prog []cbpf.Filter) (*fpb.ValidationResult, error) {
 	if len(prog) == 0 {
 		return nil, fmt.Errorf("cannot run empty program")
 	}

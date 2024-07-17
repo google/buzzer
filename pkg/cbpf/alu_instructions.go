@@ -67,6 +67,9 @@ func Ret[T Src](src T) *pb.Instruction {
 	case int32:
 		srcType = pb.SrcOperand_Immediate
 		k = int32(src)
+	case int:
+		srcType = pb.SrcOperand_Immediate
+		k = int32(src)
 	}
 	// The opcode field is divided into three parts, for more information go to:
 	// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding

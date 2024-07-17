@@ -29,3 +29,12 @@ const (
 	A = pb.Reg_A
 	X = pb.Reg_X
 )
+
+// classic BPF instruction structure
+// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#structure
+type Filter struct {
+	Opcode uint16
+	Jt     uint8
+	Jf     uint8
+	K      uint32
+}

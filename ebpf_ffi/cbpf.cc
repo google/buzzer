@@ -32,7 +32,16 @@ bool load_cbpf_program(void *prog_buff, size_t size, std::string *error,
   struct sock_fprog program;
   program.len = size;
   program.filter = insn;
-  if (setsockopt(socks[0], SOL_SOCKET, SO_ATTACH_FILTER, &program,
+  struct timeval tv;
+  tv.tv_sec = 0;
+  // The amount of time for timeout was determined arbitrarly
+  tv.tv_usec = 10000;
+  if (setsockopt(socks[1], SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv,
+                 sizeof tv) < 0) {
+    *error = strerror(errno);
+    return false;
+  }
+  if (setsockopt(socks[1], SOL_SOCKET, SO_ATTACH_FILTER, &program,
                  sizeof(program)) < 0) {
     *error = strerror(errno);
     return false;
@@ -69,8 +78,8 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
   if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
 
   // Start building the validation result proto.
-  vres.set_socket_parent(socks[0]);
-  vres.set_socket_child(socks[1]);
+  vres.set_socket_write(socks[0]);
+  vres.set_socket_read(socks[1]);
   if (cover.fd != -1) {
     vres.set_did_collect_coverage(true);
     vres.set_coverage_size(cover.coverage_size);
@@ -88,19 +97,19 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
   return serialize_proto(vres);
 }
 
-bool execute_cbpf_program(int socket_parent, int socket_child, uint8_t *input,
+bool execute_cbpf_program(int socket_write, int socket_read, uint8_t *input,
                           uint8_t *output, int input_length,
                           std::string *error_message) {
-  if (write(socket_parent, input, input_length) != input_length) {
+  if (write(socket_write, input, input_length) != input_length) {
     *error_message = "Could not write all data to socket";
     return false;
   }
 
-  if (read(socket_child, output, input_length) != input_length) {
+  close(socket_write);
+  if (read(socket_read, output, input_length) != input_length) {
     *error_message = "Could not read all data to socket";
   }
-  close(socket_parent);
-  close(socket_child);
+  close(socket_read);
 
   return true;
 }
@@ -117,12 +126,12 @@ struct bpf_result ffi_execute_cbpf_program(void *serialized_proto,
                         &execution_result);
   }
 
-  int socket_parent = execution_request.socket_parent();
-  if (socket_parent < 0) {
+  int socket_write = execution_request.socket_write();
+  if (socket_write < 0) {
     return return_error("Invalid socket parent", &execution_result);
   }
-  int socket_child = execution_request.socket_child();
-  if (socket_child < 0) {
+  int socket_read = execution_request.socket_read();
+  if (socket_read < 0) {
     return return_error("Invalid socket child", &execution_result);
   }
 
@@ -141,7 +150,7 @@ struct bpf_result ffi_execute_cbpf_program(void *serialized_proto,
 
   memset(read_data, 0x00, data_size + 1);
   std::string error_message;
-  if (!execute_cbpf_program(socket_parent, socket_child, data, read_data,
+  if (!execute_cbpf_program(socket_write, socket_read, data, read_data,
                             data_size, &error_message)) {
     return return_error(error_message, &execution_result);
   }
