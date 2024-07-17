@@ -25,6 +25,13 @@ import (
 	"fmt"
 )
 
+type filter struct {
+	opcode uint16
+	jt     uint8
+	jf     uint8
+	k      uint32
+}
+
 var (
 	NilStrategyError = errors.New("Strategy cannot be nil")
 )
@@ -201,15 +208,17 @@ func (cu *Control) runCbpf(prog *cpb.Program) error {
 	return nil
 }
 
-func encodeCbpfInstructions(program *cpb.Program) [][]int32 {
-	result := [][]int32{}
+func encodeCbpfInstructions(program *cpb.Program) []filter {
+	result := []filter{}
 	for _, instruction := range program.Instructions {
-		ins := [][]int32{{instruction.Opcode,
-			instruction.Jt,
-			instruction.Jf,
-			instruction.K},
+		ins := filter{
+			opcode: uint16(instruction.Opcode),
+			jt:     uint8(instruction.Jt),
+			jf:     uint8(instruction.Jf),
+			k:      uint32(instruction.K),
 		}
-		result = append(result, ins...)
+
+		result = append(result, ins)
 	}
 	return result
 }

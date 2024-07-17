@@ -168,7 +168,7 @@ func (e *FFI) RunEbpfProgram(executionRequest *fpb.ExecutionRequest) (*fpb.Execu
 // ValidateProgram passes the program through the bpf verifier without executing
 // it. Returns feedback to the generator so it can adjust the generation
 // settings.
-func (e *FFI) ValidateCbpfProgram(prog [][]int32) (*fpb.ValidationResult, error) {
+func (e *FFI) ValidateCbpfProgram(prog []filter) (*fpb.ValidationResult, error) {
 	if len(prog) == 0 {
 		return nil, fmt.Errorf("cannot run empty program")
 	}
@@ -177,7 +177,7 @@ func (e *FFI) ValidateCbpfProgram(prog [][]int32) (*fpb.ValidationResult, error)
 	if shouldCollect {
 		cbool = 1
 	}
-	bpfVerifyResult := C.ffi_load_cbpf_program(unsafe.Pointer(&prog[0][0]), C.ulong(len(prog)), C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
+	bpfVerifyResult := C.ffi_load_cbpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)), C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
 	res, err := validationProtoFromStruct(&bpfVerifyResult)
 	if err != nil {
 		return nil, err

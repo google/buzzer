@@ -24,11 +24,13 @@ extern "C" {
 // Actual implementation of load program. The split between ffi and
 // implementation is done so the impl code can be shared with other parts of the
 // codebase also written in C++.
-bool load_cbpf_program(void *prog_buff, std::string *error, int *socks);
+bool load_cbpf_program(void *prog_buff, size_t size, std::string *error,
+                       int *socks);
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
-struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
+struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
+                                        int coverage_enabled,
                                         uint64_t coverage_size);
 
 bool execute_cbpf_program(int prog_fd, uint8_t *input, uint8_t *output,

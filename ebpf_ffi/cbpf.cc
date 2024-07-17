@@ -20,7 +20,8 @@
 #include <linux/kernel.h>
 #include <netpacket/packet.h>
 
-bool load_cbpf_program(void *prog_buff, std::string *error, int *socks) {
+bool load_cbpf_program(void *prog_buff, size_t size, std::string *error,
+                       int *socks) {
   if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) < 0) {
     *error = strerror(errno);
     return false;
@@ -29,9 +30,7 @@ bool load_cbpf_program(void *prog_buff, std::string *error, int *socks) {
   // https://www.kernel.org/doc/html/latest/networking/filter.html#structure
   struct sock_filter *insn = (struct sock_filter *)prog_buff;
   struct sock_fprog program;
-  int size = sizeof(insn);
-  printf("%d", size);
-  program.len = size / sizeof(insn[0]);
+  program.len = size;
   program.filter = insn;
   if (setsockopt(socks[0], SOL_SOCKET, SO_ATTACH_FILTER, &program,
                  sizeof(program)) < 0) {
@@ -48,7 +47,8 @@ struct bpf_result validation_error(std::string error_message,
   return serialize_proto(*vres);
 }
 
-struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
+struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
+                                        int coverage_enabled,
                                         uint64_t coverage_size) {
   std::string error_message;
 
@@ -61,7 +61,7 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, int coverage_enabled,
   ValidationResult vres;
 
   int socks[2] = {-1, -1};
-  if (!load_cbpf_program(prog_buff, &error_message, socks)) {
+  if (!load_cbpf_program(prog_buff, size, &error_message, socks)) {
     // Return why we failed to load the program.
     return validation_error(error_message, &vres);
   }

@@ -18,7 +18,8 @@ type Cbpf_Playground struct {
 }
 
 func (pg *Cbpf_Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
-	insn := []*cpb.Instruction{Ret(1), Ret(0)}
+	insn := []*cpb.Instruction{
+		Add(1), Ret(0)}
 	prog := &pb.Program{
 		Program: &pb.Program_Cbpf{
 			Cbpf: &cpb.Program{Instructions: insn},
