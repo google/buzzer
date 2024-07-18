@@ -49,3 +49,10 @@ section.
   certain registers are versus what they actually are. This mismatch can be
   abused to read/write arbitrary memory in the kernel by using the confused
   registers as base registers for memory operations.
+
+* [CVE-2024-41003](https://github.com/google/security-research/security/advisories/GHSA-hfqc-63c7-rj9f):
+  A bug in the verifier's register limit tracking allows an attacker to trick
+  the verifier into thinking a register holds a value of 0 when at run time
+  this register could take a value of 1. This can be then leveraged to achieve
+  arbitrary kernel memory read/write and lead to a local privilege escalation
+  or container escape.
