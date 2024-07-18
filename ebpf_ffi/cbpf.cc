@@ -32,6 +32,8 @@ bool load_cbpf_program(void *prog_buff, size_t size, std::string *error,
   struct sock_fprog program;
   program.len = size;
   program.filter = insn;
+
+  // Timeout added in case the filter drops a packet
   struct timeval tv;
   tv.tv_sec = 0;
   // The amount of time for timeout was determined arbitrarly
