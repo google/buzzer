@@ -41,6 +41,7 @@ var (
 		strategies.NewPointerArithmeticStrategy(),
 		strategies.NewPlaygroundStrategy(),
 		strategies.NewCoverageBasedStrategy(),
+		strategies.NewCbpfPlaygroundStrategy(),
 	}
 )
 

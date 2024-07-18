@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-#include "ebpf_ffi/ffi.h"
+#include "ebpf_ffi/ebpf.h"
 #include "ffi.h"
 #include "proto/ebpf.pb.h"
 
@@ -37,8 +37,8 @@ int main(int argc, char **argv) {
   int map_fd = bpf_create_map(BPF_MAP_TYPE_ARRAY, sizeof(uint32_t),
                               sizeof(uint64_t), map_size);
   std::string verifier_log, error_message;
-  int prog_fd = load_bpf_program(ebpf_instructions, array_length, &verifier_log,
-                                 &error_message);
+  int prog_fd = load_ebpf_program(ebpf_instructions, array_length,
+                                  &verifier_log, &error_message);
   std::cout << "Verifier log: " << std::endl << verifier_log;
 
   if (prog_fd < 0) {
@@ -47,8 +47,8 @@ int main(int argc, char **argv) {
   }
 
   uint8_t socket_input[2] = {0xAA, 0xAA};
-  if (!execute_bpf_program(prog_fd, socket_input, sizeof(socket_input),
-                           &error_message)) {
+  if (!execute_ebpf_program(prog_fd, socket_input, sizeof(socket_input),
+                            &error_message)) {
     std::cerr << "error executing program " << error_message << std::endl;
     return -1;
   }

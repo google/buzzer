@@ -36,9 +36,12 @@ go_library(
     cgo = 1,
     importpath = "buzzer/pkg/units/units",
     deps = [
+        "//pkg/cbpf",
         "//pkg/ebpf",
+        "//proto:cbpf_go_proto",
         "//proto:ebpf_go_proto",
         "//proto:ffi_go_proto",
+        "//proto:program_go_proto",
         "@com_github_go_echarts_go_echarts_v2//charts",
         "@com_github_go_echarts_go_echarts_v2//opts",
         "@com_github_go_echarts_go_echarts_v2//types",

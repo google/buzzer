@@ -12,29 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cbpf
+syntax = "proto3";
 
-import pb "buzzer/proto/cbpf_go_proto"
+import "proto/cbpf.proto";
+import "proto/ebpf.proto";
 
-type Src interface {
-	pb.Reg | int32 | int
-}
+package program;
 
-const (
-	// Constants related to the encoding of cbpf operations
-	// UnusedField Unused Field.
-	UnusedField = 0x00
-)
-const (
-	A = pb.Reg_A
-	X = pb.Reg_X
-)
-
-// classic BPF instruction structure
-// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#structure
-type Filter struct {
-	Opcode uint16
-	Jt     uint8
-	Jf     uint8
-	K      uint32
+message Program {
+  oneof program {
+    cbpf.Program cbpf = 1;
+    ebpf.Program ebpf = 2;
+  }
 }
