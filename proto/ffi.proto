@@ -25,10 +25,21 @@ message ExecutionRequest {
   bytes input_data = 3;
 }
 
+message CbpfExecutionRequest {
+  // Program pair sockets
+  int64 socket_write = 1;
+  int64 socket_read = 2;
+
+  // Optional data to send over the network that can be accessed by the
+  // cbpf program.
+  bytes input_data = 3;
+}
+
 // Results from Executing the ebpf program.
 message ExecutionResult {
   bool did_succeed = 1;
   string error_message = 2;
+  bytes output_data = 3;
 }
 
 // Result from get_map_elements call, retrieves all the elements in a bpf map.
@@ -47,4 +58,6 @@ message ValidationResult {
   int64 coverage_size = 6;
   int64 coverage_buffer = 7;
   repeated uint64 coverage_address = 8;
+  int64 socket_write = 9;  // cbpf only
+  int64 socket_read = 10;  // cbpf only
 }

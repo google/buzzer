@@ -28,6 +28,9 @@ func newJmpInstruction[T Src](oc pb.JmpOperationCode, jmpTrue, jmpFalse int32, s
 	case int32:
 		srcType = pb.SrcOperand_Immediate
 		k = int32(src)
+	case int:
+		srcType = pb.SrcOperand_Immediate
+		k = int32(src)
 	default:
 		return nil
 	}

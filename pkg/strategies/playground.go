@@ -5,6 +5,7 @@ import (
 	"buzzer/pkg/units/units"
 	epb "buzzer/proto/ebpf_go_proto"
 	fpb "buzzer/proto/ffi_go_proto"
+	pb "buzzer/proto/program_go_proto"
 	"fmt"
 )
 
@@ -18,8 +19,7 @@ type Playground struct {
 	isFinished bool
 }
 
-// GenerateProgram should return the instructions to feed the verifier.
-func (pg *Playground) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
+func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	insn, err := InstructionSequence(
 		Mov64(R0, 0),
 		Exit(),
@@ -27,7 +27,11 @@ func (pg *Playground) GenerateProgram(ffi *units.FFI) (*epb.Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &epb.Program{Instructions: insn}, nil
+	prog := &pb.Program{
+		Program: &pb.Program_Ebpf{
+			Ebpf: &epb.Program{Instructions: insn},
+		}}
+	return prog, nil
 }
 
 // OnVerifyDone process the results from the verifier. Here the strategy

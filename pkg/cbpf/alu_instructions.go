@@ -28,6 +28,9 @@ func newAluInstruction[T Src](oc pb.AluOperationCode, src T) *pb.Instruction {
 	case int32:
 		srcType = pb.SrcOperand_Immediate
 		k = int32(src)
+	case int:
+		srcType = pb.SrcOperand_Immediate
+		k = int32(src)
 	default:
 		return nil
 	}
@@ -62,6 +65,9 @@ func Ret[T Src](src T) *pb.Instruction {
 		srcType = pb.SrcOperand_RegSrc
 		k = int32(pb.Reg_A)
 	case int32:
+		srcType = pb.SrcOperand_Immediate
+		k = int32(src)
+	case int:
 		srcType = pb.SrcOperand_Immediate
 		k = int32(src)
 	}

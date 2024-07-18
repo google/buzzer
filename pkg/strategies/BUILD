@@ -24,6 +24,7 @@ go_library(
     name = "strategies",
     srcs = [
         "base.go",
+        "cbpf_playground.go",
         "coverage_based.go",
         "heap.go",
         "playground.go",
@@ -31,11 +32,14 @@ go_library(
     ],
     importpath = "buzzer/pkg/strategies/strategies",
     deps = [
+        "//pkg/cbpf",
         "//pkg/ebpf",
         "//pkg/rand",
         "//pkg/units",
+        "//proto:cbpf_go_proto",
         "//proto:ebpf_go_proto",
         "//proto:ffi_go_proto",
+        "//proto:program_go_proto",
         "@com_github_golang_protobuf//proto",
     ],
 )

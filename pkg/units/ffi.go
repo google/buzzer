@@ -21,8 +21,10 @@ package units
 //  char* serialized_proto;
 //  size_t size;
 //};
-//struct bpf_result ffi_load_bpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
-//struct bpf_result ffi_execute_bpf_program(void* serialized_proto, size_t length);
+//struct bpf_result ffi_load_cbpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
+//struct bpf_result ffi_execute_cbpf_program(void* serialized_proto, size_t length);
+//struct bpf_result ffi_load_ebpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
+//struct bpf_result ffi_execute_ebpf_program(void* serialized_proto, size_t length);
 //struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
 //int ffi_create_bpf_map(size_t size);
 //void ffi_close_fd(int fd);
@@ -30,12 +32,12 @@ package units
 import "C"
 
 import (
+	"buzzer/pkg/cbpf/cbpf"
+	fpb "buzzer/proto/ffi_go_proto"
 	"encoding/base64"
 	"fmt"
-	"unsafe"
-
-	fpb "buzzer/proto/ffi_go_proto"
 	"github.com/golang/protobuf/proto"
+	"unsafe"
 )
 
 // Takes the results returned by the c FFI and reconstructs the result proto.
@@ -107,37 +109,6 @@ type FFI struct {
 	MetricsUnit *Metrics
 }
 
-// ValidateProgram passes the program through the bpf verifier without executing
-// it. Returns feedback to the generator so it can adjust the generation
-// settings.
-func (e *FFI) ValidateProgram(prog []uint64) (*fpb.ValidationResult, error) {
-	if len(prog) == 0 {
-		return nil, fmt.Errorf("cannot run empty program")
-	}
-	shouldCollect, coverageSize := e.MetricsUnit.ShouldGetCoverage()
-	cbool := 0
-	if shouldCollect {
-		cbool = 1
-	}
-	bpfVerifyResult := C.ffi_load_bpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)) /*enable_coverage=*/, C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
-	res, err := validationProtoFromStruct(&bpfVerifyResult)
-	if err != nil {
-		return nil, err
-	}
-	e.MetricsUnit.RecordVerificationResults(res)
-	return res, nil
-}
-
-// RunProgram Runs the ebpf program and returns the execution results.
-func (e *FFI) RunProgram(executionRequest *fpb.ExecutionRequest) (*fpb.ExecutionResult, error) {
-	serializedProto, err := proto.Marshal(executionRequest)
-	if err != nil {
-		return nil, err
-	}
-	res := C.ffi_execute_bpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
-	return executionProtoFromStruct(&res)
-}
-
 // CreateMapArray creates an ebpf map of type array and returns its fd.
 // -1 means error.
 func (e *FFI) CreateMapArray(size uint64) int {
@@ -159,4 +130,68 @@ func (e *FFI) GetMapElements(fd int, mapSize uint64) (*fpb.MapElements, error) {
 // described by `fd`
 func (e *FFI) SetMapElement(fd int, key uint32, value uint64) int {
 	return int(C.ffi_update_map_element(C.int(fd), C.int(key), C.ulong(value)))
+}
+
+// ----------- eBPF --------------
+// ValidateProgram passes the program through the bpf verifier without executing
+// it. Returns feedback to the generator so it can adjust the generation
+// settings.
+func (e *FFI) ValidateEbpfProgram(prog []uint64) (*fpb.ValidationResult, error) {
+	if len(prog) == 0 {
+		return nil, fmt.Errorf("cannot run empty program")
+	}
+	shouldCollect, coverageSize := e.MetricsUnit.ShouldGetCoverage()
+	cbool := 0
+	if shouldCollect {
+		cbool = 1
+	}
+	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)), C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
+	res, err := validationProtoFromStruct(&bpfVerifyResult)
+	if err != nil {
+		return nil, err
+	}
+	e.MetricsUnit.RecordVerificationResults(res)
+	return res, nil
+}
+
+// RunProgram Runs the ebpf program and returns the execution results.
+func (e *FFI) RunEbpfProgram(executionRequest *fpb.ExecutionRequest) (*fpb.ExecutionResult, error) {
+	serializedProto, err := proto.Marshal(executionRequest)
+	if err != nil {
+		return nil, err
+	}
+	res := C.ffi_execute_ebpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
+	return executionProtoFromStruct(&res)
+}
+
+// ---------- cBPF --------------
+// ValidateProgram passes the program through the bpf verifier without executing
+// it. Returns feedback to the generator so it can adjust the generation
+// settings.
+func (e *FFI) ValidateCbpfProgram(prog []cbpf.Filter) (*fpb.ValidationResult, error) {
+	if len(prog) == 0 {
+		return nil, fmt.Errorf("cannot run empty program")
+	}
+	shouldCollect, coverageSize := e.MetricsUnit.ShouldGetCoverage()
+	cbool := 0
+	if shouldCollect {
+		cbool = 1
+	}
+	bpfVerifyResult := C.ffi_load_cbpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)), C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
+	res, err := validationProtoFromStruct(&bpfVerifyResult)
+	if err != nil {
+		return nil, err
+	}
+	e.MetricsUnit.RecordVerificationResults(res)
+	return res, nil
+}
+
+// RunProgram Runs the cbpf program and returns the execution results.
+func (e *FFI) RunCbpfProgram(executionRequest *fpb.CbpfExecutionRequest) (*fpb.ExecutionResult, error) {
+	serializedProto, err := proto.Marshal(executionRequest)
+	if err != nil {
+		return nil, err
+	}
+	res := C.ffi_execute_cbpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
+	return executionProtoFromStruct(&res)
 }

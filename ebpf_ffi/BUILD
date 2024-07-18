@@ -20,8 +20,16 @@ package(
 
 cc_library(
     name = "ebpf_ffi",
-    srcs = ["ffi.cc"],
-    hdrs = ["ffi.h"],
+    srcs = [
+        "cbpf.cc",
+        "ebpf.cc",
+        "ffi.cc",
+    ],
+    hdrs = [
+        "cbpf.h",
+        "ebpf.h",
+        "ffi.h",
+    ],
     deps = [
         "//proto:ffi_cc_proto",
         "@com_google_absl//absl/container:flat_hash_set",
