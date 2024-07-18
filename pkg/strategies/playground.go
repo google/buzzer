@@ -29,7 +29,11 @@ func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	}
 	prog := &pb.Program{
 		Program: &pb.Program_Ebpf{
-			Ebpf: &epb.Program{Instructions: insn},
+			Ebpf: &epb.Program{
+				Functions: []*epb.Functions{
+					{Instructions: insn},
+				},
+			},
 		}}
 	return prog, nil
 }
