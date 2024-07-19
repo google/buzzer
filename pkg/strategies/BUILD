@@ -36,6 +36,7 @@ go_library(
         "//pkg/ebpf",
         "//pkg/rand",
         "//pkg/units",
+        "//proto:btf_go_proto",
         "//proto:cbpf_go_proto",
         "//proto:ebpf_go_proto",
         "//proto:ffi_go_proto",

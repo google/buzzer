@@ -121,15 +121,18 @@ func (cu *Control) RunFuzzer() error {
 }
 
 func (cu *Control) runEbpf(prog *epb.Program) error {
-	encodedProg, err := ebpf.EncodeInstructions(prog)
+	encodedProg, encodedFuncInfo, err := ebpf.EncodeInstructions(prog)
 	if err != nil {
 		fmt.Printf("Encoding error: %v\n", err)
 		if !cu.strat.OnError(err) {
 			return err
 		}
 	}
-
-	validationResult, err := cu.ffi.ValidateEbpfProgram(encodedProg)
+	btf, err := ebpf.GetBtf()
+	if err != nil {
+		fmt.Printf("Btf error: %v\n", err)
+	}
+	validationResult, err := cu.ffi.ValidateEbpfProgram(encodedProg, encodedFuncInfo, btf)
 	if err != nil {
 		fmt.Printf("Validation error: %v\n", err)
 		if !cu.strat.OnError(err) {

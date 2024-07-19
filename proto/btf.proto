@@ -1,0 +1,89 @@
+// Copyright 2024 Google LLC
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+// Most of the things here are documented at
+// https://docs.kernel.org/bpf/btf.html
+package btf;
+
+message Empty {}
+
+enum TypeId {
+  EMPTY = 0;
+  NA = 2;
+  FUNC_PTR_INT = 7;
+}
+
+message BtfParam {
+  int32 name_off = 1;
+  int32 param_type = 2;
+}
+
+message FuncProtoTypeData {
+  repeated BtfParam param = 1;
+}
+
+message StructTypeData {
+  int32 name_off = 1;
+  int32 struct_type = 2;
+  int32 offset = 3;
+}
+
+message IntTypeData {
+  int32 int_info = 1;
+}
+
+message BtfType {
+  int32 name_off = 1;
+  int32 info = 2;
+  int32 size_or_type = 3;
+  oneof extra {
+    Empty empty = 4;
+    IntTypeData int_type_data = 5;
+    FuncProtoTypeData func_proto_type_data = 6;
+    StructTypeData struct_type_data = 7;
+  }
+}
+
+message Header {
+  int32 magic = 1;
+  int32 version = 2;
+  int32 flags = 3;
+  int32 hdr_len = 4;
+
+  int32 type_off = 5;
+  int32 type_len = 6;
+  int32 str_off = 7;
+  int32 str_len = 8;
+}
+
+message TypeSection {
+  repeated BtfType btf_type = 1;
+}
+
+message StringSection {
+  string str = 1;
+}
+
+message Btf {
+  Header header = 1;
+  TypeSection type_section = 2;
+  StringSection string_section = 3;
+}
+
+message FuncInfo {
+  int32 insn_off = 1;
+  int32 type_id = 2;
+}

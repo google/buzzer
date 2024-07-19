@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+import "proto/btf.proto";
+
 // Most of the things here represent the encoding documented at
 // https://www.kernel.org/doc/html/v5.17/bpf/instruction-set.html
 package ebpf;
@@ -158,51 +160,12 @@ message Instruction {
   }
 }
 
-message btf_param {
-  int32 name_off = 1;
-  int32 type = 2;
-}
-
-message FuncProtoTypeData {
-  repeated btf_param param = 1;
-}
-
-message IntTypeData {
-  int32 int_info = 1;
-}
-
-message btf_type {
-  int32 name_off = 1;
-  int32 info = 2;
-  oneof other {
-    int32 size = 3;
-    int32 type = 4;
-  }
-  oneof extra {
-    Empty empty = 5;
-    IntTypeData int_type_data = 6;
-    FuncProtoTypeData func_proto_type_data = 7;
-  }
-}
-
-message Btf {
-  int32 magic = 1;
-  int32 version = 2;
-  int32 flags = 3;
-  int32 hdr_len = 4;
-
-  int32 type_off = 5;
-  int32 type_len = 6;
-  int32 str_off = 7;
-  int32 str_len = 8;
-}
-
 message Functions {
   repeated Instruction instructions = 1;
-  int32 type_id = 2;
+  btf.FuncInfo func_info = 2;
 }
 
 message Program {
-  Btf btf = 1;
+  btf.Btf btf = 1;
   repeated Functions functions = 2;
 }

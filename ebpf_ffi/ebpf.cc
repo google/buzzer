@@ -21,7 +21,27 @@ namespace ebpf_ffi {
 constexpr size_t kLogBuffSize = 100000000;
 }  // namespace ebpf_ffi
 
-int load_ebpf_program(void *prog_buff, size_t prog_size,
+int btf_load(void *func_buff, std::string *error) {
+  union bpf_attr btf_attr;
+  memset(&btf_attr, 0, sizeof(btf_attr));
+  btf_attr.btf = (uint64_t)func_buff;
+  btf_attr.btf_size = sizeof(&func_buff);
+
+  char *btf_log_buf = (char *)malloc(1024);
+  memset(btf_log_buf, 0, 1024);
+  btf_attr.btf_log_buf = (uint64_t)btf_log_buf;
+  btf_attr.btf_log_size = 1024;
+  btf_attr.btf_log_level = 2;
+
+  int btf_fd = syscall(SYS_bpf, BPF_BTF_LOAD, &btf_attr, sizeof(btf_attr));
+  if (btf_fd < 0) {
+    *error = strerror(errno);
+  }
+  return btf_fd;
+}
+
+int load_ebpf_program(void *prog_buff, size_t prog_size, void *func_buff,
+                      void *func_info, size_t func_info_size,
                       std::string *verifier_log, std::string *error) {
   struct bpf_insn *insn;
   union bpf_attr attr = {};
@@ -29,6 +49,13 @@ int load_ebpf_program(void *prog_buff, size_t prog_size,
   // For the verifier log.
   unsigned char *log_buf = (unsigned char *)malloc(ebpf_ffi::kLogBuffSize);
   memset(log_buf, 0, ebpf_ffi::kLogBuffSize);
+
+  int btf_fd = btf_load(func_buff, error);
+  struct bpf_func_info *func = (struct bpf_func_info *)func_info;
+  attr.prog_btf_fd = btf_fd;
+  attr.func_info_rec_size = sizeof(struct bpf_func_info);
+  attr.func_info = (uint64_t)(&func);
+  attr.func_info_cnt = func_info_size;
 
   insn = (struct bpf_insn *)prog_buff;
   attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;
@@ -52,6 +79,8 @@ int load_ebpf_program(void *prog_buff, size_t prog_size,
 }
 
 struct bpf_result ffi_load_ebpf_program(void *prog_buff, size_t size,
+                                        void *func_buff, void *func_info,
+                                        size_t func_info_size,
                                         int coverage_enabled,
                                         uint64_t coverage_size) {
   std::string verifier_log, error_message;
@@ -62,7 +91,8 @@ struct bpf_result ffi_load_ebpf_program(void *prog_buff, size_t size,
   if (coverage_enabled) enable_coverage(&cover);
 
   int program_fd =
-      load_ebpf_program(prog_buff, size, &verifier_log, &error_message);
+      load_ebpf_program(prog_buff, size, func_buff, func_info, func_info_size,
+                        &verifier_log, &error_message);
 
   ValidationResult vres;
   if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);

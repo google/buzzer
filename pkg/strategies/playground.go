@@ -3,6 +3,7 @@ package strategies
 import (
 	. "buzzer/pkg/ebpf/ebpf"
 	"buzzer/pkg/units/units"
+	btfpb "buzzer/proto/btf_go_proto"
 	epb "buzzer/proto/ebpf_go_proto"
 	fpb "buzzer/proto/ffi_go_proto"
 	pb "buzzer/proto/program_go_proto"
@@ -27,11 +28,14 @@ func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	if err != nil {
 		return nil, err
 	}
+	func_info_na := &btfpb.FuncInfo{InsnOff: 0, TypeId: int32(btfpb.TypeId_NA)}
 	prog := &pb.Program{
 		Program: &pb.Program_Ebpf{
 			Ebpf: &epb.Program{
 				Functions: []*epb.Functions{
-					{Instructions: insn},
+					{Instructions: insn,
+						FuncInfo: func_info_na,
+					},
 				},
 			},
 		}}
@@ -42,7 +46,7 @@ func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 // can also tell the fuzzer to continue with execution by returning true
 // or start over and generate a new program by returning false.
 func (pg *Playground) OnVerifyDone(ffi *units.FFI, verificationResult *fpb.ValidationResult) bool {
-	fmt.Println(verificationResult.VerifierLog)
+	fmt.Println(verificationResult)
 	pg.isFinished = true
 	return true
 }
