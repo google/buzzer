@@ -123,6 +123,41 @@ func Call(functionValue int32) *pb.Instruction {
 	return newJmpInstruction(pb.JmpOperationCode_JmpCALL, pb.InsClass_InsClassJmp, pb.Reg_R0, functionValue, int16(UnusedField))
 }
 
+func LdFunctionPtr(Imm int32) *pb.Instruction {
+	return &pb.Instruction{
+		Opcode: &pb.Instruction_MemOpcode{
+			MemOpcode: &pb.MemOpcode{
+				Mode:             pb.StLdMode_StLdModeIMM,
+				Size:             pb.StLdSize_StLdSizeDW,
+				InstructionClass: pb.InsClass_InsClassLd,
+			},
+		},
+		DstReg:    R2,
+		SrcReg:    pb.Reg_R4,
+		Offset:    0,
+		Immediate: Imm,
+		PseudoInstruction: &pb.Instruction_PseudoValue{
+			PseudoValue: &pb.Instruction{
+				Opcode: &pb.Instruction_MemOpcode{
+					MemOpcode: &pb.MemOpcode{
+						Mode:             0,
+						Size:             0,
+						InstructionClass: 0,
+					},
+				},
+				DstReg:    0,
+				SrcReg:    0,
+				Offset:    0,
+				Immediate: 0,
+				PseudoInstruction: &pb.Instruction_Empty{
+					Empty: &pb.Empty{},
+				},
+			},
+		},
+	}
+
+}
+
 // LdMapElement loads a map element ptr to R0.
 // It does the following operations:
 // - Set R1 to the pointer of the target map.

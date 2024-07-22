@@ -36,9 +36,7 @@ int load_ebpf_program(void *prog_buff, size_t prog_size, void *func_buff,
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
-struct bpf_result ffi_load_ebpf_program(void *prog_buff, size_t size,
-                                        void *func_buff, void *func_info,
-                                        size_t func_info_size,
+struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
                                         int coverage_enabled,
                                         uint64_t coverage_size);
 

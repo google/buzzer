@@ -21,8 +21,11 @@ type Playground struct {
 }
 
 func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
+
 	insn, err := InstructionSequence(
 		Mov64(R0, 0),
+		Mov(R0, 0),
+		Mov(R0, 0),
 		Exit(),
 	)
 	if err != nil {
@@ -33,9 +36,7 @@ func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 		Program: &pb.Program_Ebpf{
 			Ebpf: &epb.Program{
 				Functions: []*epb.Functions{
-					{Instructions: insn,
-						FuncInfo: func_info_na,
-					},
+					{Instructions: insn, FuncInfo: func_info_na},
 				},
 			},
 		}}
@@ -46,7 +47,7 @@ func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 // can also tell the fuzzer to continue with execution by returning true
 // or start over and generate a new program by returning false.
 func (pg *Playground) OnVerifyDone(ffi *units.FFI, verificationResult *fpb.ValidationResult) bool {
-	fmt.Println(verificationResult)
+	fmt.Println(verificationResult.VerifierLog)
 	pg.isFinished = true
 	return true
 }

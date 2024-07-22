@@ -117,7 +117,7 @@ func Btf() *pb.Btf {
 	type_section := typeSection()
 	string_section := stringSection()
 	header := &pb.Header{
-		Magic:   0x9feb,
+		Magic:   0xeb9f,
 		Version: 0x01,
 		Flags:   0x00,
 		HdrLen:  0x18,
@@ -137,8 +137,47 @@ func GetBtf() ([]byte, error) {
 	btf := Btf()
 	buf := new(bytes.Buffer)
 
-	var data = []any{
+	var type_data = []any{}
+	for _, t := range btf.TypeSection.BtfType {
+		type_data = append(type_data, t.NameOff)
+		type_data = append(type_data, t.Info)
+		type_data = append(type_data, t.SizeOrType)
+		switch e := t.Extra.(type) {
+		case *pb.BtfType_IntTypeData:
+			type_data = append(type_data, e.IntTypeData.IntInfo)
+		case *pb.BtfType_StructTypeData:
+			type_data = append(type_data, e.StructTypeData.NameOff)
+			type_data = append(type_data, e.StructTypeData.StructType)
+			type_data = append(type_data, e.StructTypeData.Offset)
+		case *pb.BtfType_FuncProtoTypeData:
+			for _, param := range e.FuncProtoTypeData.Param {
+				type_data = append(type_data, param.NameOff)
+				type_data = append(type_data, param.ParamType)
+			}
+		}
+	}
+	types_buf := new(bytes.Buffer)
+	for _, v := range type_data {
+		err_types := binary.Write(types_buf, binary.LittleEndian, v)
+		if err_types != nil {
+			fmt.Println("binary.Write failed:", err_types)
+			return nil, err_types
+		}
+	}
+	string_data := []byte(btf.StringSection.Str)
+	string_buf := new(bytes.Buffer)
+	for _, v := range string_data {
+		err_string := binary.Write(string_buf, binary.LittleEndian, v)
+		if err_string != nil {
+			fmt.Println("binary.Write failed:", err_string)
+			return nil, err_string
+		}
+	}
+	btf.Header.TypeLen = int32(len(types_buf.Bytes()))
+	btf.Header.StrOff = int32(len(types_buf.Bytes()))
+	btf.Header.StrLen = int32(len(string_buf.Bytes()) + 2)
 
+	var data = []any{
 		uint16(btf.Header.Magic),
 		uint8(btf.Header.Version),
 		uint8(btf.Header.Flags),
@@ -148,25 +187,6 @@ func GetBtf() ([]byte, error) {
 		btf.Header.StrOff,
 		btf.Header.StrLen,
 	}
-	for _, t := range btf.TypeSection.BtfType {
-		data = append(data, t.NameOff)
-		data = append(data, t.Info)
-		switch e := t.Extra.(type) {
-		case *pb.BtfType_IntTypeData:
-			data = append(data, e.IntTypeData.IntInfo)
-		case *pb.BtfType_StructTypeData:
-			data = append(data, e.StructTypeData.NameOff)
-			data = append(data, e.StructTypeData.StructType)
-			data = append(data, e.StructTypeData.Offset)
-		case *pb.BtfType_FuncProtoTypeData:
-			for _, param := range e.FuncProtoTypeData.Param {
-				data = append(data, param.NameOff)
-				data = append(data, param.ParamType)
-			}
-		}
-	}
-
-	data = append(data, []byte(btf.StringSection.Str))
 
 	for _, v := range data {
 		err := binary.Write(buf, binary.LittleEndian, v)
@@ -175,7 +195,10 @@ func GetBtf() ([]byte, error) {
 			return nil, err
 		}
 	}
-
+	buf.Write(types_buf.Bytes())
+	buf.Write([]byte{0})
+	buf.Write(string_buf.Bytes())
+	buf.Write([]byte{0})
 	return buf.Bytes(), nil
 
 }

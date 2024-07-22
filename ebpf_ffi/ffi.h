@@ -49,6 +49,7 @@
 #define KCOV_TRACE_CMP 1
 
 using ebpf_fuzzer::CbpfExecutionRequest;
+using ebpf_fuzzer::EncodedProgram;
 using ebpf_fuzzer::ExecutionRequest;
 using ebpf_fuzzer::ExecutionResult;
 using ebpf_fuzzer::MapElements;

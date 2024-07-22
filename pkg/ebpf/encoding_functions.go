@@ -15,7 +15,10 @@
 package ebpf
 
 import (
+	btfpb "buzzer/proto/btf_go_proto"
 	pb "buzzer/proto/ebpf_go_proto"
+	"bytes"
+	"encoding/binary"
 	"fmt"
 )
 
@@ -59,9 +62,20 @@ func encodeMemOpcode(op *pb.MemOpcode) (uint8, error) {
 }
 
 // EncodeInstructions transforms the given array to ebpf bytecode.
-func EncodeInstructions(program *pb.Program) ([]uint64, []uint64, error) {
-	prog := []uint64{}
-	func_info := []uint64{}
+func EncodeInstructions(program *pb.Program) ([]byte, []byte, error) {
+	prog := new(bytes.Buffer)
+	func_info := new(bytes.Buffer)
+	default_func_info := &btfpb.FuncInfo{InsnOff: 0, TypeId: int32(btfpb.TypeId_NA)}
+	err := binary.Write(func_info, binary.LittleEndian, default_func_info.InsnOff)
+	if err != nil {
+		fmt.Println("binary.Write failed:", err)
+		return nil, nil, err
+	}
+	err = binary.Write(func_info, binary.LittleEndian, default_func_info.TypeId)
+	if err != nil {
+		fmt.Println("binary.Write failed:", err)
+		return nil, nil, err
+	}
 	for _, functions := range program.Functions {
 
 		for _, instruction := range functions.Instructions {
@@ -69,15 +83,28 @@ func EncodeInstructions(program *pb.Program) ([]uint64, []uint64, error) {
 			if err != nil {
 				return nil, nil, err
 			}
-			prog = append(prog, encoding...)
+			err_b := binary.Write(prog, binary.LittleEndian, encoding)
+			if err_b != nil {
+				fmt.Println("binary.Write failed:", err_b)
+				return nil, nil, err_b
+			}
 		}
-		funcInfo := functions.FuncInfo
-		func_encoding := uint64(0)
-		func_encoding |= uint64(funcInfo.InsnOff)
-		func_encoding |= uint64(funcInfo.TypeId << 32)
-		func_info = append(func_info, func_encoding)
+		if functions.FuncInfo == nil {
+			continue
+		}
+		err_off := binary.Write(func_info, binary.LittleEndian, functions.FuncInfo.InsnOff)
+		if err_off != nil {
+			fmt.Println("binary.Write failed:", err_off)
+			return nil, nil, err_off
+		}
+		err_id := binary.Write(func_info, binary.LittleEndian, functions.FuncInfo.TypeId)
+		if err_id != nil {
+			fmt.Println("binary.Write failed:", err_id)
+			return nil, nil, err_id
+		}
 	}
-	return prog, func_info, nil
+
+	return prog.Bytes(), func_info.Bytes(), nil
 }
 
 // To understand what each part of the encoding mean, please refer to
