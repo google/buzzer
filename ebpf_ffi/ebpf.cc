@@ -55,7 +55,8 @@ int load_ebpf_program(uint8_t *prog_buff, int prog_size, uint8_t *btf_buff,
   attr.prog_btf_fd = btf_fd;
   attr.func_info_rec_size = sizeof(struct bpf_func_info);
   attr.func_info = (uint64_t)(func);
-  attr.func_info_cnt = (func_size / sizeof(struct bpf_func_info)) - 1;;
+  attr.func_info_cnt = (func_size / sizeof(struct bpf_func_info)) - 1;
+  ;
 
   insn = (struct bpf_insn *)prog_buff;
   attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;

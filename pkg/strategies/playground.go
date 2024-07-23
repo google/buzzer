@@ -32,7 +32,7 @@ func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 		Program: &pb.Program_Ebpf{
 			Ebpf: &epb.Program{
 				Functions: []*epb.Functions{
-                    {Instructions: insn, },
+					{Instructions: insn},
 				},
 			},
 		}}
