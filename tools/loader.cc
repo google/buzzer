@@ -10,7 +10,7 @@
 #include "proto/ebpf.pb.h"
 
 extern "C" {
-void EncodeEBPF(void *, int, void *, void *);
+void EncodeEBPF(void *, int, void *, void *, void *, void *, void *, void *);
 }
 
 int main(int argc, char **argv) {
@@ -23,10 +23,14 @@ int main(int argc, char **argv) {
   std::string content((std::istreambuf_iterator<char>(input)),
                       std::istreambuf_iterator<char>());
 
-  uint64_t *ebpf_instructions = NULL;
+  uint8_t *ebpf_instructions = NULL;
+  uint8_t *func = NULL;
+  uint8_t *btf = NULL;
   uint64_t array_length = 0;
+  uint64_t func_length = 0;
+  uint64_t btf_length = 0;
   EncodeEBPF(content.data(), content.length(), &ebpf_instructions,
-             &array_length);
+             &array_length, &btf, &btf_length, &func, &func_length);
 
   if (!ebpf_instructions) {
     std::cerr << "failed to decode ebpf program" << std::endl;
@@ -37,8 +41,9 @@ int main(int argc, char **argv) {
   int map_fd = bpf_create_map(BPF_MAP_TYPE_ARRAY, sizeof(uint32_t),
                               sizeof(uint64_t), map_size);
   std::string verifier_log, error_message;
-  int prog_fd = load_ebpf_program(ebpf_instructions, array_length,
-                                  &verifier_log, &error_message);
+  int prog_fd =
+      load_ebpf_program(ebpf_instructions, array_length, btf, btf_length, func,
+                        func_length, &verifier_log, &error_message);
   std::cout << "Verifier log: " << std::endl << verifier_log;
 
   if (prog_fd < 0) {

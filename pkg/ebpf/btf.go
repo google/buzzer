@@ -134,11 +134,12 @@ func Btf() *pb.Btf {
 }
 
 func GetBtf() ([]byte, error) {
-	btf := Btf()
-	buf := new(bytes.Buffer)
+	btf_proto := Btf()
+	btf_buff := new(bytes.Buffer)
+	var err error
 
 	var type_data = []any{}
-	for _, t := range btf.TypeSection.BtfType {
+	for _, t := range btf_proto.TypeSection.BtfType {
 		type_data = append(type_data, t.NameOff)
 		type_data = append(type_data, t.Info)
 		type_data = append(type_data, t.SizeOrType)
@@ -156,49 +157,52 @@ func GetBtf() ([]byte, error) {
 			}
 		}
 	}
-	types_buf := new(bytes.Buffer)
-	for _, v := range type_data {
-		err_types := binary.Write(types_buf, binary.LittleEndian, v)
-		if err_types != nil {
-			fmt.Println("binary.Write failed:", err_types)
-			return nil, err_types
-		}
-	}
-	string_data := []byte(btf.StringSection.Str)
-	string_buf := new(bytes.Buffer)
-	for _, v := range string_data {
-		err_string := binary.Write(string_buf, binary.LittleEndian, v)
-		if err_string != nil {
-			fmt.Println("binary.Write failed:", err_string)
-			return nil, err_string
-		}
-	}
-	btf.Header.TypeLen = int32(len(types_buf.Bytes()))
-	btf.Header.StrOff = int32(len(types_buf.Bytes()))
-	btf.Header.StrLen = int32(len(string_buf.Bytes()) + 2)
-
-	var data = []any{
-		uint16(btf.Header.Magic),
-		uint8(btf.Header.Version),
-		uint8(btf.Header.Flags),
-		btf.Header.HdrLen,
-		btf.Header.TypeOff,
-		btf.Header.TypeLen,
-		btf.Header.StrOff,
-		btf.Header.StrLen,
-	}
-
-	for _, v := range data {
-		err := binary.Write(buf, binary.LittleEndian, v)
+	types_buff := new(bytes.Buffer)
+	for _, types := range type_data {
+		err = binary.Write(types_buff, binary.LittleEndian, types)
 		if err != nil {
 			fmt.Println("binary.Write failed:", err)
 			return nil, err
 		}
 	}
-	buf.Write(types_buf.Bytes())
-	buf.Write([]byte{0})
-	buf.Write(string_buf.Bytes())
-	buf.Write([]byte{0})
-	return buf.Bytes(), nil
+
+	string_data := []byte(btf_proto.StringSection.Str)
+	string_buff := new(bytes.Buffer)
+	for _, strings := range string_data {
+		err = binary.Write(string_buff, binary.LittleEndian, strings)
+		if err != nil {
+			fmt.Println("binary.Write failed:", err)
+			return nil, err
+		}
+		string_buff.Write([]byte{0})
+	}
+
+	btf_proto.Header.TypeLen = int32(len(types_buff.Bytes()))
+	btf_proto.Header.StrOff = int32(len(types_buff.Bytes()))
+	btf_proto.Header.StrLen = int32(len(string_buff.Bytes()) + 1)
+
+	var header_data = []any{
+		uint16(btf_proto.Header.Magic),
+		uint8(btf_proto.Header.Version),
+		uint8(btf_proto.Header.Flags),
+		btf_proto.Header.HdrLen,
+		btf_proto.Header.TypeOff,
+		btf_proto.Header.TypeLen,
+		btf_proto.Header.StrOff,
+		btf_proto.Header.StrLen,
+	}
+	for _, header := range header_data {
+		err = binary.Write(btf_buff, binary.LittleEndian, header)
+		if err != nil {
+			fmt.Println("binary.Write failed:", err)
+			return nil, err
+		}
+	}
+
+	btf_buff.Write(types_buff.Bytes())
+	// The first string in the string section must be a null string
+	btf_buff.Write([]byte{0})
+	btf_buff.Write(string_buff.Bytes())
+	return btf_buff.Bytes(), nil
 
 }

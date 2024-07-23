@@ -129,14 +129,14 @@ func (cu *Control) runEbpf(prog *epb.Program) error {
 			return err
 		}
 	}
-	btf, err := ebpf.GetBtf()
+	encodedBtf, err := ebpf.GetBtf()
 	if err != nil {
 		fmt.Printf("Btf error: %v\n", err)
 	}
 
 	encodedProgram := &fpb.EncodedProgram{
 		Program:  encodedProg,
-		Btf:      btf,
+		Btf:      encodedBtf,
 		Function: encodedFuncInfo,
 	}
 	validationResult, err := cu.ffi.ValidateEbpfProgram(encodedProgram)

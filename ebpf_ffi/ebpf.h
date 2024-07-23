@@ -30,8 +30,8 @@ extern "C" {
 // Actual implementation of load program. The split between ffi and
 // implementation is done so the impl code can be shared with other parts of the
 // codebase also written in C++.
-int load_ebpf_program(void *prog_buff, size_t prog_size, void *func_buff,
-                      void *func_info, size_t func_info_size,
+int load_ebpf_program(uint8_t *prog_buff, int prog_size, uint8_t *btf_buff,
+                      int btf_size, uint8_t *func_buff, int func_size,
                       std::string *verifier_log, std::string *error);
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct

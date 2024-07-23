@@ -23,7 +23,7 @@ package units
 //};
 //struct bpf_result ffi_load_cbpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
 //struct bpf_result ffi_execute_cbpf_program(void* serialized_proto, size_t length);
-//struct bpf_result ffi_load_ebpf_program(void* serialized_proto, size_t lenght, int coverage_enabled, unsigned long coverage_size);
+//struct bpf_result ffi_load_ebpf_program(void* serialized_proto, size_t size, int coverage_enabled, unsigned long coverage_size);
 //struct bpf_result ffi_execute_ebpf_program(void* serialized_proto, size_t length);
 //struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
 //int ffi_create_bpf_map(size_t size);
@@ -146,7 +146,8 @@ func (e *FFI) ValidateEbpfProgram(encodedProgram *fpb.EncodedProgram) (*fpb.Vali
 		cbool = 1
 	}
 	serializedProto, err := proto.Marshal(encodedProgram)
-	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)), C.int(cbool), C.ulong(coverageSize))
+	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)),
+		C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
 	res, err := validationProtoFromStruct(&bpfVerifyResult)
 	if err != nil {
 		return nil, err

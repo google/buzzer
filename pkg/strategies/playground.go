@@ -3,7 +3,6 @@ package strategies
 import (
 	. "buzzer/pkg/ebpf/ebpf"
 	"buzzer/pkg/units/units"
-	btfpb "buzzer/proto/btf_go_proto"
 	epb "buzzer/proto/ebpf_go_proto"
 	fpb "buzzer/proto/ffi_go_proto"
 	pb "buzzer/proto/program_go_proto"
@@ -23,20 +22,17 @@ type Playground struct {
 func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 
 	insn, err := InstructionSequence(
-		Mov64(R0, 0),
-		Mov(R0, 0),
 		Mov(R0, 0),
 		Exit(),
 	)
 	if err != nil {
 		return nil, err
 	}
-	func_info_na := &btfpb.FuncInfo{InsnOff: 0, TypeId: int32(btfpb.TypeId_NA)}
 	prog := &pb.Program{
 		Program: &pb.Program_Ebpf{
 			Ebpf: &epb.Program{
 				Functions: []*epb.Functions{
-					{Instructions: insn, FuncInfo: func_info_na},
+                    {Instructions: insn, },
 				},
 			},
 		}}

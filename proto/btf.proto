@@ -20,35 +20,64 @@ package btf;
 
 message Empty {}
 
+// Type Ids to be reference in function info, the type Ids are definined in
+// pkg/ebpf/btf.go
+// https://docs.kernel.org/bpf/btf.html#btf-type-and-string-encoding
 enum TypeId {
   EMPTY = 0;
   NA = 2;
   FUNC_PTR_INT = 7;
 }
 
+// btf_param struct for BTF kind function proto
+// https://docs.kernel.org/bpf/btf.html#btf-kind-func-proto
 message BtfParam {
   int32 name_off = 1;
   int32 param_type = 2;
 }
 
+// BTF func proto extra data
+// https://docs.kernel.org/bpf/btf.html#btf-kind-func-proto
 message FuncProtoTypeData {
   repeated BtfParam param = 1;
 }
 
+// BTF kind struct extra data
+// https://docs.kernel.org/bpf/btf.html#btf-kind-struct
 message StructTypeData {
   int32 name_off = 1;
   int32 struct_type = 2;
   int32 offset = 3;
 }
 
+// BTF Kind int extra data
+// https://docs.kernel.org/bpf/btf.html#btf-kind-int
 message IntTypeData {
   int32 int_info = 1;
 }
 
+// Type Encoding
+// https://docs.kernel.org/bpf/btf.html#btf-kind-func-proto
 message BtfType {
+  // Specifies the offset in the string table
   int32 name_off = 1;
+  // "info" bits arrangement
+  // - bits 0-15: vlen (e.g. # of struct's members)
+  // - bits 16-23: unused
+  // - bits 24-28: kind (e.g. int, ptr, array...etc)
+  // - bits 29-30: unused
+  // - bit 31: kind_flag, currently used by struct, union, fwd, enum and enum64.
+  // https://docs.kernel.org/bpf/btf.html#type-encoding
   int32 info = 2;
+  // "size" is used by INT, ENUM, STRUCT, UNION and ENUM64.
+  //  "size" tells the size of the type it is describing.
+  // "type" is used by PTR, TYPEDEF, VOLATILE, CONST, RESTRICT,
+  //  FUNC, FUNC_PROTO, DECL_TAG and TYPE_TAG.
+  //  "type" is a type_id referring to another type.
+  //  https://docs.kernel.org/bpf/btf.html#type-encoding
   int32 size_or_type = 3;
+  // For certain kinds, the common data are followed by kind-specific data.
+  // https://docs.kernel.org/bpf/btf.html#type-encoding
   oneof extra {
     Empty empty = 4;
     IntTypeData int_type_data = 5;
@@ -57,32 +86,38 @@ message BtfType {
   }
 }
 
+// The beginning of the BTF Data
+// https://docs.kernel.org/bpf/btf.html#btf-type-and-string-encoding
 message Header {
-  int32 magic = 1;
+  int32 magic = 1;  // Indicates big- or little-endian target
   int32 version = 2;
   int32 flags = 3;
   int32 hdr_len = 4;
 
-  int32 type_off = 5;
-  int32 type_len = 6;
-  int32 str_off = 7;
-  int32 str_len = 8;
+  int32 type_off = 5;  // offset of type section
+  int32 type_len = 6;  // length of type section
+  int32 str_off = 7;   // offset of string section
+  int32 str_len = 8;   // length of string section
 }
 
+// https://docs.kernel.org/bpf/btf.html#type-encoding
 message TypeSection {
   repeated BtfType btf_type = 1;
 }
 
+// https://docs.kernel.org/bpf/btf.html#string-encoding
 message StringSection {
   string str = 1;
 }
 
+// https://docs.kernel.org/bpf/btf.html#bpf-type-format-btf
 message Btf {
   Header header = 1;
   TypeSection type_section = 2;
   StringSection string_section = 3;
 }
 
+// https://docs.kernel.org/bpf/btf.html#bpf-prog-load:~:text=The%20func_info%20and%20line_info%20are%20an%20array%20of%20below%2C%20respectively.
 message FuncInfo {
   int32 insn_off = 1;
   int32 type_id = 2;

@@ -63,48 +63,42 @@ func encodeMemOpcode(op *pb.MemOpcode) (uint8, error) {
 
 // EncodeInstructions transforms the given array to ebpf bytecode.
 func EncodeInstructions(program *pb.Program) ([]byte, []byte, error) {
-	prog := new(bytes.Buffer)
-	func_info := new(bytes.Buffer)
-	default_func_info := &btfpb.FuncInfo{InsnOff: 0, TypeId: int32(btfpb.TypeId_NA)}
-	err := binary.Write(func_info, binary.LittleEndian, default_func_info.InsnOff)
-	if err != nil {
-		fmt.Println("binary.Write failed:", err)
-		return nil, nil, err
-	}
-	err = binary.Write(func_info, binary.LittleEndian, default_func_info.TypeId)
-	if err != nil {
-		fmt.Println("binary.Write failed:", err)
-		return nil, nil, err
-	}
-	for _, functions := range program.Functions {
+	prog_buff := new(bytes.Buffer)
+	func_buff := new(bytes.Buffer)
 
+	// The first function info must be with offset 0 and type_id to a function
+    func_buff.Write([]byte{0,0,0,0,byte(btfpb.TypeId_NA),0,0,0})
+	for _, functions := range program.Functions {
+		var err error
 		for _, instruction := range functions.Instructions {
 			encoding, err := encodeInstruction(instruction)
 			if err != nil {
 				return nil, nil, err
 			}
-			err_b := binary.Write(prog, binary.LittleEndian, encoding)
-			if err_b != nil {
-				fmt.Println("binary.Write failed:", err_b)
-				return nil, nil, err_b
+			err = binary.Write(prog_buff, binary.LittleEndian, encoding)
+			if err != nil {
+				fmt.Println("binary.Write failed:", err)
+				return nil, nil, err
 			}
 		}
+
 		if functions.FuncInfo == nil {
 			continue
 		}
-		err_off := binary.Write(func_info, binary.LittleEndian, functions.FuncInfo.InsnOff)
-		if err_off != nil {
-			fmt.Println("binary.Write failed:", err_off)
-			return nil, nil, err_off
+
+		err = binary.Write(func_buff, binary.LittleEndian, functions.FuncInfo.InsnOff)
+		if err != nil {
+			fmt.Println("binary.Write failed:", err)
+			return nil, nil, err
 		}
-		err_id := binary.Write(func_info, binary.LittleEndian, functions.FuncInfo.TypeId)
-		if err_id != nil {
-			fmt.Println("binary.Write failed:", err_id)
-			return nil, nil, err_id
+		err = binary.Write(func_buff, binary.LittleEndian, functions.FuncInfo.TypeId)
+		if err != nil {
+			fmt.Println("binary.Write failed:", err)
+			return nil, nil, err
 		}
 	}
 
-	return prog.Bytes(), func_info.Bytes(), nil
+	return prog_buff.Bytes(), func_buff.Bytes(), nil
 }
 
 // To understand what each part of the encoding mean, please refer to
