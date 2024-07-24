@@ -63,7 +63,10 @@ message ValidationResult {
 }
 
 message EncodedProgram {
+  // Array of bytes with the encoded eBPF instructions
   bytes program = 1;
+  // Array of bytes with encoded BTF
   bytes btf = 2;
+  // Array of bytes with the encoded function info for the program's functions
   bytes function = 3;
 }

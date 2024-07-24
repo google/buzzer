@@ -20,7 +20,7 @@
 #include <linux/kernel.h>
 #include <netpacket/packet.h>
 
-bool load_cbpf_program(void *prog_buff, size_t size, std::string& error,
+bool load_cbpf_program(void *prog_buff, size_t size, std::string &error,
                        int *socks) {
   if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) < 0) {
     error = strerror(errno);
@@ -101,7 +101,7 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
 
 bool execute_cbpf_program(int socket_write, int socket_read, uint8_t *input,
                           uint8_t *output, int input_length,
-                          std::string& error_message) {
+                          std::string &error_message) {
   if (write(socket_write, input, input_length) != input_length) {
     error_message = "Could not write all data to socket";
     return false;

@@ -10,7 +10,7 @@
 #include "proto/ebpf.pb.h"
 
 extern "C" {
-void EncodeEBPF(void *, int, void *, void *, void *, void *, void *, void *);
+void EncodeEBPF(void *, int, void *, void *);
 }
 
 int main(int argc, char **argv) {
@@ -23,16 +23,11 @@ int main(int argc, char **argv) {
   std::string content((std::istreambuf_iterator<char>(input)),
                       std::istreambuf_iterator<char>());
 
-  uint8_t *ebpf_instructions = NULL;
-  uint8_t *func = NULL;
-  uint8_t *btf = NULL;
-  uint64_t array_length = 0;
-  uint64_t func_length = 0;
-  uint64_t btf_length = 0;
-  EncodeEBPF(content.data(), content.length(), &ebpf_instructions,
-             &array_length, &btf, &btf_length, &func, &func_length);
+  void *serialized_proto = NULL;
+  size_t size = 0;
+  EncodeEBPF(content.data(), content.length(), &serialized_proto, &size);
 
-  if (!ebpf_instructions) {
+  if (!serialized_proto) {
     std::cerr << "failed to decode ebpf program" << std::endl;
     return -1;
   }
@@ -41,9 +36,9 @@ int main(int argc, char **argv) {
   int map_fd = bpf_create_map(BPF_MAP_TYPE_ARRAY, sizeof(uint32_t),
                               sizeof(uint64_t), map_size);
   std::string verifier_log, error_message;
+
   int prog_fd =
-      load_ebpf_program(ebpf_instructions, array_length, btf, btf_length, func,
-                        func_length, &verifier_log, &error_message);
+      load_ebpf_program(&serialized_proto, size, &verifier_log, error_message);
   std::cout << "Verifier log: " << std::endl << verifier_log;
 
   if (prog_fd < 0) {
@@ -53,13 +48,13 @@ int main(int argc, char **argv) {
 
   uint8_t socket_input[2] = {0xAA, 0xAA};
   if (!execute_ebpf_program(prog_fd, socket_input, sizeof(socket_input),
-                            &error_message)) {
+                            error_message)) {
     std::cerr << "error executing program " << error_message << std::endl;
     return -1;
   }
 
   std::vector<uint64_t> map_elements;
-  if (!get_map_elements(map_fd, map_size, &map_elements, &error_message)) {
+  if (!get_map_elements(map_fd, map_size, &map_elements, error_message)) {
     std::cerr << "Could not get map elements: " << error_message << std::endl;
     return -1;
   }
@@ -69,6 +64,6 @@ int main(int argc, char **argv) {
     std::cout << "element: " << element << std::endl;
   }
 
-  free(ebpf_instructions);
+  free(serialized_proto);
   return 0;
 }

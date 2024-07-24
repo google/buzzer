@@ -103,7 +103,7 @@ void get_coverage_and_free_resources(struct coverage_data *cstruct,
   munmap(cstruct->coverage_buffer, cstruct->coverage_size * sizeof(uint64_t));
 }
 
-bool execute_error(std::string& error_message, const char *strerr,
+bool execute_error(std::string &error_message, const char *strerr,
                    int *sockets) {
   if (sockets != nullptr) {
     close(sockets[0]);

@@ -19,18 +19,22 @@ namespace ebpf_ffi {
 // This constant was determined arbitrarily, the number of 0's has incremented
 // when the size was no longer enough for the verifier logs.
 constexpr size_t kLogBuffSize = 100000000;
+// This constnat was determined arbitrarily for the btf logs
+constexpr size_t btfKLogBuffSize = 1024;
 }  // namespace ebpf_ffi
 
-int btf_load(void *btf_buff, size_t btf_size, std::string& error) {
-  union bpf_attr btf_attr;
+// btf_buff: Pointer to a buffer where the BTF data is stored
+// btf_size: Size of the BTF data in bytes
+int btf_load(void *btf_buff, size_t btf_size, std::string &error) {
+    union bpf_attr btf_attr;
   memset(&btf_attr, 0, sizeof(btf_attr));
   btf_attr.btf = (uint64_t)btf_buff;
   btf_attr.btf_size = btf_size;
 
-  char *btf_log_buf = (char *)malloc(1024);
-  memset(btf_log_buf, 0, 1024);
+  char *btf_log_buf = (char *)malloc(ebpf_ffi::btfKLogBuffSize);
+  memset(btf_log_buf, 0, ebpf_ffi::btfKLogBuffSize);
   btf_attr.btf_log_buf = (uint64_t)btf_log_buf;
-  btf_attr.btf_log_size = 1024;
+  btf_attr.btf_log_size = ebpf_ffi::btfKLogBuffSize;
   btf_attr.btf_log_level = 2;
 
   int btf_fd = syscall(SYS_bpf, BPF_BTF_LOAD, &btf_attr, sizeof(btf_attr));
@@ -40,9 +44,15 @@ int btf_load(void *btf_buff, size_t btf_size, std::string& error) {
   return btf_fd;
 }
 
-int load_ebpf_program(uint8_t *prog_buff, int prog_size, uint8_t *btf_buff,
-                      int btf_size, uint8_t *func_buff, int func_size,
-                      std::string *verifier_log, std::string& error) {
+int load_ebpf_program(void *serialized_proto, size_t size,
+                      std::string *verifier_log, std::string &error) {
+  std::string serialized_proto_string(
+      reinterpret_cast<const char *>(serialized_proto), size);
+  EncodedProgram program;
+  if (!program.ParseFromString(serialized_proto_string)) {
+    error = "Could not parse EncodedProgram proto";
+  }
+
   struct bpf_insn *insn;
   union bpf_attr attr = {};
 
@@ -50,18 +60,20 @@ int load_ebpf_program(uint8_t *prog_buff, int prog_size, uint8_t *btf_buff,
   unsigned char *log_buf = (unsigned char *)malloc(ebpf_ffi::kLogBuffSize);
   memset(log_buf, 0, ebpf_ffi::kLogBuffSize);
 
-  int btf_fd = btf_load(btf_buff, btf_size, error);
-  struct bpf_func_info *func = (struct bpf_func_info *)func_buff;
+  int btf_fd = btf_load(((uint8_t *)(program.btf().c_str())),
+                        (program.btf().length()), error);
+  struct bpf_func_info *func =
+      (struct bpf_func_info *)((uint8_t *)(program.function().c_str()));
   attr.prog_btf_fd = btf_fd;
   attr.func_info_rec_size = sizeof(struct bpf_func_info);
   attr.func_info = (uint64_t)(func);
-  attr.func_info_cnt = (func_size / sizeof(struct bpf_func_info)) - 1;
-  ;
+  attr.func_info_cnt =
+      ((program.function().length()) / sizeof(struct bpf_func_info)) - 1;
 
-  insn = (struct bpf_insn *)prog_buff;
+  insn = (struct bpf_insn *)((uint8_t *)(program.program().c_str()));
   attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;
   attr.insns = (uint64_t)insn;
-  attr.insn_cnt = (prog_size / (sizeof(struct bpf_insn)));
+  attr.insn_cnt = ((program.program().length()) / (sizeof(struct bpf_insn)));
   attr.license = (uint64_t) "GPL";
   attr.log_size = ebpf_ffi::kLogBuffSize;
   attr.log_buf = (uint64_t)log_buf;
@@ -83,25 +95,15 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
                                         int coverage_enabled,
                                         uint64_t coverage_size) {
   std::string verifier_log, error_message;
-  std::string serialized_proto_string(
-      reinterpret_cast<const char *>(serialized_proto), size);
-  EncodedProgram program;
-  if (!program.ParseFromString(serialized_proto_string)) {
-    error_message = "Could not parse EncodedProgram proto";
-  }
 
   struct coverage_data cover;
   memset(&cover, 0, sizeof(struct coverage_data));
   cover.fd = -1;
   cover.coverage_size = coverage_size;
   if (coverage_enabled) enable_coverage(&cover);
-  uint8_t *prog_buff = (uint8_t *)(program.program().c_str());
-  uint8_t *btf_buff = (uint8_t *)(program.btf().c_str());
-  uint8_t *func_buff = (uint8_t *)(program.function().c_str());
 
-  int program_fd = load_ebpf_program(
-      prog_buff, program.program().length(), btf_buff, program.btf().length(),
-      func_buff, program.function().length(), &verifier_log, error_message);
+  int program_fd =
+      load_ebpf_program(serialized_proto, size, &verifier_log, error_message);
   ValidationResult vres;
   if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
 
@@ -129,7 +131,7 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
 }
 
 bool get_map_elements(int map_fd, size_t map_size, std::vector<uint64_t> *res,
-                      std::string& error) {
+                      std::string &error) {
   for (uint64_t key = 0; key < map_size; key++) {
     uint64_t element = 0;
     union bpf_attr lookup_map = {.map_fd = static_cast<uint32_t>(map_fd),
@@ -187,7 +189,7 @@ struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size) {
 }
 
 bool execute_ebpf_program(int prog_fd, uint8_t *input, int input_length,
-                          std::string& error_message) {
+                          std::string &error_message) {
   int socks[2] = {};
   if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) != 0) {
     return execute_error(error_message, strerror(errno), NULL);

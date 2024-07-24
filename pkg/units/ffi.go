@@ -137,7 +137,7 @@ func (e *FFI) SetMapElement(fd int, key uint32, value uint64) int {
 // it. Returns feedback to the generator so it can adjust the generation
 // settings.
 func (e *FFI) ValidateEbpfProgram(encodedProgram *fpb.EncodedProgram) (*fpb.ValidationResult, error) {
-	if len(encodedProgram.Program) == 0 {
+	if len(encodedProgram.Program) == 0 && encodedProgram != nil {
 		return nil, fmt.Errorf("cannot run empty program")
 	}
 	shouldCollect, coverageSize := e.MetricsUnit.ShouldGetCoverage()
@@ -147,7 +147,7 @@ func (e *FFI) ValidateEbpfProgram(encodedProgram *fpb.EncodedProgram) (*fpb.Vali
 	}
 	serializedProto, err := proto.Marshal(encodedProgram)
 	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)),
-		C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
+		C.int(cbool), C.ulong(coverageSize))
 	res, err := validationProtoFromStruct(&bpfVerifyResult)
 	if err != nil {
 		return nil, err

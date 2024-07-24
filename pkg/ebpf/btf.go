@@ -22,6 +22,24 @@ import (
 	proto "github.com/golang/protobuf/proto"
 )
 
+// typeSection constructs a pb.TypeSection containing a set of basic types
+// used to represent functions in eBPF programs
+//
+// The generated types are:
+//
+// - Func_Proto: A base type for function prototypes
+// - Func: A function type, referencing a Func_Proto
+// - Int: 32-bit signed integer type
+// - Struct: A struct containing a single Int member
+// - Ptr: A pointer type
+// - Func_Proto (second occurrence): Function prototype with two parameters: an Int and a Ptr
+// - Func (second occurrence): Function type referencing the second Func_Proto
+//
+// These types are defined according to the BTF type encoding documented at
+// https://docs.kernel.org/bpf/btf.html#type-encoding
+//
+// The generated TypeSection will be used by eBPF programs to provide BTF
+// information about functions, e.g. enabling helper functions
 func typeSection() *pb.TypeSection {
 
 	types := []*pb.BtfType{}
@@ -113,7 +131,8 @@ func stringSection() *pb.StringSection {
 	return &pb.StringSection{Str: "buzzer"}
 }
 
-func Btf() *pb.Btf {
+func getBtf() *pb.Btf {
+	// https://docs.kernel.org/bpf/btf.html#btf-type-and-string-encoding
 	type_section := typeSection()
 	string_section := stringSection()
 	header := &pb.Header{
@@ -133,9 +152,10 @@ func Btf() *pb.Btf {
 	}
 }
 
-func GetBtf() ([]byte, error) {
-	btf_proto := Btf()
-	btf_buff := new(bytes.Buffer)
+// GenerateBtf returns a byte array containing the serialized BTF data from a BTF proto.
+func GenerateBtf() ([]byte, error) {
+	btf_proto := getBtf()
+	var btf_buff bytes.Buffer
 	var err error
 
 	var type_data = []any{}
@@ -157,9 +177,10 @@ func GetBtf() ([]byte, error) {
 			}
 		}
 	}
-	types_buff := new(bytes.Buffer)
+	var types_buff bytes.Buffer
+	//types_buff := new(bytes.Buffer)
 	for _, types := range type_data {
-		err = binary.Write(types_buff, binary.LittleEndian, types)
+		err = binary.Write(&types_buff, binary.LittleEndian, types)
 		if err != nil {
 			fmt.Println("binary.Write failed:", err)
 			return nil, err
@@ -167,9 +188,11 @@ func GetBtf() ([]byte, error) {
 	}
 
 	string_data := []byte(btf_proto.StringSection.Str)
-	string_buff := new(bytes.Buffer)
+	var string_buff bytes.Buffer
+	// The first string in the string section must be a null string
+	btf_buff.Write([]byte{0})
 	for _, strings := range string_data {
-		err = binary.Write(string_buff, binary.LittleEndian, strings)
+		err = binary.Write(&string_buff, binary.LittleEndian, strings)
 		if err != nil {
 			fmt.Println("binary.Write failed:", err)
 			return nil, err
@@ -179,7 +202,7 @@ func GetBtf() ([]byte, error) {
 
 	btf_proto.Header.TypeLen = int32(len(types_buff.Bytes()))
 	btf_proto.Header.StrOff = int32(len(types_buff.Bytes()))
-	btf_proto.Header.StrLen = int32(len(string_buff.Bytes()) + 1)
+	btf_proto.Header.StrLen = int32(len(string_buff.Bytes()))
 
 	var header_data = []any{
 		uint16(btf_proto.Header.Magic),
@@ -192,7 +215,7 @@ func GetBtf() ([]byte, error) {
 		btf_proto.Header.StrLen,
 	}
 	for _, header := range header_data {
-		err = binary.Write(btf_buff, binary.LittleEndian, header)
+		err = binary.Write(&btf_buff, binary.LittleEndian, header)
 		if err != nil {
 			fmt.Println("binary.Write failed:", err)
 			return nil, err
@@ -200,8 +223,6 @@ func GetBtf() ([]byte, error) {
 	}
 
 	btf_buff.Write(types_buff.Bytes())
-	// The first string in the string section must be a null string
-	btf_buff.Write([]byte{0})
 	btf_buff.Write(string_buff.Bytes())
 	return btf_buff.Bytes(), nil
 

@@ -129,7 +129,7 @@ func (cu *Control) runEbpf(prog *epb.Program) error {
 			return err
 		}
 	}
-	encodedBtf, err := ebpf.GetBtf()
+	encodedBtf, err := ebpf.GenerateBtf()
 	if err != nil {
 		fmt.Printf("Btf error: %v\n", err)
 	}

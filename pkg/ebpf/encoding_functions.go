@@ -61,7 +61,8 @@ func encodeMemOpcode(op *pb.MemOpcode) (uint8, error) {
 	return opcode, nil
 }
 
-// EncodeInstructions transforms the given array to ebpf bytecode.
+// EncodeInstructions transforms the given array of functions with instructions
+// and function info to ebpf bytecode and func_info bytecode, respectively.
 func EncodeInstructions(program *pb.Program) ([]byte, []byte, error) {
 	prog_buff := new(bytes.Buffer)
 	func_buff := new(bytes.Buffer)

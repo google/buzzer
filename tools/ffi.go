@@ -3,8 +3,10 @@ package main
 import (
 	"buzzer/pkg/ebpf/ebpf"
 	epb "buzzer/proto/ebpf_go_proto"
+	fpb "buzzer/proto/ffi_go_proto"
 	"fmt"
 	jsonpb "github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
 	"unsafe"
 )
 
@@ -14,9 +16,7 @@ import "C"
 
 //export EncodeEBPF
 func EncodeEBPF(serializedProgram unsafe.Pointer, serializedProgramSize C.int,
-	encodingResult unsafe.Pointer, encodingResultSize unsafe.Pointer,
-	encodingBtf unsafe.Pointer, encodingBtfSize unsafe.Pointer,
-	encodingfunc unsafe.Pointer, encodingfuncSize unsafe.Pointer) {
+	serialized_proto unsafe.Pointer, size unsafe.Pointer) {
 
 	// First reconstruct the proto.
 	encodedPb := C.GoBytes(serializedProgram, serializedProgramSize)
@@ -33,51 +33,28 @@ func EncodeEBPF(serializedProgram unsafe.Pointer, serializedProgramSize C.int,
 		return
 	}
 
-	// Then do magic to return it to C++
-	// The 8 here is because every bpf instruction is an 8 byte number.
-	cLength := C.ulong(len(encodedProg) * 8)
-
-	// C++ will free the memory.
-	resBuffer := C.malloc(cLength)
-	C.memcpy(resBuffer, unsafe.Pointer(&encodedProg[0]), cLength)
-
-	resultPtr := (**uint64)(encodingResult)
-	*resultPtr = (*uint64)(resBuffer)
-
-	resultSizePtr := (*uint64)(encodingResultSize)
-	*resultSizePtr = uint64(len(encodedProg))
-
-	// Func
-	funcLength := C.ulong(len(encodedfunc) * 8)
-
-	// C++ will free the memory.
-	funcBuffer := C.malloc(funcLength)
-	C.memcpy(funcBuffer, unsafe.Pointer(&encodedfunc[0]), funcLength)
-
-	funcPtr := (**uint64)(encodingfunc)
-	*funcPtr = (*uint64)(funcBuffer)
-
-	funcSizePtr := (*uint64)(encodingfuncSize)
-	*funcSizePtr = uint64(len(encodedfunc))
-
-	// BTF
-	encodedBtf, err := ebpf.GetBtf()
+	encodedBtf, err := ebpf.GenerateBtf()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	btfLength := C.ulong(len(encodedBtf) * 8)
+	result := &fpb.EncodedProgram{
+		Program:  encodedProg,
+		Function: encodedfunc,
+		Btf:      encodedBtf,
+	}
+	// Then do magic to return it to C++
+	serializedProto, err := proto.Marshal(result)
+	serializedSize := C.ulong(len(serializedProto))
 
-	// C++ will free the memory.
-	btfBuffer := C.malloc(btfLength)
-	C.memcpy(btfBuffer, unsafe.Pointer(&encodedBtf[0]), btfLength)
+	serializedBuffer := C.malloc(serializedSize)
+	C.memcpy(serializedBuffer, unsafe.Pointer(&serializedProto[0]), serializedSize)
 
-	btfPtr := (**uint64)(encodingBtf)
-	*btfPtr = (*uint64)(btfBuffer)
+	serializedPtr := (**uint64)(serialized_proto)
+	*serializedPtr = (*uint64)(serializedBuffer)
 
-	btfSizePtr := (*uint64)(encodingBtfSize)
-	*btfSizePtr = uint64(len(encodedBtf))
-
+	sizePtr := (*uint64)(size)
+	*sizePtr = uint64(len(serializedProto))
 }
 
 func main() {}

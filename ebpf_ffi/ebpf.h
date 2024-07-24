@@ -30,9 +30,8 @@ extern "C" {
 // Actual implementation of load program. The split between ffi and
 // implementation is done so the impl code can be shared with other parts of the
 // codebase also written in C++.
-int load_ebpf_program(uint8_t *prog_buff, int prog_size, uint8_t *btf_buff,
-                      int btf_size, uint8_t *func_buff, int func_size,
-                      std::string *verifier_log, std::string& error);
+int load_ebpf_program(void *serialized_proto, size_t size,
+                      std::string *verifier_log, std::string &error);
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
@@ -41,7 +40,7 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
                                         uint64_t coverage_size);
 
 bool get_map_elements(int map_fd, size_t map_size, std::vector<uint64_t> *res,
-                      std::string& error);
+                      std::string &error);
 
 // Sets the value at key |key| in the map described by |map_fd| to |value|.
 int ffi_update_map_element(int map_fd, int key, uint64_t value);
@@ -57,7 +56,7 @@ int ffi_create_bpf_map(size_t size);
 struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
 
 bool execute_ebpf_program(int prog_fd, uint8_t *input, int input_length,
-                          std::string& error_message);
+                          std::string &error_message);
 
 /// Runs the specified ebpf program by sending some data to a socket.
 // Serialized proto is of type ExecutionRequest.
