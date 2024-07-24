@@ -26,7 +26,7 @@ constexpr size_t btfKLogBuffSize = 1024;
 // btf_buff: Pointer to a buffer where the BTF data is stored
 // btf_size: Size of the BTF data in bytes
 int btf_load(void *btf_buff, size_t btf_size, std::string &error) {
-    union bpf_attr btf_attr;
+  union bpf_attr btf_attr;
   memset(&btf_attr, 0, sizeof(btf_attr));
   btf_attr.btf = (uint64_t)btf_buff;
   btf_attr.btf_size = btf_size;
