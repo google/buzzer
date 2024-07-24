@@ -62,7 +62,7 @@ int load_ebpf_program(void *serialized_proto, size_t size,
 
   int btf_fd = btf_load(((uint8_t *)(program.btf().c_str())),
                         (program.btf().length()), error);
-  if (btf_fd < 0) {
+  if (!(btf_fd < 0)) {
     struct bpf_func_info *func =
         (struct bpf_func_info *)((uint8_t *)(program.function().c_str()));
     attr.prog_btf_fd = btf_fd;
