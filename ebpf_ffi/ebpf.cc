@@ -62,7 +62,8 @@ int load_ebpf_program(void *serialized_proto, size_t size,
 
   int btf_fd = btf_load(((uint8_t *)(program.btf().c_str())),
                         (program.btf().length()), error);
-  struct bpf_func_info *func =
+  if (btf_fd < 0) {
+ struct bpf_func_info *func =
       (struct bpf_func_info *)((uint8_t *)(program.function().c_str()));
   attr.prog_btf_fd = btf_fd;
   attr.func_info_rec_size = sizeof(struct bpf_func_info);
@@ -70,6 +71,8 @@ int load_ebpf_program(void *serialized_proto, size_t size,
   attr.func_info_cnt =
       ((program.function().length()) / sizeof(struct bpf_func_info)) - 1;
 
+
+  }
   insn = (struct bpf_insn *)((uint8_t *)(program.program().c_str()));
   attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;
   attr.insns = (uint64_t)insn;

@@ -190,7 +190,7 @@ func GenerateBtf() ([]byte, error) {
 	string_data := []byte(btf_proto.StringSection.Str)
 	var string_buff bytes.Buffer
 	// The first string in the string section must be a null string
-	btf_buff.Write([]byte{0})
+	string_buff.Write([]byte{0})
 	for _, strings := range string_data {
 		err = binary.Write(&string_buff, binary.LittleEndian, strings)
 		if err != nil {
