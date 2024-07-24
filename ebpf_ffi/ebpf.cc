@@ -21,7 +21,7 @@ namespace ebpf_ffi {
 constexpr size_t kLogBuffSize = 100000000;
 }  // namespace ebpf_ffi
 
-int btf_load(void *btf_buff, size_t btf_size, std::string *error) {
+int btf_load(void *btf_buff, size_t btf_size, std::string& error) {
   union bpf_attr btf_attr;
   memset(&btf_attr, 0, sizeof(btf_attr));
   btf_attr.btf = (uint64_t)btf_buff;
@@ -35,14 +35,14 @@ int btf_load(void *btf_buff, size_t btf_size, std::string *error) {
 
   int btf_fd = syscall(SYS_bpf, BPF_BTF_LOAD, &btf_attr, sizeof(btf_attr));
   if (btf_fd < 0) {
-    *error = strerror(errno);
+    error = strerror(errno);
   }
   return btf_fd;
 }
 
 int load_ebpf_program(uint8_t *prog_buff, int prog_size, uint8_t *btf_buff,
                       int btf_size, uint8_t *func_buff, int func_size,
-                      std::string *verifier_log, std::string *error) {
+                      std::string *verifier_log, std::string& error) {
   struct bpf_insn *insn;
   union bpf_attr attr = {};
 
@@ -69,7 +69,7 @@ int load_ebpf_program(uint8_t *prog_buff, int prog_size, uint8_t *btf_buff,
 
   int program_fd = syscall(SYS_bpf, BPF_PROG_LOAD, &attr, sizeof(attr));
   if (program_fd < 0) {
-    *error = strerror(errno);
+    error = strerror(errno);
   }
 
   *verifier_log =
@@ -101,7 +101,7 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
 
   int program_fd = load_ebpf_program(
       prog_buff, program.program().length(), btf_buff, program.btf().length(),
-      func_buff, program.function().length(), &verifier_log, &error_message);
+      func_buff, program.function().length(), &verifier_log, error_message);
   ValidationResult vres;
   if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
 
@@ -129,7 +129,7 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
 }
 
 bool get_map_elements(int map_fd, size_t map_size, std::vector<uint64_t> *res,
-                      std::string *error) {
+                      std::string& error) {
   for (uint64_t key = 0; key < map_size; key++) {
     uint64_t element = 0;
     union bpf_attr lookup_map = {.map_fd = static_cast<uint32_t>(map_fd),
@@ -138,7 +138,7 @@ bool get_map_elements(int map_fd, size_t map_size, std::vector<uint64_t> *res,
     int err =
         syscall(SYS_bpf, BPF_MAP_LOOKUP_ELEM, &lookup_map, sizeof(lookup_map));
     if (err < 0) {
-      *error = strerror(errno);
+      error = strerror(errno);
       return false;
     }
     res->push_back(element);
@@ -177,7 +177,7 @@ struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size) {
   MapElements res;
   std::vector<uint64_t> elements;
   std::string error_message;
-  if (!get_map_elements(map_fd, map_size, &elements, &error_message)) {
+  if (!get_map_elements(map_fd, map_size, &elements, error_message)) {
     res.set_error_message(error_message);
     return serialize_proto(res);
   }
@@ -187,7 +187,7 @@ struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size) {
 }
 
 bool execute_ebpf_program(int prog_fd, uint8_t *input, int input_length,
-                          std::string *error_message) {
+                          std::string& error_message) {
   int socks[2] = {};
   if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) != 0) {
     return execute_error(error_message, strerror(errno), NULL);
@@ -231,7 +231,7 @@ struct bpf_result ffi_execute_ebpf_program(void *serialized_proto,
   }
 
   std::string error_message;
-  if (!execute_ebpf_program(prog_fd, data, data_size, &error_message)) {
+  if (!execute_ebpf_program(prog_fd, data, data_size, error_message)) {
     return return_error(error_message, &execution_result);
   }
 

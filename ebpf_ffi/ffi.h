@@ -71,7 +71,7 @@ void enable_coverage(struct coverage_data *coverage_info);
 void get_coverage_and_free_resources(struct coverage_data *cstruct,
                                      ValidationResult *vres);
 
-bool execute_error(std::string *error_message, const char *strerr,
+bool execute_error(std::string& error_message, const char *strerr,
                    int *sockets);
 
 struct bpf_result return_error(std::string error_message,
