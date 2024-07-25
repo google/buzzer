@@ -15,7 +15,6 @@
 package ebpf
 
 import (
-	btfpb "buzzer/proto/btf_go_proto"
 	pb "buzzer/proto/ebpf_go_proto"
 	"bytes"
 	"encoding/binary"
@@ -68,7 +67,6 @@ func EncodeInstructions(program *pb.Program) ([]byte, []byte, error) {
 	func_buff := new(bytes.Buffer)
 
 	// The first function info must be with offset 0 and type_id to a function
-	func_buff.Write([]byte{0, 0, 0, 0, byte(btfpb.TypeId_NA), 0, 0, 0})
 	for _, functions := range program.Functions {
 		var err error
 		for _, instruction := range functions.Instructions {
