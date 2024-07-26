@@ -16,6 +16,8 @@ package ebpf
 
 import (
 	pb "buzzer/proto/ebpf_go_proto"
+	"bytes"
+	"encoding/binary"
 	"fmt"
 )
 
@@ -58,17 +60,44 @@ func encodeMemOpcode(op *pb.MemOpcode) (uint8, error) {
 	return opcode, nil
 }
 
-// EncodeInstructions transforms the given array to ebpf bytecode.
-func EncodeInstructions(program *pb.Program) ([]uint64, error) {
-	result := []uint64{}
-	for _, instruction := range program.Instructions {
-		encoding, err := encodeInstruction(instruction)
-		if err != nil {
-			return nil, err
+// EncodeInstructions transforms the given array of functions with instructions
+// and function info to ebpf bytecode and func_info bytecode, respectively.
+func EncodeInstructions(program *pb.Program) ([]byte, []byte, error) {
+	prog_buff := new(bytes.Buffer)
+	func_buff := new(bytes.Buffer)
+
+	// The first function info must be with offset 0 and type_id to a function
+	for _, functions := range program.Functions {
+		var err error
+		for _, instruction := range functions.Instructions {
+			encoding, err := encodeInstruction(instruction)
+			if err != nil {
+				return nil, nil, err
+			}
+			err = binary.Write(prog_buff, binary.LittleEndian, encoding)
+			if err != nil {
+				fmt.Println("binary.Write failed:", err)
+				return nil, nil, err
+			}
 		}
-		result = append(result, encoding...)
+
+		if functions.FuncInfo == nil {
+			continue
+		}
+
+		err = binary.Write(func_buff, binary.LittleEndian, functions.FuncInfo.InsnOff)
+		if err != nil {
+			fmt.Println("binary.Write failed:", err)
+			return nil, nil, err
+		}
+		err = binary.Write(func_buff, binary.LittleEndian, functions.FuncInfo.TypeId)
+		if err != nil {
+			fmt.Println("binary.Write failed:", err)
+			return nil, nil, err
+		}
 	}
-	return result, nil
+
+	return prog_buff.Bytes(), func_buff.Bytes(), nil
 }
 
 // To understand what each part of the encoding mean, please refer to

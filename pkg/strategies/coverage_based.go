@@ -233,7 +233,9 @@ func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	prog := &pb.Program{
 		Program: &pb.Program_Ebpf{
 			Ebpf: &epb.Program{
-				Instructions: append(mutatedProgram, footer...),
+				Functions: []*epb.Functions{
+					{Instructions: append(mutatedProgram, footer...)},
+				},
 			},
 		},
 	}

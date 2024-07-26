@@ -24,6 +24,7 @@ go_library(
     name = "ebpf",
     srcs = [
         "alu_instructions.go",
+        "btf.go",
         "constants.go",
         "encoding_functions.go",
         "instruction_generators.go",
@@ -39,8 +40,10 @@ go_library(
     importpath = "buzzer/pkg/ebpf/ebpf",
     deps = [
         "//pkg/rand",
+        "//proto:btf_go_proto",
         "//proto:ebpf_go_proto",
         "@com_github_golang_protobuf//jsonpb",
+        "@com_github_golang_protobuf//proto",
     ],
 )
 
