@@ -27,6 +27,7 @@ go_library(
         "cbpf_playground.go",
         "coverage_based.go",
         "heap.go",
+        "loop_pointer_arithmetic.go",
         "playground.go",
         "pointer_arithmetic.go",
     ],
