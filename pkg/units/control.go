@@ -131,7 +131,7 @@ func (cu *Control) runEbpf(prog *epb.Program) error {
 	}
 
 	var encodedBtf []byte
-	if prog.Btf == true {
+	if prog.Btf {
 		encodedBtf, err = ebpf.GenerateBtf()
 		if err != nil {
 			fmt.Printf("Btf error: %v\n", err)

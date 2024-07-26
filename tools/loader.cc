@@ -36,9 +36,13 @@ int main(int argc, char **argv) {
   int map_fd = bpf_create_map(BPF_MAP_TYPE_ARRAY, sizeof(uint32_t),
                               sizeof(uint64_t), map_size);
   std::string verifier_log, error_message;
-
-  int prog_fd =
-      load_ebpf_program(&serialized_proto, size, &verifier_log, error_message);
+  std::string serialized_proto_string(
+      reinterpret_cast<const char *>(serialized_proto), size);
+  EncodedProgram program;
+  if (!program.ParseFromString(serialized_proto_string)) {
+    std::cout << "Could not parse EncodedProgram proto" << std::endl;
+  }
+  int prog_fd = load_ebpf_program(program, size, verifier_log, error_message);
   std::cout << "Verifier log: " << std::endl << verifier_log;
 
   if (prog_fd < 0) {

@@ -44,15 +44,8 @@ int btf_load(void *btf_buff, size_t btf_size, std::string &error) {
   return btf_fd;
 }
 
-int load_ebpf_program(void *serialized_proto, size_t size,
-                      std::string *verifier_log, std::string &error) {
-  std::string serialized_proto_string(
-      reinterpret_cast<const char *>(serialized_proto), size);
-  EncodedProgram program;
-  if (!program.ParseFromString(serialized_proto_string)) {
-    error = "Could not parse EncodedProgram proto";
-  }
-
+int load_ebpf_program(EncodedProgram program, size_t size,
+                      std::string &verifier_log, std::string &error) {
   struct bpf_insn *insn;
   union bpf_attr attr = {};
 
@@ -85,7 +78,7 @@ int load_ebpf_program(void *serialized_proto, size_t size,
     error = strerror(errno);
   }
 
-  *verifier_log =
+  verifier_log =
       std::string((const char *)log_buf, strlen((const char *)log_buf));
 
   free(log_buf);
@@ -103,8 +96,14 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
   cover.coverage_size = coverage_size;
   if (coverage_enabled) enable_coverage(&cover);
 
+  std::string serialized_proto_string(
+      reinterpret_cast<const char *>(serialized_proto), size);
+  EncodedProgram program;
+  if (!program.ParseFromString(serialized_proto_string)) {
+    error_message = "Could not parse EncodedProgram proto";
+  }
   int program_fd =
-      load_ebpf_program(serialized_proto, size, &verifier_log, error_message);
+      load_ebpf_program(program, size, verifier_log, error_message);
   ValidationResult vres;
   if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
 

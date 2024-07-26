@@ -30,8 +30,8 @@ extern "C" {
 // Actual implementation of load program. The split between ffi and
 // implementation is done so the impl code can be shared with other parts of the
 // codebase also written in C++.
-int load_ebpf_program(void *serialized_proto, size_t size,
-                      std::string *verifier_log, std::string &error);
+int load_ebpf_program(EncodedProgram program, size_t size,
+                      std::string &verifier_log, std::string &error);
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
