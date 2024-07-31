@@ -19,54 +19,6 @@ import (
 	pb "buzzer/proto/cbpf_go_proto"
 )
 
-func RandomAluInstruction() *pb.Instruction {
-	op := RandomAluOp()
-	var instr *pb.Instruction
-	if rand.SharedRNG.RandRange(0, 1) == 0 {
-		instr = generateImmAluInstruction(op)
-	} else {
-		instr = generateRegAluInstruction(op)
-	}
-
-	return instr
-}
-
-func RandomJmpInstruction(maxOffset uint64) *pb.Instruction {
-	var op pb.JmpOperationCode
-
-	for {
-		op = RandomJumpOp()
-		if IsConditional(op) {
-			break
-		}
-	}
-
-	offset := int8(rand.SharedRNG.RandRange(1, maxOffset))
-	if rand.SharedRNG.OneOf(2) {
-		src := int32(rand.SharedRNG.RandRange(0, 0xffffffff))
-		return newJmpInstruction(op, 0, int32(offset), src)
-	} else {
-		src := RandomRegister()
-		return newJmpInstruction(op, 0, int32(offset), src)
-	}
-}
-
-func RandomJumpOp() pb.JmpOperationCode {
-	return pb.JmpOperationCode(rand.SharedRNG.RandRange(0x00, 0x04) << 4)
-}
-
-func RandomAluOp() pb.AluOperationCode {
-	return pb.AluOperationCode(rand.SharedRNG.RandRange(0x00, 0x0a) << 4)
-}
-
-func IsConditional(op pb.JmpOperationCode) bool {
-	return !(op == pb.JmpOperationCode_JmpJA)
-}
-
-func RandomRegister() pb.Reg {
-	return pb.Reg(rand.SharedRNG.RandRange(0, 1))
-}
-
 func generateImmAluInstruction(op pb.AluOperationCode) *pb.Instruction {
 	value := int32(rand.SharedRNG.RandRange(0, 0xFFFFFFFF))
 	switch op {
@@ -79,13 +31,41 @@ func generateImmAluInstruction(op pb.AluOperationCode) *pb.Instruction {
 	return newAluInstruction(op, value)
 }
 
-func generateRegAluInstruction(op pb.AluOperationCode) *pb.Instruction {
-	return newAluInstruction(op, RandomRegister())
+func RandomAluInstruction() *pb.Instruction {
+	op := pb.AluOperationCode(rand.SharedRNG.RandRange(0x00, 0x0a) << 4)
+	var instr *pb.Instruction
+	if rand.SharedRNG.RandRange(0, 1) == 0 {
+		instr = generateImmAluInstruction(op)
+	} else {
+		instr = newAluInstruction(op, X)
+	}
+
+	return instr
+}
+
+func RandomJmpInstruction(maxOffset uint64) *pb.Instruction {
+	var op pb.JmpOperationCode
+
+	for {
+		op = pb.JmpOperationCode(rand.SharedRNG.RandRange(0x00, 0x04) << 4)
+		if op != pb.JmpOperationCode_JmpJA {
+			break
+		}
+	}
+
+	offset := int8(rand.SharedRNG.RandRange(1, maxOffset))
+	if rand.SharedRNG.OneOf(2) {
+		src := int32(rand.SharedRNG.RandRange(0, 0xffffffff))
+		return newJmpInstruction(op, 0, int32(offset), src)
+	} else {
+		src := X
+		return newJmpInstruction(op, 0, int32(offset), src)
+	}
 }
 
 // RandomSize is a helper function to be used in the RandomMemInstruction
 // functions. The result of this function should be one of the recognized
-// operation sizes of ebpf (https://www.kernel.org/doc/html/v5.18/bpf/instruction-set.html#:~:text=The%20size%20modifier%20is%20one%20of%3A)
+// operation sizes of cbpf
 func RandomSize() pb.StLdSize {
 	size := rand.SharedRNG.RandInt() % 3
 	// The possible size values of instructions are
@@ -140,38 +120,47 @@ func RandomMemInstruction() *pb.Instruction {
 		return RandomStoreInstruction()
 	default:
 		return RandomLoadInstruction()
-
 	}
+}
 
-}
 func RandomMode() pb.StLdMode {
-	return pb.StLdMode(rand.SharedRNG.RandRange(0x00, 0x0a))
+	return pb.StLdMode(rand.SharedRNG.RandRange(0x00, 0x0a) << 4)
 }
+
 func RandomStoreInstruction() *pb.Instruction {
-	size := RandomSize()
-	offset := int32(RandomOffset(size))
-	imm := int32(rand.SharedRNG.RandInt())
 	mode := RandomMode()
+	size := RandomSize()
+	imm := int32(rand.SharedRNG.RandRange(0, 512))
+
 	t := rand.SharedRNG.RandInt() % 2
 	switch t {
 	case 0:
-		return newStoreLoadOperation(mode, size, pb.InsClass_InsClassSt, 0, offset, imm)
+		return newStoreLoadOperation(mode, size, pb.InsClass_InsClassSt, imm)
 	default:
-		return newStoreLoadOperation(mode, size, pb.InsClass_InsClassStx, 0, offset, imm)
+		return newStoreLoadOperation(mode, size, pb.InsClass_InsClassStx, imm)
 	}
 
+}
+
+func RandomLoadImm(mode pb.StLdMode) int32 {
+	switch mode {
+	case pb.StLdMode_StLdModeABS:
+		return int32(ExtensionOffset + pb.Extensions(rand.SharedRNG.RandRange(0, 64)))
+	default:
+		return int32(rand.SharedRNG.RandRange(0, 512))
+	}
 }
 
 func RandomLoadInstruction() *pb.Instruction {
-	size := RandomSize()
-	offset := int32(RandomOffset(size))
-	imm := int32(rand.SharedRNG.RandInt())
 	mode := RandomMode()
+	size := RandomSize()
+	imm := RandomLoadImm(mode)
+
 	t := rand.SharedRNG.RandInt() % 2
 	switch t {
 	case 0:
-		return newStoreLoadOperation(mode, size, pb.InsClass_InsClassLd, 0, offset, imm)
+		return newStoreLoadOperation(mode, size, pb.InsClass_InsClassLd, imm)
 	default:
-		return newStoreLoadOperation(mode, size, pb.InsClass_InsClassLdx, 0, offset, imm)
+		return newStoreLoadOperation(mode, size, pb.InsClass_InsClassLdx, imm)
 	}
 }

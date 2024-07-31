@@ -25,7 +25,7 @@ func (cr *cBPFRandomInstruction) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 	fmt.Printf("Generated %d programs, %d were valid               \r", cr.programCount, cr.validProgramCount)
 
 	instructionCount := rand.SharedRNG.RandInt() % 1000
-	instructions := []*cpb.Instruction{}
+    instructions := []*cpb.Instruction{Add(1), Misc(A)} // Initialize Registers
 	for instructionCount != 0 {
 		instructionCount -= 1
 		var instruction *cpb.Instruction
@@ -35,12 +35,14 @@ func (cr *cBPFRandomInstruction) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 			instruction = RandomStoreInstruction()
 		case 1:
 			instruction = RandomLoadInstruction()
-		default:
-			if rand.SharedRNG.RandRange(1, 100) > 30 || instructionCount == 0 {
-				instruction = RandomAluInstruction()
-			} else {
+		case 2:
+			if instructionCount != 0 {
 				instruction = RandomJmpInstruction(uint64(instructionCount))
+			} else {
+				instruction = RandomAluInstruction()
 			}
+		default:
+			instruction = RandomAluInstruction()
 		}
 		instructions = append(instructions, instruction)
 	}
