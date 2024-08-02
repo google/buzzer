@@ -25,25 +25,104 @@ type LoopPointerArithmetic struct {
 	log               string
 }
 
+func types() []*btfpb.BtfType {
+	types := []*btfpb.BtfType{}
+
+	// 1: Func_Proto
+	types = append(types, &btfpb.BtfType{
+		NameOff:    0x0,
+		Info:       0x0d000000,
+		SizeOrType: 0x0,
+		Extra: &btfpb.BtfType_Empty{
+			Empty: &btfpb.Empty{},
+		},
+	})
+
+	// 2: Func
+	types = append(types, &btfpb.BtfType{
+		NameOff:    0x1,
+		Info:       0x0c000000,
+		SizeOrType: 0x01,
+		Extra: &btfpb.BtfType_Empty{
+			Empty: &btfpb.Empty{},
+		},
+	})
+
+	// 3: Int
+	types = append(types, &btfpb.BtfType{
+		NameOff:    0x1,
+		Info:       0x01000000,
+		SizeOrType: 0x4,
+		Extra: &btfpb.BtfType_IntTypeData{
+			IntTypeData: &btfpb.IntTypeData{IntInfo: 0x01000020},
+		},
+	})
+
+	// 4: Struct
+	types = append(types, &btfpb.BtfType{
+		NameOff:    0x1,
+		Info:       0x04000001,
+		SizeOrType: 0x4,
+		Extra: &btfpb.BtfType_StructTypeData{
+			StructTypeData: &btfpb.StructTypeData{
+				NameOff:    0x1,
+				StructType: 0x3,
+				Offset:     0x0,
+			},
+		},
+	})
+
+	// 5: Ptr
+	types = append(types, &btfpb.BtfType{
+		NameOff:    0x0,
+		Info:       0x02000000,
+		SizeOrType: 0x4,
+		Extra: &btfpb.BtfType_Empty{
+			Empty: &btfpb.Empty{},
+		},
+	})
+
+	// 6: Func_Proto
+	types = append(types, &btfpb.BtfType{
+		NameOff:    0x0,
+		Info:       0x0d000002,
+		SizeOrType: 0x3,
+		Extra: &btfpb.BtfType_FuncProtoTypeData{
+			FuncProtoTypeData: &btfpb.FuncProtoTypeData{
+				Param: []*btfpb.BtfParam{
+					{NameOff: 0x1, ParamType: 0x3},
+					{NameOff: 0x1, ParamType: 0x5},
+				},
+			},
+		},
+	})
+
+	// 7: Func
+	types = append(types, &btfpb.BtfType{
+		NameOff:    0x1,
+		Info:       0x0c000000,
+		SizeOrType: 0x6,
+		Extra: &btfpb.BtfType_Empty{
+			Empty: &btfpb.Empty{},
+		},
+	})
+	return types
+}
+
 func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	lp.programCount += 1
 	fmt.Printf("Generated %d programs, %d were valid               \r", lp.programCount, lp.validProgramCount)
+
+	btf := NewBtf()
+	btf.SetHeaderSection(0xeb9f, 0x01, 0x0)
+	btf.SetTypeSection(types())
+	btf.SetStringSection("buzzer")
 
 	mapFd := ffi.CreateMapArray(2)
 	ffi.CloseFD(lp.mapFd)
 	lp.mapFd = mapFd
 
-	main, err := InstructionSequence(
-		// Set up and call loop function
-		StW(R10, 0, -4),   // Stack[-4] = 0
-		StW(R10, 0, -12),  // Stack[-4] = 0
-		Mov64(R3, R10),    // R3 = stack
-		Add64(R3, -8),     // R3 = stack[-8] (*ctx)
-		Mov(R1, 10),       // R1 = 10 (# iterations)
-		Mov(R4, 0),        // R4 = 0 (flags)
-		LdFunctionPtr(24), // R2 = func
-		Call(181),         // Call loop
-
+	mainBody, _ := InstructionSequence(
 		// Load a fd to the map.
 		LdMapByFd(R9, mapFd), // R9 = Map File Descriptor
 		// Begin by writing a value to the map without ptr arithmetic.
@@ -73,9 +152,19 @@ func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 		Exit(), // return 0
 	)
 
-	if err != nil {
-		return nil, err
-	}
+	mainHeader, _ := InstructionSequence(
+		// Set up and call loop function
+		StW(R10, 0, -4),                       // Stack[-4] = 0
+		StW(R10, 0, -12),                      // Stack[-4] = 0
+		Mov64(R3, R10),                        // R3 = stack
+		Add64(R3, -8),                         // R3 = stack[-8] (*ctx)
+		Mov(R1, 10),                           // R1 = 10 (# iterations)
+		Mov(R4, 0),                            // R4 = 0 (flags)
+		LdFunctionPtr(int32(len(mainBody)+3)), // R2 = func
+		Call(181),                             // Call loop
+	)
+	main := append(mainHeader, mainBody...)
+
 	loopFuncHead, _ := InstructionSequence(
 		StDW(R10, R2, -8),
 	)
@@ -136,7 +225,7 @@ func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 	loopFunc = append(loopFunc, loopFuncFoo...)
 
 	func_info_na := &btfpb.FuncInfo{InsnOff: 0, TypeId: int32(btfpb.TypeId_NA)}
-	func_info_loop := &btfpb.FuncInfo{InsnOff: 31, TypeId: int32(btfpb.TypeId_FUNC_PTR_INT)}
+	func_info_loop := &btfpb.FuncInfo{InsnOff: int32(len(main) + 2), TypeId: int32(btfpb.TypeId_FUNC_PTR_INT)}
 	prog := &pb.Program{
 		Program: &pb.Program_Ebpf{
 			Ebpf: &epb.Program{
@@ -144,7 +233,7 @@ func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 					{Instructions: main, FuncInfo: func_info_na},
 					{Instructions: loopFunc, FuncInfo: func_info_loop},
 				},
-				Btf: true,
+				Btf: btf.GetBuffer(),
 			},
 		},
 	}

@@ -22,139 +22,72 @@ import (
 	proto "github.com/golang/protobuf/proto"
 )
 
-// typeSection constructs a pb.TypeSection containing a set of basic types
-// used to represent functions in eBPF programs
-//
-// The generated types are:
-//
-// - Func_Proto: A base type for function prototypes
-// - Func: A function type, referencing a Func_Proto
-// - Int: 32-bit signed integer type
-// - Struct: A struct containing a single Int member
-// - Ptr: A pointer type
-// - Func_Proto (second occurrence): Function prototype with two parameters: an Int and a Ptr
-// - Func (second occurrence): Function type referencing the second Func_Proto
-//
-// These types are defined according to the BTF type encoding documented at
-// https://docs.kernel.org/bpf/btf.html#type-encoding
-//
-// The generated TypeSection will be used by eBPF programs to provide BTF
-// information about functions, e.g. enabling helper functions
-func typeSection() *pb.TypeSection {
-
-	types := []*pb.BtfType{}
-
-	// 1: Func_Proto
-	types = append(types, &pb.BtfType{
-		NameOff:    0x0,
-		Info:       0x0d000000,
-		SizeOrType: 0x0,
-		Extra: &pb.BtfType_Empty{
-			Empty: &pb.Empty{},
-		},
-	})
-
-	// 2: Func
-	types = append(types, &pb.BtfType{
-		NameOff:    0x1,
-		Info:       0x0c000000,
-		SizeOrType: 0x01,
-		Extra: &pb.BtfType_Empty{
-			Empty: &pb.Empty{},
-		},
-	})
-
-	// 3: Int
-	types = append(types, &pb.BtfType{
-		NameOff:    0x1,
-		Info:       0x01000000,
-		SizeOrType: 0x4,
-		Extra: &pb.BtfType_IntTypeData{
-			IntTypeData: &pb.IntTypeData{IntInfo: 0x01000020},
-		},
-	})
-
-	// 4: Struct
-	types = append(types, &pb.BtfType{
-		NameOff:    0x1,
-		Info:       0x04000001,
-		SizeOrType: 0x4,
-		Extra: &pb.BtfType_StructTypeData{
-			StructTypeData: &pb.StructTypeData{
-				NameOff:    0x1,
-				StructType: 0x3,
-				Offset:     0x0,
-			},
-		},
-	})
-
-	// 5: Ptr
-	types = append(types, &pb.BtfType{
-		NameOff:    0x0,
-		Info:       0x02000000,
-		SizeOrType: 0x4,
-		Extra: &pb.BtfType_Empty{
-			Empty: &pb.Empty{},
-		},
-	})
-
-	// 6: Func_Proto
-	types = append(types, &pb.BtfType{
-		NameOff:    0x0,
-		Info:       0x0d000002,
-		SizeOrType: 0x3,
-		Extra: &pb.BtfType_FuncProtoTypeData{
-			FuncProtoTypeData: &pb.FuncProtoTypeData{
-				Param: []*pb.BtfParam{
-					{NameOff: 0x1, ParamType: 0x3},
-					{NameOff: 0x1, ParamType: 0x5},
-				},
-			},
-		},
-	})
-
-	// 7: Func
-	types = append(types, &pb.BtfType{
-		NameOff:    0x1,
-		Info:       0x0c000000,
-		SizeOrType: 0x6,
-		Extra: &pb.BtfType_Empty{
-			Empty: &pb.Empty{},
-		},
-	})
-	return &pb.TypeSection{BtfType: types}
+type BTF struct {
+	headerSec  *pb.Header
+	typeSec    *pb.TypeSection
+	stringsSec *pb.StringSection
+	btf        *pb.Btf
+	buffer     []byte
 }
 
-func stringSection() *pb.StringSection {
-	// For buzzer's BTF Implementation the string sections is not currently
-	// in used.
-	return &pb.StringSection{Str: "buzzer"}
+func NewBtf() *BTF {
+	return &BTF{}
 }
 
-func getBtf() *pb.Btf {
-	// https://docs.kernel.org/bpf/btf.html#btf-type-and-string-encoding
-	type_section := typeSection()
-	string_section := stringSection()
-	header := &pb.Header{
-		Magic:   0xeb9f,
-		Version: 0x01,
-		Flags:   0x00,
+func (b *BTF) GetHeaderSection() *pb.Header {
+	return b.headerSec
+}
+
+func (b *BTF) GetTypeSec() *pb.TypeSection {
+	return b.typeSec
+}
+
+func (b *BTF) GetStringSec() *pb.StringSection {
+	return b.stringsSec
+}
+
+func (b *BTF) GetBtf() *pb.Btf {
+	return b.btf
+}
+
+func (b *BTF) SetHeaderSection(magic int32, version int32, flags int32) {
+
+	b.headerSec = &pb.Header{
+		Magic:   magic,
+		Version: version,
+		Flags:   flags,
 		HdrLen:  0x18,
 		TypeOff: 0x0,
-		TypeLen: int32(proto.Size(type_section)),
-		StrOff:  int32(proto.Size(type_section)),
-		StrLen:  int32(proto.Size(string_section)),
+		TypeLen: int32(proto.Size(b.typeSec)),
+		StrOff:  int32(proto.Size(b.typeSec)),
+		StrLen:  int32(proto.Size(b.stringsSec)),
 	}
-	return &pb.Btf{
-		Header:        header,
-		TypeSection:   type_section,
-		StringSection: string_section,
+}
+
+func (b *BTF) SetTypeSection(types []*pb.BtfType) {
+	b.typeSec = &pb.TypeSection{
+		BtfType: types,
 	}
+}
+
+func (b *BTF) SetStringSection(str string) {
+	b.stringsSec = &pb.StringSection{
+		Str: str,
+	}
+}
+
+func (b *BTF) GetBuffer() []byte {
+	b.btf = &pb.Btf{
+		Header:        b.headerSec,
+		TypeSection:   b.typeSec,
+		StringSection: b.stringsSec,
+	}
+	b.buffer, _ = generateBtf(b.btf)
+	return b.buffer
 }
 
 // GenerateBtf returns a byte array containing the serialized BTF data from a BTF proto.
-func GenerateBtf() ([]byte, error) {
-	btf_proto := getBtf()
+func generateBtf(btf_proto *pb.Btf) ([]byte, error) {
 	var btf_buff bytes.Buffer
 	var err error
 
@@ -178,7 +111,6 @@ func GenerateBtf() ([]byte, error) {
 		}
 	}
 	var types_buff bytes.Buffer
-	//types_buff := new(bytes.Buffer)
 	for _, types := range type_data {
 		err = binary.Write(&types_buff, binary.LittleEndian, types)
 		if err != nil {
@@ -225,5 +157,4 @@ func GenerateBtf() ([]byte, error) {
 	btf_buff.Write(types_buff.Bytes())
 	btf_buff.Write(string_buff.Bytes())
 	return btf_buff.Bytes(), nil
-
 }
