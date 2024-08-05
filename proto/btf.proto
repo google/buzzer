@@ -45,15 +45,6 @@ enum BtfKind {
   ENUM64 = 19;
 }
 
-// Type Ids to be reference in function info, the type Ids are definined in
-// pkg/ebpf/btf.go
-// https://docs.kernel.org/bpf/btf.html#btf-type-and-string-encoding
-enum TypeId {
-  EMPTY = 0;
-  NA = 2;
-  FUNC_PTR_INT = 7;
-}
-
 // btf_param struct for BTF kind function proto
 // https://docs.kernel.org/bpf/btf.html#btf-kind-func-proto
 message BtfParam {

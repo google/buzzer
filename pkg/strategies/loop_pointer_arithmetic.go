@@ -225,8 +225,8 @@ func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 	loopFunc := append(loopFuncHead, loopFuncBody...)
 	loopFunc = append(loopFunc, loopFuncFoo...)
 
-	func_info_na := &btfpb.FuncInfo{InsnOff: 0, TypeId: int32(btfpb.TypeId_NA)}
-	func_info_loop := &btfpb.FuncInfo{InsnOff: int32(len(main) + 2), TypeId: int32(btfpb.TypeId_FUNC_PTR_INT)}
+	func_info_na := &btfpb.FuncInfo{InsnOff: 0, TypeId: 2}
+	func_info_loop := &btfpb.FuncInfo{InsnOff: int32(len(main) + 2), TypeId: 7}
 	prog := &pb.Program{
 		Program: &pb.Program_Ebpf{
 			Ebpf: &epb.Program{

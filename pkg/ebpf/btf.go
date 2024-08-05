@@ -23,7 +23,7 @@ import (
 )
 
 // SetHeaderSection takes a BTF proto and assigns the header values, magic
-// represents if the system is big or little endian.
+// represents if the system is big or little endian (0xeb9f, 0x9feb).
 func SetHeaderSection(btf *pb.Btf, magic int32, version int32, flags int32) {
 	btf.Header = &pb.Header{
 		Magic:   magic,
@@ -37,15 +37,15 @@ func SetHeaderSection(btf *pb.Btf, magic int32, version int32, flags int32) {
 	}
 }
 
-// SetTypeSection takes a BTF proto and assigns the parameter types to the
-// BTF type section
+// SetTypeSection populates the BTF type section of the provided BTF proto with
+// the parameter types
 func SetTypeSection(btf *pb.Btf, types []*pb.BtfType) {
 	btf.TypeSection = &pb.TypeSection{
 		BtfType: types,
 	}
 }
 
-// SetTypeInfo returns the encoded number for the specified type info,
+// SetTypeInfo returns the parameter type info encoded,
 // the bits arrangement is:
 //   - bits 0-15  = vlen
 //   - bits 16-23 = unused
@@ -66,15 +66,15 @@ func SetTypeInfo(vlen int16, kind pb.BtfKind, kind_flag bool) int32 {
 	return info
 }
 
-// SetStringSection takes a BTF proto and assigns the parameter string to the
-// BTF string section
+// SetStringSection populates the BTF string section of the provided BTF proto
+// with the parameter string
 func SetStringSection(btf *pb.Btf, str string) {
 	btf.StringSection = &pb.StringSection{
 		Str: str,
 	}
 }
 
-// GetBuffer takes a BTF Proto return its value in bytes
+// GetBuffer takes a BTF Proto and returns its serialized value as a byte array.
 func GetBuffer(btf *pb.Btf) []byte {
 	buffer, err := generateBtf(btf)
 	if err != nil {
@@ -83,7 +83,6 @@ func GetBuffer(btf *pb.Btf) []byte {
 	return buffer
 }
 
-// generateBtf returns a byte array containing the serialized BTF data from a BTF proto.
 func generateBtf(btf_proto *pb.Btf) ([]byte, error) {
 	var btf_buff bytes.Buffer
 	var err error
