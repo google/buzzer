@@ -75,7 +75,7 @@ func types() []*btfpb.BtfType {
 	// 5: Ptr
 	types = append(types, &btfpb.BtfType{
 		NameOff:    0x0,
-		Info:       SetTypeInfo(0,btfpb.BtfKind_PTR, false),
+		Info:       SetTypeInfo(0, btfpb.BtfKind_PTR, false),
 		SizeOrType: 0x4,
 		Extra: &btfpb.BtfType_Empty{
 			Empty: &btfpb.Empty{},
@@ -112,8 +112,8 @@ func types() []*btfpb.BtfType {
 func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	lp.programCount += 1
 	fmt.Printf("Generated %d programs, %d were valid               \r", lp.programCount, lp.validProgramCount)
-   
-    // Setup BTF Section
+
+	// Setup BTF Section
 	btf := &btfpb.Btf{}
 	SetHeaderSection(btf, 0xeb9f, 0x01, 0x0)
 	SetTypeSection(btf, types())
@@ -125,44 +125,44 @@ func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 
 	mainBody, _ := InstructionSequence(
 		// Load a fd to the map.
-		LdMapByFd(R9, mapFd),                   // R9 = Map File Descriptor
+		LdMapByFd(R9, mapFd), // R9 = Map File Descriptor
 		// Begin by writing a value to the map without ptr arithmetic.
-		StW(R10, 0, -4),                        // R10[-4] = 0
-		Mov64(R2, R10),                         // R2 = R10
-		Add64(R2, -4),                          // R2 = R10[-4] = 0 (param 2)
-		Mov64(R1, R9),                          // R1 = R9 (mapf fd) (param 1)
-		Call(MapLookup),                        // if map != succes: exit() // *R0 = map[0]
+		StW(R10, 0, -4), // R10[-4] = 0
+		Mov64(R2, R10),  // R2 = R10
+		Add64(R2, -4),   // R2 = R10[-4] = 0 (param 2)
+		Mov64(R1, R9),   // R1 = R9 (mapf fd) (param 1)
+		Call(MapLookup), // if map != succes: exit() // *R0 = map[0]
 		JmpNE(R0, 0, 1),
 		Exit(),
-		StDW(R0, 0xCAFE, 0),                    // R0[0] = 0xCAFE
+		StDW(R0, 0xCAFE, 0), // R0[0] = 0xCAFE
 
 		// Now repeat the operation but doing pointer arithmetic.
-		StW(R10, 1, -4),                        // R10[-4] = 1
-		Mov64(R2, R10),                         // R2 = R10
-		Add64(R2, -4),                          // R2 = R10[-4] = 1  (param 2)
-		Mov64(R1, R9),                          // R1 = R9 (map fd) (param 1)
-		Call(MapLookup),                        // if map != success: exit
+		StW(R10, 1, -4), // R10[-4] = 1
+		Mov64(R2, R10),  // R2 = R10
+		Add64(R2, -4),   // R2 = R10[-4] = 1  (param 2)
+		Mov64(R1, R9),   // R1 = R9 (map fd) (param 1)
+		Call(MapLookup), // if map != success: exit
 		JmpNE(R0, 0, 1),
 		Exit(),
 
-		LdW(R8, R10, -12),                      // R8 = 3
-		Add64(R0, R8),                          // *R0 = map[1] => *R0 += 3
-		StW(R0, R8, 0),                         // R0[0] = R8
+		LdW(R8, R10, -12), // R8 = 3
+		Add64(R0, R8),     // *R0 = map[1] => *R0 += 3
+		StW(R0, R8, 0),    // R0[0] = R8
 
 		Mov64(R0, 0),
-		Exit(),                                 // return 0
+		Exit(), // return 0
 	)
 
 	mainHeader, _ := InstructionSequence(
 		// Set up and call loop function
-		StW(R10, 0, -4),                        // Stack[-4] = 0
-		StW(R10, 0, -12),                       // Stack[-12] = 0
-		Mov64(R3, R10),                         // R3 = stack
-		Add64(R3, -8),                          // R3 = stack[-8] (param 3, *ctx)
-		Mov(R1, 10),                            // R1 = 10 (param 1, # iterations)
-		Mov(R4, 0),                             // R4 = 0 (param 4, flags)
-		LdFunctionPtr(int32(len(mainBody)+3)),  // R2 = func (param 2)
-		Call(181),                              // Call loop
+		StW(R10, 0, -4),                       // Stack[-4] = 0
+		StW(R10, 0, -12),                      // Stack[-12] = 0
+		Mov64(R3, R10),                        // R3 = stack
+		Add64(R3, -8),                         // R3 = stack[-8] (param 3, *ctx)
+		Mov(R1, 10),                           // R1 = 10 (param 1, # iterations)
+		Mov(R4, 0),                            // R4 = 0 (param 4, flags)
+		LdFunctionPtr(int32(len(mainBody)+3)), // R2 = func (param 2)
+		Call(181),                             // Call loop
 	)
 	main := append(mainHeader, mainBody...)
 

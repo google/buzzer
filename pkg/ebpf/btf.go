@@ -15,10 +15,10 @@
 package ebpf
 
 import (
+	pb "buzzer/proto/btf_go_proto"
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	pb "buzzer/proto/btf_go_proto"
 	proto "github.com/golang/protobuf/proto"
 )
 
@@ -47,12 +47,13 @@ func SetTypeSection(btf *pb.Btf, types []*pb.BtfType) {
 
 // SetTypeInfo returns the encoded number for the specified type info,
 // the bits arrangement is:
-//    - bits 0-15  = vlen
-//    - bits 16-23 = unused
-//    - bits 24-28 = kind
-//    - bits 29-30 = unused
-//    - bits    31 = kind_flag
-// https://docs.kernel.org/bpf/btf.html#:~:text=Each%20type%20contains%20the%20following%20common%20data%3A 
+//   - bits 0-15  = vlen
+//   - bits 16-23 = unused
+//   - bits 24-28 = kind
+//   - bits 29-30 = unused
+//   - bits    31 = kind_flag
+//
+// https://docs.kernel.org/bpf/btf.html#:~:text=Each%20type%20contains%20the%20following%20common%20data%3A
 func SetTypeInfo(vlen int16, kind pb.BtfKind, kind_flag bool) int32 {
 	info := int32(0)
 	info |= int32(vlen)
@@ -65,7 +66,7 @@ func SetTypeInfo(vlen int16, kind pb.BtfKind, kind_flag bool) int32 {
 	return info
 }
 
-// SetStringSection takes a BTF proto and assigns the parameter string to the 
+// SetStringSection takes a BTF proto and assigns the parameter string to the
 // BTF string section
 func SetStringSection(btf *pb.Btf, str string) {
 	btf.StringSection = &pb.StringSection{
@@ -76,9 +77,9 @@ func SetStringSection(btf *pb.Btf, str string) {
 // GetBuffer takes a BTF Proto return its value in bytes
 func GetBuffer(btf *pb.Btf) []byte {
 	buffer, err := generateBtf(btf)
-    if err != nil {
-      fmt.Println(err)
-    }
+	if err != nil {
+		fmt.Println(err)
+	}
 	return buffer
 }
 
