@@ -2,11 +2,12 @@ package main
 
 import (
 	"buzzer/pkg/ebpf/ebpf"
-	"fmt"
-	"unsafe"
-
 	epb "buzzer/proto/ebpf_go_proto"
+	fpb "buzzer/proto/ffi_go_proto"
+	"fmt"
 	jsonpb "github.com/golang/protobuf/jsonpb"
+	"github.com/golang/protobuf/proto"
+	"unsafe"
 )
 
 //#include <stdlib.h>
@@ -14,7 +15,8 @@ import (
 import "C"
 
 //export EncodeEBPF
-func EncodeEBPF(serializedProgram unsafe.Pointer, serializedProgramSize C.int, encodingResult, encodingResultSize unsafe.Pointer) {
+func EncodeEBPF(serializedProgram unsafe.Pointer, serializedProgramSize C.int,
+	serialized_proto unsafe.Pointer, size unsafe.Pointer) {
 
 	// First reconstruct the proto.
 	encodedPb := C.GoBytes(serializedProgram, serializedProgramSize)
@@ -24,27 +26,35 @@ func EncodeEBPF(serializedProgram unsafe.Pointer, serializedProgramSize C.int, e
 		fmt.Println(err)
 		return
 	}
-
 	// Serialize it.
-	encodedProg, err := ebpf.EncodeInstructions(program)
+	encodedProg, encodedfunc, err := ebpf.EncodeInstructions(program)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
+	encodedBtf, err := ebpf.GenerateBtf()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	result := &fpb.EncodedProgram{
+		Program:  encodedProg,
+		Function: encodedfunc,
+		Btf:      encodedBtf,
+	}
 	// Then do magic to return it to C++
-	// The 8 here is because every bpf instruction is an 8 byte number.
-	cLength := C.ulong(len(encodedProg) * 8)
+	serializedProto, err := proto.Marshal(result)
+	serializedSize := C.ulong(len(serializedProto))
 
-	// C++ will free the memory.
-	resBuffer := C.malloc(cLength)
-	C.memcpy(resBuffer, unsafe.Pointer(&encodedProg[0]), cLength)
+	serializedBuffer := C.malloc(serializedSize)
+	C.memcpy(serializedBuffer, unsafe.Pointer(&serializedProto[0]), serializedSize)
 
-	resultPtr := (**uint64)(encodingResult)
-	*resultPtr = (*uint64)(resBuffer)
+	serializedPtr := (**uint64)(serialized_proto)
+	*serializedPtr = (*uint64)(serializedBuffer)
 
-	resultSizePtr := (*uint64)(encodingResultSize)
-	*resultSizePtr = uint64(len(encodedProg))
+	sizePtr := (*uint64)(size)
+	*sizePtr = uint64(len(serializedProto))
 }
 
 func main() {}

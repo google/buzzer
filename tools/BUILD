@@ -34,7 +34,9 @@ go_binary(
     deps = [
         "//pkg/ebpf",
         "//proto:ebpf_go_proto",
+        "//proto:ffi_go_proto",
         "@com_github_golang_protobuf//jsonpb",
+        "@com_github_golang_protobuf//proto",
     ],
 )
 
