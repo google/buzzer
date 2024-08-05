@@ -23,7 +23,7 @@ package units
 //};
 //struct bpf_result ffi_load_cbpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
 //struct bpf_result ffi_execute_cbpf_program(void* serialized_proto, size_t length);
-//struct bpf_result ffi_load_ebpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
+//struct bpf_result ffi_load_ebpf_program(void* serialized_proto, size_t size, int coverage_enabled, unsigned long coverage_size);
 //struct bpf_result ffi_execute_ebpf_program(void* serialized_proto, size_t length);
 //struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
 //int ffi_create_bpf_map(size_t size);
@@ -136,8 +136,8 @@ func (e *FFI) SetMapElement(fd int, key uint32, value uint64) int {
 // ValidateProgram passes the program through the bpf verifier without executing
 // it. Returns feedback to the generator so it can adjust the generation
 // settings.
-func (e *FFI) ValidateEbpfProgram(prog []uint64) (*fpb.ValidationResult, error) {
-	if len(prog) == 0 {
+func (e *FFI) ValidateEbpfProgram(encodedProgram *fpb.EncodedProgram) (*fpb.ValidationResult, error) {
+	if len(encodedProgram.Program) == 0 && encodedProgram != nil {
 		return nil, fmt.Errorf("cannot run empty program")
 	}
 	shouldCollect, coverageSize := e.MetricsUnit.ShouldGetCoverage()
@@ -145,7 +145,9 @@ func (e *FFI) ValidateEbpfProgram(prog []uint64) (*fpb.ValidationResult, error) 
 	if shouldCollect {
 		cbool = 1
 	}
-	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)), C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
+	serializedProto, err := proto.Marshal(encodedProgram)
+	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)),
+		C.int(cbool), C.ulong(coverageSize))
 	res, err := validationProtoFromStruct(&bpfVerifyResult)
 	if err != nil {
 		return nil, err

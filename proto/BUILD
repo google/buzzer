@@ -24,14 +24,14 @@ package(
 proto_library(
     name = "ebpf_proto",
     srcs = ["ebpf.proto"],
-    deps = [],
+    deps = [":btf_proto"],
 )
 
 go_proto_library(
     name = "ebpf_go_proto",
     importpath = "buzzer/proto/ebpf_go_proto",
     protos = [":ebpf_proto"],
-    deps = [],
+    deps = [":btf_go_proto"],
 )
 
 cc_proto_library(
@@ -97,4 +97,22 @@ go_proto_library(
 cc_proto_library(
     name = "program_cc_proto",
     deps = [":program_proto"],
+)
+
+proto_library(
+    name = "btf_proto",
+    srcs = ["btf.proto"],
+    deps = [],
+)
+
+go_proto_library(
+    name = "btf_go_proto",
+    importpath = "buzzer/proto/btf_go_proto",
+    protos = [":btf_proto"],
+    deps = [],
+)
+
+cc_proto_library(
+    name = "btf_cc_proto",
+    deps = [":btf_proto"],
 )

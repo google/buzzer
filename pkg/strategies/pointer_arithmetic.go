@@ -119,12 +119,13 @@ func (pa *PointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, error
 	}
 	header = append(header, body...)
 	header = append(header, footer...)
-	p := &epb.Program{
-		Instructions: header,
-	}
 	prog := &pb.Program{
 		Program: &pb.Program_Ebpf{
-			Ebpf: p,
+			Ebpf: &epb.Program{
+				Functions: []*epb.Functions{
+					{Instructions: header},
+				},
+			},
 		}}
 	return prog, nil
 }

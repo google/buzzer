@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+import "proto/btf.proto";
+
 // Most of the things here represent the encoding documented at
 // https://www.kernel.org/doc/html/v5.17/bpf/instruction-set.html
 package ebpf;
@@ -158,6 +160,12 @@ message Instruction {
   }
 }
 
-message Program {
+message Functions {
   repeated Instruction instructions = 1;
+  btf.FuncInfo func_info = 2;
+}
+
+message Program {
+  bool btf = 1;
+  repeated Functions functions = 2;
 }

@@ -20,8 +20,9 @@ type Playground struct {
 }
 
 func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
+
 	insn, err := InstructionSequence(
-		Mov64(R0, 0),
+		Mov(R0, 0),
 		Exit(),
 	)
 	if err != nil {
@@ -29,7 +30,11 @@ func (pg *Playground) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 	}
 	prog := &pb.Program{
 		Program: &pb.Program_Ebpf{
-			Ebpf: &epb.Program{Instructions: insn},
+			Ebpf: &epb.Program{
+				Functions: []*epb.Functions{
+					{Instructions: insn},
+				},
+			},
 		}}
 	return prog, nil
 }

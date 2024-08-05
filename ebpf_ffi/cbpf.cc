@@ -20,10 +20,10 @@
 #include <linux/kernel.h>
 #include <netpacket/packet.h>
 
-bool load_cbpf_program(void *prog_buff, size_t size, std::string *error,
+bool load_cbpf_program(void *prog_buff, size_t size, std::string &error,
                        int *socks) {
   if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) < 0) {
-    *error = strerror(errno);
+    error = strerror(errno);
     return false;
   }
   // cBPF programs have two relevant structures: sock_filter, and sock_fprog
@@ -40,12 +40,12 @@ bool load_cbpf_program(void *prog_buff, size_t size, std::string *error,
   tv.tv_usec = 10000;
   if (setsockopt(socks[1], SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv,
                  sizeof tv) < 0) {
-    *error = strerror(errno);
+    error = strerror(errno);
     goto out_error;
   }
-  if (setsockopt(socks[1], SOL_SOCKET, SO_ATTACH_FILTER, &program,
+   if (setsockopt(socks[1], SOL_SOCKET, SO_ATTACH_FILTER, &program,
                  sizeof(program)) < 0) {
-    *error = strerror(errno);
+    error = strerror(errno);
     goto out_error;
   }
   return true;
@@ -76,7 +76,7 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
   ValidationResult vres;
 
   int socks[2] = {-1, -1};
-  if (!load_cbpf_program(prog_buff, size, &error_message, socks)) {
+  if (!load_cbpf_program(prog_buff, size, error_message, socks)) {
     // Return why we failed to load the program.
     if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
     return validation_error(error_message, &vres);
@@ -106,18 +106,17 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
 
 bool execute_cbpf_program(int socket_write, int socket_read, uint8_t *input,
                           uint8_t *output, int input_length,
-                          std::string *error_message) {
+                          std::string &error_message) {
   if (write(socket_write, input, input_length) != input_length) {
-    *error_message = "Could not write all data to socket";
-    goto out;
-  }
-
-  if (read(socket_read, output, input_length) != input_length) {
-    *error_message = "Could not read all data to socket";
-    goto out;
+    error_message = "Could not write all data to socket";
+    goto out
   }
 
   close(socket_write);
+  if (read(socket_read, output, input_length) != input_length) {
+    error_message = "Could not read all data to socket";
+    goto out
+  }
   close(socket_read);
 
   return true;
@@ -165,7 +164,7 @@ struct bpf_result ffi_execute_cbpf_program(void *serialized_proto,
   memset(read_data, 0x00, data_size + 1);
   std::string error_message;
   if (!execute_cbpf_program(socket_write, socket_read, data, read_data,
-                            data_size, &error_message)) {
+                            data_size, error_message)) {
     return return_error(error_message, &execution_result);
   }
 
