@@ -41,14 +41,18 @@ bool load_cbpf_program(void *prog_buff, size_t size, std::string &error,
   if (setsockopt(socks[1], SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv,
                  sizeof tv) < 0) {
     error = strerror(errno);
-    return false;
+    goto out_error;
   }
   if (setsockopt(socks[1], SOL_SOCKET, SO_ATTACH_FILTER, &program,
                  sizeof(program)) < 0) {
     error = strerror(errno);
-    return false;
+    goto out_error;
   }
   return true;
+out_error:
+  close(socks[0]);
+  close(socks[1]);
+  return false;
 }
 
 struct bpf_result validation_error(std::string error_message,
@@ -74,6 +78,7 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
   int socks[2] = {-1, -1};
   if (!load_cbpf_program(prog_buff, size, error_message, socks)) {
     // Return why we failed to load the program.
+    if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
     return validation_error(error_message, &vres);
   }
 
@@ -104,16 +109,22 @@ bool execute_cbpf_program(int socket_write, int socket_read, uint8_t *input,
                           std::string &error_message) {
   if (write(socket_write, input, input_length) != input_length) {
     error_message = "Could not write all data to socket";
-    return false;
+    goto out;
   }
 
   close(socket_write);
   if (read(socket_read, output, input_length) != input_length) {
     error_message = "Could not read all data to socket";
+    goto out;
   }
   close(socket_read);
 
   return true;
+
+out:
+  close(socket_write);
+  close(socket_read);
+  return false;
 }
 
 struct bpf_result ffi_execute_cbpf_program(void *serialized_proto,

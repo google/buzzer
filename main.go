@@ -42,6 +42,7 @@ var (
 		strategies.NewPlaygroundStrategy(),
 		strategies.NewCoverageBasedStrategy(),
 		strategies.NewCbpfPlaygroundStrategy(),
+		strategies.NewCbpfRandomInstructionStrategy(),
 	}
 )
 

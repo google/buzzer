@@ -38,3 +38,8 @@ type Filter struct {
 	Jf     uint8
 	K      uint32
 }
+
+// https://elixir.bootlin.com/linux/v6.10/source/include/uapi/linux/filter.h#L65
+const (
+	ExtensionOffset = -0x1000
+)

@@ -18,7 +18,7 @@ import (
 	pb "buzzer/proto/cbpf_go_proto"
 )
 
-func newStoreLoadOperation(mode pb.StLdMode, size pb.StLdSize, class pb.InsClass, jmpTrue, jmpFalse, fieldK int32) *pb.Instruction {
+func newStoreLoadOperation(mode pb.StLdMode, size pb.StLdSize, class pb.InsClass, fieldK int32) *pb.Instruction {
 
 	// The opcode field is divided into three parts, for more information go to:
 	// https://www.infradead.org/~mchehab/kernel_docs/networking/filter.html#ebpf-opcode-encoding
@@ -35,102 +35,102 @@ func newStoreLoadOperation(mode pb.StLdMode, size pb.StLdSize, class pb.InsClass
 
 	return &pb.Instruction{
 		Opcode: opcode,
-		Jt:     jmpTrue,
-		Jf:     jmpFalse,
+		Jt:     0,
+		Jf:     0,
 		K:      fieldK,
 	}
 }
 
 // ----- Load Operations -----
 // A = mem[K]
-func Ld(jt, jf, k int32) *pb.Instruction {
+func Ld(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeMEM, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassLd, jt, jf, k)
+		pb.InsClass_InsClassLd, k)
 }
 
 // A = K
-func Ldi(jt, jf, k int32) *pb.Instruction {
+func Ldi(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeIMM, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassLd, jt, jf, k)
+		pb.InsClass_InsClassLd, k)
 }
 
 // A = skb->len
-func LdLen(jt, jf, k int32) *pb.Instruction {
+func LdLen(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeLEN, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassLd, jt, jf, k)
+		pb.InsClass_InsClassLd, k)
 }
 
 // Absolute Loads
-func LdAbsW(jt, jf, k int32) *pb.Instruction {
+func LdAbsW(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeABS, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassLd, jt, jf, k)
+		pb.InsClass_InsClassLd, k)
 }
 
-func LdAbsH(jt, jf, k int32) *pb.Instruction {
+func LdAbsH(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeABS, pb.StLdSize_StLdSizeH,
-		pb.InsClass_InsClassLd, jt, jf, k)
+		pb.InsClass_InsClassLd, k)
 }
 
-func LdAbsB(jt, jf, k int32) *pb.Instruction {
+func LdAbsB(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeABS, pb.StLdSize_StLdSizeB,
-		pb.InsClass_InsClassLd, jt, jf, k)
+		pb.InsClass_InsClassLd, k)
 }
 
 // Indirect Loads
-func LdIndW(jt, jf, k int32) *pb.Instruction {
+func LdIndW(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeIND, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassLd, jt, jf, k)
+		pb.InsClass_InsClassLd, k)
 }
 
-func LdIndH(jt, jf, k int32) *pb.Instruction {
+func LdIndH(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeIND, pb.StLdSize_StLdSizeH,
-		pb.InsClass_InsClassLd, jt, jf, k)
+		pb.InsClass_InsClassLd, k)
 }
 
-func LdIndB(jt, jf, k int32) *pb.Instruction {
+func LdIndB(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeIND, pb.StLdSize_StLdSizeB,
-		pb.InsClass_InsClassLd, jt, jf, k)
+		pb.InsClass_InsClassLd, k)
 }
 
 // X = mem[K]
-func Ldx(jt, jf, k int32) *pb.Instruction {
+func Ldx(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeMEM, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassLdx, jt, jf, k)
+		pb.InsClass_InsClassLdx, k)
 }
 
 // X = K
-func Ldxi(jt, jf, k int32) *pb.Instruction {
+func Ldxi(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeIMM, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassLdx, jt, jf, k)
+		pb.InsClass_InsClassLdx, k)
 }
 
 // X = skb->len
-func LdxLen(jt, jf, k int32) *pb.Instruction {
+func LdxLen(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeLEN, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassLdx, jt, jf, k)
+		pb.InsClass_InsClassLdx, k)
 }
 
 // A = *((u32 *) (seccomp_data + K))
-func LdxAbs(jt, jf, k int32) *pb.Instruction {
+func LdxAbs(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeABS, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassLdx, jt, jf, k)
+		pb.InsClass_InsClassLdx, k)
 }
 
 // X = 4*([k]&0xf)
-func Ldxb(jt, jf, k int32) *pb.Instruction {
+func Ldxb(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeMSH, pb.StLdSize_StLdSizeB,
-		pb.InsClass_InsClassLdx, jt, jf, k)
+		pb.InsClass_InsClassLdx, k)
 }
 
 // -----  Store Operations -----
 // mem[k] = A
-func St(jt, jf, k int32) *pb.Instruction {
+func St(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeMEM, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassSt, jt, jf, k)
+		pb.InsClass_InsClassSt, k)
 }
 
 // mem[k] = X
-func Stx(jt, jf, k int32) *pb.Instruction {
+func Stx(k int32) *pb.Instruction {
 	return newStoreLoadOperation(pb.StLdMode_StLdModeMEM, pb.StLdSize_StLdSizeW,
-		pb.InsClass_InsClassStx, jt, jf, k)
+		pb.InsClass_InsClassStx, k)
 }
