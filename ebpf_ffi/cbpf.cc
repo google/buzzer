@@ -43,7 +43,7 @@ bool load_cbpf_program(void *prog_buff, size_t size, std::string &error,
     error = strerror(errno);
     goto out_error;
   }
-   if (setsockopt(socks[1], SOL_SOCKET, SO_ATTACH_FILTER, &program,
+  if (setsockopt(socks[1], SOL_SOCKET, SO_ATTACH_FILTER, &program,
                  sizeof(program)) < 0) {
     error = strerror(errno);
     goto out_error;
@@ -109,13 +109,13 @@ bool execute_cbpf_program(int socket_write, int socket_read, uint8_t *input,
                           std::string &error_message) {
   if (write(socket_write, input, input_length) != input_length) {
     error_message = "Could not write all data to socket";
-    goto out
+    goto out;
   }
 
   close(socket_write);
   if (read(socket_read, output, input_length) != input_length) {
     error_message = "Could not read all data to socket";
-    goto out
+    goto out;
   }
   close(socket_read);
 
