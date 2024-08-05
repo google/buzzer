@@ -112,23 +112,12 @@ func RandomOffset(s pb.StLdSize) int16 {
 	return offset
 }
 
-// Returns a random store or load instruction to the stack.
-func RandomMemInstruction() *pb.Instruction {
-	t := rand.SharedRNG.RandInt() % 2
-	switch t {
-	case 0:
-		return RandomStoreInstruction()
-	default:
-		return RandomLoadInstruction()
-	}
-}
-
 func RandomMode() pb.StLdMode {
-	return pb.StLdMode(rand.SharedRNG.RandRange(0x00, 0x0a) << 4)
+	return pb.StLdMode(rand.SharedRNG.RandRange(0x00, 0x08) << 4)
 }
 
 func RandomStoreInstruction() *pb.Instruction {
-	mode := RandomMode()
+	mode := pb.StLdMode_StLdModeMEM
 	size := RandomSize()
 	imm := int32(rand.SharedRNG.RandRange(0, 512))
 

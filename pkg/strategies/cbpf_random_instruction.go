@@ -25,7 +25,7 @@ func (cr *cBPFRandomInstruction) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 	fmt.Printf("Generated %d programs, %d were valid               \r", cr.programCount, cr.validProgramCount)
 
 	instructionCount := rand.SharedRNG.RandInt() % 1000
-    instructions := []*cpb.Instruction{Add(1), Misc(A)} // Initialize Registers
+	instructions := []*cpb.Instruction{Add(1), Misc(A)} // Initialize Registers
 	for instructionCount != 0 {
 		instructionCount -= 1
 		var instruction *cpb.Instruction
