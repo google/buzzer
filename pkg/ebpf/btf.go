@@ -15,78 +15,74 @@
 package ebpf
 
 import (
-	pb "buzzer/proto/btf_go_proto"
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	pb "buzzer/proto/btf_go_proto"
 	proto "github.com/golang/protobuf/proto"
 )
 
-type BTF struct {
-	headerSec  *pb.Header
-	typeSec    *pb.TypeSection
-	stringsSec *pb.StringSection
-	btf        *pb.Btf
-	buffer     []byte
-}
-
-func NewBtf() *BTF {
-	return &BTF{}
-}
-
-func (b *BTF) GetHeaderSection() *pb.Header {
-	return b.headerSec
-}
-
-func (b *BTF) GetTypeSec() *pb.TypeSection {
-	return b.typeSec
-}
-
-func (b *BTF) GetStringSec() *pb.StringSection {
-	return b.stringsSec
-}
-
-func (b *BTF) GetBtf() *pb.Btf {
-	return b.btf
-}
-
-func (b *BTF) SetHeaderSection(magic int32, version int32, flags int32) {
-
-	b.headerSec = &pb.Header{
+// SetHeaderSection takes a BTF proto and assigns the header values, magic
+// represents if the system is big or little endian.
+func SetHeaderSection(btf *pb.Btf, magic int32, version int32, flags int32) {
+	btf.Header = &pb.Header{
 		Magic:   magic,
 		Version: version,
 		Flags:   flags,
 		HdrLen:  0x18,
 		TypeOff: 0x0,
-		TypeLen: int32(proto.Size(b.typeSec)),
-		StrOff:  int32(proto.Size(b.typeSec)),
-		StrLen:  int32(proto.Size(b.stringsSec)),
+		TypeLen: int32(proto.Size(btf.TypeSection)),
+		StrOff:  int32(proto.Size(btf.TypeSection)),
+		StrLen:  int32(proto.Size(btf.StringSection)),
 	}
 }
 
-func (b *BTF) SetTypeSection(types []*pb.BtfType) {
-	b.typeSec = &pb.TypeSection{
+// SetTypeSection takes a BTF proto and assigns the parameter types to the
+// BTF type section
+func SetTypeSection(btf *pb.Btf, types []*pb.BtfType) {
+	btf.TypeSection = &pb.TypeSection{
 		BtfType: types,
 	}
 }
 
-func (b *BTF) SetStringSection(str string) {
-	b.stringsSec = &pb.StringSection{
+// SetTypeInfo returns the encoded number for the specified type info,
+// the bits arrangement is:
+//    - bits 0-15  = vlen
+//    - bits 16-23 = unused
+//    - bits 24-28 = kind
+//    - bits 29-30 = unused
+//    - bits    31 = kind_flag
+// https://docs.kernel.org/bpf/btf.html#:~:text=Each%20type%20contains%20the%20following%20common%20data%3A 
+func SetTypeInfo(vlen int16, kind pb.BtfKind, kind_flag bool) int32 {
+	info := int32(0)
+	info |= int32(vlen)
+	info |= int32(kind) << 24
+	flag := 0
+	if kind_flag {
+		flag = 1
+	}
+	info |= int32(flag) << 28
+	return info
+}
+
+// SetStringSection takes a BTF proto and assigns the parameter string to the 
+// BTF string section
+func SetStringSection(btf *pb.Btf, str string) {
+	btf.StringSection = &pb.StringSection{
 		Str: str,
 	}
 }
 
-func (b *BTF) GetBuffer() []byte {
-	b.btf = &pb.Btf{
-		Header:        b.headerSec,
-		TypeSection:   b.typeSec,
-		StringSection: b.stringsSec,
-	}
-	b.buffer, _ = generateBtf(b.btf)
-	return b.buffer
+// GetBuffer takes a BTF Proto return its value in bytes
+func GetBuffer(btf *pb.Btf) []byte {
+	buffer, err := generateBtf(btf)
+    if err != nil {
+      fmt.Println(err)
+    }
+	return buffer
 }
 
-// GenerateBtf returns a byte array containing the serialized BTF data from a BTF proto.
+// generateBtf returns a byte array containing the serialized BTF data from a BTF proto.
 func generateBtf(btf_proto *pb.Btf) ([]byte, error) {
 	var btf_buff bytes.Buffer
 	var err error

@@ -20,6 +20,31 @@ package btf;
 
 message Empty {}
 
+// List of Supported Types
+// https://docs.kernel.org/bpf/btf.html#type-encoding
+enum BtfKind {
+  KIND = 0;
+  INT = 1;
+  PTR = 2;
+  ARRAY = 3;
+  STRUCT = 4;
+  UNION = 5;
+  ENUM = 6;
+  FWD = 7;
+  TYPEDEF = 8;
+  VOLATILE = 9;
+  CONST = 10;
+  RESTRICT = 11;
+  FUNC = 12;
+  FUNCPROTO = 13;
+  VAR = 14;
+  DATASEC = 15;
+  FLOAT = 16;
+  DECLTAG = 17;
+  TYPETAG = 18;
+  ENUM64 = 19;
+}
+
 // Type Ids to be reference in function info, the type Ids are definined in
 // pkg/ebpf/btf.go
 // https://docs.kernel.org/bpf/btf.html#btf-type-and-string-encoding
