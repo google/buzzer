@@ -30,8 +30,12 @@ func types() []*btfpb.BtfType {
 
 	// 1: Func_Proto
 	types = append(types, &btfpb.BtfType{
-		NameOff:    0x0,
-		Info:       SetTypeInfo(0, btfpb.BtfKind_FUNCPROTO, false),
+		NameOff: 0x0,
+		Info: &btfpb.TypeInfo{
+			Vlen:     0,
+			Kind:     btfpb.BtfKind_FUNCPROTO,
+			KindFlag: false,
+		},
 		SizeOrType: 0x0,
 		Extra: &btfpb.BtfType_Empty{
 			Empty: &btfpb.Empty{},
@@ -40,8 +44,12 @@ func types() []*btfpb.BtfType {
 
 	// 2: Func
 	types = append(types, &btfpb.BtfType{
-		NameOff:    0x1,
-		Info:       SetTypeInfo(0, btfpb.BtfKind_FUNC, false),
+		NameOff: 0x1,
+		Info: &btfpb.TypeInfo{
+			Vlen:     0,
+			Kind:     btfpb.BtfKind_FUNC,
+			KindFlag: false,
+		},
 		SizeOrType: 0x01,
 		Extra: &btfpb.BtfType_Empty{
 			Empty: &btfpb.Empty{},
@@ -50,8 +58,12 @@ func types() []*btfpb.BtfType {
 
 	// 3: Int
 	types = append(types, &btfpb.BtfType{
-		NameOff:    0x1,
-		Info:       SetTypeInfo(0, btfpb.BtfKind_INT, false),
+		NameOff: 0x1,
+		Info: &btfpb.TypeInfo{
+			Vlen:     0,
+			Kind:     btfpb.BtfKind_INT,
+			KindFlag: false,
+		},
 		SizeOrType: 0x4,
 		Extra: &btfpb.BtfType_IntTypeData{
 			IntTypeData: &btfpb.IntTypeData{IntInfo: 0x01000020},
@@ -60,8 +72,12 @@ func types() []*btfpb.BtfType {
 
 	// 4: Struct
 	types = append(types, &btfpb.BtfType{
-		NameOff:    0x1,
-		Info:       SetTypeInfo(1, btfpb.BtfKind_STRUCT, false),
+		NameOff: 0x1,
+		Info: &btfpb.TypeInfo{
+			Vlen:     1,
+			Kind:     btfpb.BtfKind_STRUCT,
+			KindFlag: false,
+		},
 		SizeOrType: 0x4,
 		Extra: &btfpb.BtfType_StructTypeData{
 			StructTypeData: &btfpb.StructTypeData{
@@ -74,8 +90,12 @@ func types() []*btfpb.BtfType {
 
 	// 5: Ptr
 	types = append(types, &btfpb.BtfType{
-		NameOff:    0x0,
-		Info:       SetTypeInfo(0, btfpb.BtfKind_PTR, false),
+		NameOff: 0x0,
+		Info: &btfpb.TypeInfo{
+			Vlen:     0,
+			Kind:     btfpb.BtfKind_PTR,
+			KindFlag: false,
+		},
 		SizeOrType: 0x4,
 		Extra: &btfpb.BtfType_Empty{
 			Empty: &btfpb.Empty{},
@@ -84,8 +104,12 @@ func types() []*btfpb.BtfType {
 
 	// 6: Func_Proto
 	types = append(types, &btfpb.BtfType{
-		NameOff:    0x0,
-		Info:       SetTypeInfo(2, btfpb.BtfKind_FUNCPROTO, false),
+		NameOff: 0x0,
+		Info: &btfpb.TypeInfo{
+			Vlen:     2,
+			Kind:     btfpb.BtfKind_FUNCPROTO,
+			KindFlag: false,
+		},
 		SizeOrType: 0x3,
 		Extra: &btfpb.BtfType_FuncProtoTypeData{
 			FuncProtoTypeData: &btfpb.FuncProtoTypeData{
@@ -99,8 +123,12 @@ func types() []*btfpb.BtfType {
 
 	// 7: Func
 	types = append(types, &btfpb.BtfType{
-		NameOff:    0x1,
-		Info:       SetTypeInfo(0, btfpb.BtfKind_FUNC, false),
+		NameOff: 0x1,
+		Info: &btfpb.TypeInfo{
+			Vlen:     0,
+			Kind:     btfpb.BtfKind_FUNC,
+			KindFlag: false,
+		},
 		SizeOrType: 0x6,
 		Extra: &btfpb.BtfType_Empty{
 			Empty: &btfpb.Empty{},
@@ -116,8 +144,8 @@ func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 	// Setup BTF Section
 	btf := &btfpb.Btf{}
 	SetHeaderSection(btf, 0xeb9f, 0x01, 0x0)
-	SetTypeSection(btf, types())
-	SetStringSection(btf, "buzzer")
+	btf.TypeSection = &btfpb.TypeSection{BtfType: types()}
+	btf.StringSection = &btfpb.StringSection{Str: "buzzer"}
 
 	mapFd := ffi.CreateMapArray(2)
 	ffi.CloseFD(lp.mapFd)
@@ -227,6 +255,12 @@ func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 
 	func_info_na := &btfpb.FuncInfo{InsnOff: 0, TypeId: 2}
 	func_info_loop := &btfpb.FuncInfo{InsnOff: int32(len(main) + 2), TypeId: 7}
+
+	btfBuffer, err := GetBuffer(btf)
+	if err != nil {
+		return nil, err
+	}
+
 	prog := &pb.Program{
 		Program: &pb.Program_Ebpf{
 			Ebpf: &epb.Program{
@@ -234,7 +268,7 @@ func (lp *LoopPointerArithmetic) GenerateProgram(ffi *units.FFI) (*pb.Program, e
 					{Instructions: main, FuncInfo: func_info_na},
 					{Instructions: loopFunc, FuncInfo: func_info_loop},
 				},
-				Btf: GetBuffer(btf),
+				Btf: btfBuffer,
 			},
 		},
 	}

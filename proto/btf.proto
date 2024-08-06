@@ -72,6 +72,12 @@ message IntTypeData {
   int32 int_info = 1;
 }
 
+message TypeInfo {
+  int32 vlen = 1;
+  BtfKind kind = 2;
+  bool kind_flag = 3;
+}
+
 // Type Encoding
 // https://docs.kernel.org/bpf/btf.html#btf-kind-func-proto
 message BtfType {
@@ -84,7 +90,7 @@ message BtfType {
   // - bits 29-30: unused
   // - bit 31: kind_flag, currently used by struct, union, fwd, enum and enum64.
   // https://docs.kernel.org/bpf/btf.html#type-encoding
-  int32 info = 2;
+  TypeInfo info = 2;
   // "size" is used by INT, ENUM, STRUCT, UNION and ENUM64.
   //  "size" tells the size of the type it is describing.
   // "type" is used by PTR, TYPEDEF, VOLATILE, CONST, RESTRICT,

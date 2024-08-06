@@ -37,15 +37,7 @@ func SetHeaderSection(btf *pb.Btf, magic int32, version int32, flags int32) {
 	}
 }
 
-// SetTypeSection populates the BTF type section of the provided BTF proto with
-// the parameter types
-func SetTypeSection(btf *pb.Btf, types []*pb.BtfType) {
-	btf.TypeSection = &pb.TypeSection{
-		BtfType: types,
-	}
-}
-
-// SetTypeInfo returns the parameter type info encoded,
+// encodeTypeInfo returns the parameter type info encoded,
 // the bits arrangement is:
 //   - bits 0-15  = vlen
 //   - bits 16-23 = unused
@@ -54,33 +46,27 @@ func SetTypeSection(btf *pb.Btf, types []*pb.BtfType) {
 //   - bits    31 = kind_flag
 //
 // https://docs.kernel.org/bpf/btf.html#:~:text=Each%20type%20contains%20the%20following%20common%20data%3A
-func SetTypeInfo(vlen int16, kind pb.BtfKind, kind_flag bool) int32 {
+func encodeTypeInfo(typeInfo *pb.TypeInfo) int32 {
 	info := int32(0)
-	info |= int32(vlen)
-	info |= int32(kind) << 24
-	flag := 0
-	if kind_flag {
-		flag = 1
+	info |= int32(typeInfo.Vlen)
+	info |= int32(typeInfo.Kind) << 24
+	if typeInfo.KindFlag {
+		info |= 1 << 28
+	} else {
+
+		info |= 0 << 28
 	}
-	info |= int32(flag) << 28
 	return info
 }
 
-// SetStringSection populates the BTF string section of the provided BTF proto
-// with the parameter string
-func SetStringSection(btf *pb.Btf, str string) {
-	btf.StringSection = &pb.StringSection{
-		Str: str,
-	}
-}
-
 // GetBuffer takes a BTF Proto and returns its serialized value as a byte array.
-func GetBuffer(btf *pb.Btf) []byte {
+func GetBuffer(btf *pb.Btf) ([]byte, error) {
 	buffer, err := generateBtf(btf)
 	if err != nil {
 		fmt.Println(err)
+		return nil, err
 	}
-	return buffer
+	return buffer, nil
 }
 
 func generateBtf(btf_proto *pb.Btf) ([]byte, error) {
@@ -90,7 +76,7 @@ func generateBtf(btf_proto *pb.Btf) ([]byte, error) {
 	var type_data = []any{}
 	for _, t := range btf_proto.TypeSection.BtfType {
 		type_data = append(type_data, t.NameOff)
-		type_data = append(type_data, t.Info)
+		type_data = append(type_data, encodeTypeInfo(t.Info))
 		type_data = append(type_data, t.SizeOrType)
 		switch e := t.Extra.(type) {
 		case *pb.BtfType_IntTypeData:
