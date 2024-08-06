@@ -25,12 +25,14 @@ go_library(
     srcs = [
         "alu_instructions.go",
         "constants.go",
+        "instruction_generators.go",
         "jmp_instructions.go",
         "st_ld_instructions.go",
     ],
     cgo = 1,
     importpath = "buzzer/pkg/cbpf/cbpf",
     deps = [
+        "//pkg/rand",
         "//proto:cbpf_go_proto",
         "@com_github_golang_protobuf//jsonpb",
     ],
