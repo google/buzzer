@@ -33,15 +33,10 @@ func EncodeEBPF(serializedProgram unsafe.Pointer, serializedProgramSize C.int,
 		return
 	}
 
-	encodedBtf, err := ebpf.GenerateBtf()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 	result := &fpb.EncodedProgram{
 		Program:  encodedProg,
 		Function: encodedfunc,
-		Btf:      encodedBtf,
+		Btf:      program.Btf,
 	}
 	// Then do magic to return it to C++
 	serializedProto, err := proto.Marshal(result)
