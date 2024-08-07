@@ -69,7 +69,7 @@ func GetBuffer(btf *pb.Btf) ([]byte, error) {
 	return buffer, nil
 }
 
-func generateBtf(btf_proto *pb.Btf) ([]byte, error) {
+func generateBTF(btf_proto *pb.Btf) ([]byte, error) {
 	var btf_buff bytes.Buffer
 	var err error
 
