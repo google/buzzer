@@ -61,7 +61,7 @@ func encodeTypeInfo(typeInfo *pb.TypeInfo) int32 {
 
 // GetBuffer takes a BTF Proto and returns its serialized value as a byte array.
 func GetBuffer(btf *pb.Btf) ([]byte, error) {
-	buffer, err := generateBtf(btf)
+	buffer, err := generateBTF(btf)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
