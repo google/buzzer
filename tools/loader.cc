@@ -10,7 +10,7 @@
 #include "proto/ebpf.pb.h"
 
 extern "C" {
-void EncodeEBPF(void *, int, void *, void *);
+void EncodeEBPF(void *, int, void *, void *,int);
 }
 
 int main(int argc, char **argv) {
@@ -25,16 +25,16 @@ int main(int argc, char **argv) {
 
   void *serialized_proto = NULL;
   size_t size = 0;
-  EncodeEBPF(content.data(), content.length(), &serialized_proto, &size);
+  const int map_size = 2;
+  int map_fd = bpf_create_map(BPF_MAP_TYPE_ARRAY, sizeof(uint32_t),
+                              sizeof(uint64_t), map_size);
+  EncodeEBPF(content.data(), content.length(), &serialized_proto, &size,map_fd);
 
   if (!serialized_proto) {
     std::cerr << "failed to decode ebpf program" << std::endl;
     return -1;
   }
 
-  const int map_size = 2;
-  int map_fd = bpf_create_map(BPF_MAP_TYPE_ARRAY, sizeof(uint32_t),
-                              sizeof(uint64_t), map_size);
   std::string verifier_log, error_message;
   std::string serialized_proto_string(
       reinterpret_cast<const char *>(serialized_proto), size);

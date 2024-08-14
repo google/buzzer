@@ -16,7 +16,7 @@ import "C"
 
 //export EncodeEBPF
 func EncodeEBPF(serializedProgram unsafe.Pointer, serializedProgramSize C.int,
-	serialized_proto unsafe.Pointer, size unsafe.Pointer) {
+	serialized_proto unsafe.Pointer, size unsafe.Pointer,map_fd int32) {
 
 	// First reconstruct the proto.
 	encodedPb := C.GoBytes(serializedProgram, serializedProgramSize)
@@ -26,6 +26,11 @@ func EncodeEBPF(serializedProgram unsafe.Pointer, serializedProgramSize C.int,
 		fmt.Println(err)
 		return
 	}
+	//fix mapFd 
+	functions := program.Functions[0]
+	ins := functions.Instructions
+	insCount := len(ins)
+	ins[insCount-20].Immediate = map_fd
 	// Serialize it.
 	encodedProg, encodedfunc, err := ebpf.EncodeInstructions(program)
 	if err != nil {
