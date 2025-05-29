@@ -70,8 +70,10 @@ func main() {
 		if err != nil {
 			return "", err
 		}
-		w.Write([]byte(inputString))
-		w.Close()
+		go func() {
+			defer w.Close()
+			w.Write([]byte(inputString))
+		}()
 		outBytes, err := cmd.Output()
 		return string(outBytes), err
 	})
