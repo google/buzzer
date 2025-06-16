@@ -20,13 +20,29 @@ package btf;
 
 message Empty {}
 
-// Type Ids to be reference in function info, the type Ids are definined in
-// pkg/ebpf/btf.go
-// https://docs.kernel.org/bpf/btf.html#btf-type-and-string-encoding
-enum TypeId {
-  EMPTY = 0;
-  NA = 2;
-  FUNC_PTR_INT = 7;
+// List of Supported Types
+// https://docs.kernel.org/bpf/btf.html#type-encoding
+enum BtfKind {
+  KIND = 0;
+  INT = 1;
+  PTR = 2;
+  ARRAY = 3;
+  STRUCT = 4;
+  UNION = 5;
+  ENUM = 6;
+  FWD = 7;
+  TYPEDEF = 8;
+  VOLATILE = 9;
+  CONST = 10;
+  RESTRICT = 11;
+  FUNC = 12;
+  FUNCPROTO = 13;
+  VAR = 14;
+  DATASEC = 15;
+  FLOAT = 16;
+  DECLTAG = 17;
+  TYPETAG = 18;
+  ENUM64 = 19;
 }
 
 // btf_param struct for BTF kind function proto
@@ -56,6 +72,12 @@ message IntTypeData {
   int32 int_info = 1;
 }
 
+message TypeInfo {
+  int32 vlen = 1;
+  BtfKind kind = 2;
+  bool kind_flag = 3;
+}
+
 // Type Encoding
 // https://docs.kernel.org/bpf/btf.html#btf-kind-func-proto
 message BtfType {
@@ -68,7 +90,7 @@ message BtfType {
   // - bits 29-30: unused
   // - bit 31: kind_flag, currently used by struct, union, fwd, enum and enum64.
   // https://docs.kernel.org/bpf/btf.html#type-encoding
-  int32 info = 2;
+  TypeInfo info = 2;
   // "size" is used by INT, ENUM, STRUCT, UNION and ENUM64.
   //  "size" tells the size of the type it is describing.
   // "type" is used by PTR, TYPEDEF, VOLATILE, CONST, RESTRICT,

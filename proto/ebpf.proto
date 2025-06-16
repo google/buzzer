@@ -166,6 +166,6 @@ message Functions {
 }
 
 message Program {
-  bool btf = 1;
+  bytes btf = 1;
   repeated Functions functions = 2;
 }

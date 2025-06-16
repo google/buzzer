@@ -25,8 +25,10 @@ go_library(
     srcs = [
         "base.go",
         "cbpf_playground.go",
+        "cbpf_random_instruction.go",
         "coverage_based.go",
         "heap.go",
+        "loop_pointer_arithmetic.go",
         "playground.go",
         "pointer_arithmetic.go",
     ],

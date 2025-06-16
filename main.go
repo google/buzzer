@@ -38,10 +38,12 @@ var (
 
 var (
 	strats = []units.Strategy{
+		strategies.NewLoopPointerArithmeticStrategy(),
 		strategies.NewPointerArithmeticStrategy(),
 		strategies.NewPlaygroundStrategy(),
 		strategies.NewCoverageBasedStrategy(),
 		strategies.NewCbpfPlaygroundStrategy(),
+		strategies.NewCbpfRandomInstructionStrategy(),
 	}
 )
 

@@ -82,6 +82,29 @@ enum StLdSize {
   StLdSizeB = 0x10;
 }
 
+// The Linux kernel has a couple of BPF extensions that are used  along with
+// the class of load instructions by “overloading” the k argument with a
+// negative offset (-0x1000) + a particular extension offset.
+enum Extensions {
+  Protocol = 0;  // skb -> protocol
+  Type = 4;      // skb -> pkt_type
+  Poff = 52;     // Playload start offset
+  Ifidx = 8;     // skb -> dev -> index
+  Nla = 12;      // Netlink attribute of type X with offset A
+  Nlan = 16;     // Nested Netlink attribute of type X with offset A
+  Mark = 20;     // skb -> mark
+  Queue = 24;    // skb -> queue_mapping
+  Hatype = 28;   // skb -> dev -> type
+  Rxhash = 32;   // skb -> has
+  Cpu = 36;      // raw_smp_processor_id()
+  AluXorX = 40;
+  Vlan_tci = 44;    // skb_vlan_tag_get(skb)
+  Vlan_avail = 48;  // skb_vlan_tag_present(skb)
+  Vlan_tpid = 60;   // skb -> vlan_proto
+  Rand = 56;        // prandom_u32()
+  Max = 64;
+}
+
 // This message should all fit in a single byte.
 message AluOpcode {
   // 4 bits MSB
