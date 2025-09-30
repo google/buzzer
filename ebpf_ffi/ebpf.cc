@@ -14,6 +14,8 @@
 
 #include "ebpf_ffi/ebpf.h"
 
+#include <vector>
+
 namespace ebpf_ffi {
 
 // This constant was determined arbitrarily, the number of 0's has incremented
@@ -44,9 +46,29 @@ int btf_load(void *btf_buff, size_t btf_size, std::string &error) {
   return btf_fd;
 }
 
-int load_ebpf_program(EncodedProgram program, size_t size,
-                      std::string &verifier_log, std::string &error) {
+uint64_t setup_bpf_maps(std::vector<ebpf::EbpfMap> maps) {
+  size_t fd_array_size = sizeof(int) * maps.size();
+  int *fd_array = (int *)malloc(fd_array_size);
+  if (!fd_array) return 0;
+  int i = 0;
+  for (ebpf::EbpfMap map : maps) {
+    int map_fd =
+        bpf_create_map(static_cast<bpf_map_type>(map.type()), map.key_size(),
+                       map.value_size(), map.max_entries());
+    if (map_fd > 0) {
+      int j = 0;
+      for (uint64_t element : map.values()) {
+        ffi_update_map_element(map_fd, j++, element);
+      }
+    }
+    fd_array[i++] = map_fd;
+  }
+  return reinterpret_cast<uint64_t>(fd_array);
+}
+
+ValidationResult load_ebpf_program(EncodedProgram program, std::string &error) {
   struct bpf_insn *insn;
+  ValidationResult res;
   union bpf_attr attr = {};
 
   // For the verifier log.
@@ -73,22 +95,30 @@ int load_ebpf_program(EncodedProgram program, size_t size,
   attr.log_buf = (uint64_t)log_buf;
   attr.log_level = 2;
 
+  if (program.maps().size() > 0) {
+    uint64_t fd_array = setup_bpf_maps(std::vector<ebpf::EbpfMap>(
+        program.maps().begin(), program.maps().end()));
+    attr.fd_array = fd_array;
+    res.set_fd_array_addr(fd_array);
+  }
+
   int program_fd = syscall(SYS_bpf, BPF_PROG_LOAD, &attr, sizeof(attr));
   if (program_fd < 0) {
     error = strerror(errno);
   }
+  res.set_program_fd(program_fd);
 
-  verifier_log =
-      std::string((const char *)log_buf, strlen((const char *)log_buf));
+  res.set_verifier_log(
+      std::string((const char *)log_buf, strlen((const char *)log_buf)));
 
   free(log_buf);
-  return program_fd;
+  return res;
 }
 
 struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
                                         int coverage_enabled,
                                         uint64_t coverage_size) {
-  std::string verifier_log, error_message;
+  std::string error_message;
 
   struct coverage_data cover;
   memset(&cover, 0, sizeof(struct coverage_data));
@@ -102,14 +132,8 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
   if (!program.ParseFromString(serialized_proto_string)) {
     error_message = "Could not parse EncodedProgram proto";
   }
-  int program_fd =
-      load_ebpf_program(program, size, verifier_log, error_message);
-  ValidationResult vres;
+  ValidationResult vres = load_ebpf_program(program, error_message);
   if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
-
-  // Start building the validation result proto.
-  vres.set_verifier_log(verifier_log);
-  vres.set_program_fd(program_fd);
 
   if (cover.fd != -1) {
     vres.set_did_collect_coverage(true);
@@ -119,7 +143,7 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
     vres.set_did_collect_coverage(false);
   }
 
-  if (program_fd < 0) {
+  if (vres.program_fd() < 0) {
     // Return why we failed to load the program.
     vres.set_bpf_error(error_message);
     vres.set_is_valid(false);
@@ -239,4 +263,12 @@ struct bpf_result ffi_execute_ebpf_program(void *serialized_proto,
 
   execution_result.set_did_succeed(true);
   return serialize_proto(execution_result);
+}
+
+void ffi_clean_fd_array(unsigned long long int addr, int size) {
+  int *fd_array = reinterpret_cast<int *>(addr);
+  for (int i = 0; i < size; i++) {
+    close(fd_array[size]);
+  }
+  free(fd_array);
 }

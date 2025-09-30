@@ -20,6 +20,8 @@ import "proto/btf.proto";
 // https://www.kernel.org/doc/html/v5.17/bpf/instruction-set.html
 package ebpf;
 
+option go_package = "buzzer/proto/ebpf_go_proto";
+
 message Empty {}
 
 // Reg each value corresponds to an ebpf register.
@@ -165,7 +167,55 @@ message Functions {
   btf.FuncInfo func_info = 2;
 }
 
+enum BpfMapType {
+  UNSPEC = 0;
+  HASH = 1;
+  ARRAY = 2;
+  PROG_ARRAY = 3;
+  PERF_EVENT_ARRAY = 4;
+  PERCPU_HASH = 5;
+  PERCPU_ARRAY = 6;
+  STACK_TRACE = 7;
+  CGROUP_ARRAY = 8;
+  LRU_HASH = 9;
+  LRU_PERCPU_HASH = 10;
+  LPM_TRIE = 11;
+  ARRAY_OF_MAPS = 12;
+  HASH_OF_MAPS = 13;
+  DEVMAP = 14;
+  SOCKMAP = 15;
+  CPUMAP = 16;
+  XSKMAP = 17;
+  SOCKHASH = 18;
+  CGROUP_STORAGE_DEPRECATED = 19;
+  CGROUP_STORAGE = 20;
+  REUSEPORT_SOCKARRAY = 21;
+  PERCPU_CGROUP_STORAGE_DEPRECATED = 22;
+  PERCPU_CGROUP_STORAGE = 23;
+  QUEUE = 24;
+  STACK = 25;
+  SK_STORAGE = 26;
+  DEVMAP_HASH = 27;
+  STRUCT_OPS = 28;
+  RINGBUF = 29;
+  INODE_STORAGE = 30;
+  TASK_STORAGE = 31;
+  BLOOM_FILTER = 32;
+  USER_RINGBUF = 33;
+  CGRP_STORAGE = 34;
+  ARENA = 35;
+}
+
+message EbpfMap {
+  BpfMapType type = 1;
+  uint32 key_size = 2;
+  uint32 value_size = 3;
+  uint32 max_entries = 4;
+  repeated uint64 values = 5;
+}
+
 message Program {
   bytes btf = 1;
   repeated Functions functions = 2;
+  repeated EbpfMap maps = 3;
 }

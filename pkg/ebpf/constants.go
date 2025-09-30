@@ -23,7 +23,8 @@ const (
 )
 
 const (
-	PseudoMapFD = pb.Reg_R1
+	PseudoMapFD  = pb.Reg_R1
+	PseudoMapIdx = pb.Reg_R5
 )
 
 const (

@@ -42,8 +42,9 @@ int main(int argc, char **argv) {
   if (!program.ParseFromString(serialized_proto_string)) {
     std::cout << "Could not parse EncodedProgram proto" << std::endl;
   }
-  int prog_fd = load_ebpf_program(program, size, verifier_log, error_message);
-  std::cout << "Verifier log: " << std::endl << verifier_log;
+  ValidationResult vres = load_ebpf_program(program, error_message);
+  std::cout << "Verifier log: " << std::endl << vres.verifier_log();
+  int prog_fd = vres.program_fd();
 
   if (prog_fd < 0) {
     std::cerr << "could not load bpf program: " << error_message << std::endl;

@@ -42,14 +42,14 @@ cc_proto_library(
 proto_library(
     name = "ffi_proto",
     srcs = ["ffi.proto"],
-    deps = [],
+    deps = [":ebpf_proto"],
 )
 
 go_proto_library(
     name = "ffi_go_proto",
     importpath = "buzzer/proto/ffi_go_proto",
     protos = [":ffi_proto"],
-    deps = [],
+    deps = [":ebpf_go_proto"],
 )
 
 cc_proto_library(

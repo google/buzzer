@@ -29,6 +29,7 @@ package units
 //int ffi_create_bpf_map(size_t size);
 //void ffi_close_fd(int fd);
 //int ffi_update_map_element(int map_fd, int key, uint64_t value);
+//void ffi_clean_fd_array(unsigned long long int addr, int size);
 import "C"
 
 import (
@@ -130,6 +131,15 @@ func (e *FFI) GetMapElements(fd int, mapSize uint64) (*fpb.MapElements, error) {
 // described by `fd`
 func (e *FFI) SetMapElement(fd int, key uint32, value uint64) int {
 	return int(C.ffi_update_map_element(C.int(fd), C.int(key), C.ulong(value)))
+}
+
+// SetMapElement sets the elemnt specified by `key` to `value` in the map
+// described by `fd`
+func (e *FFI) CleanFdArray(fd_array uint64, size int) {
+	if fd_array == 0 {
+		return
+	}
+	C.ffi_clean_fd_array(C.ulonglong(fd_array), C.int(size))
 }
 
 // ----------- eBPF --------------
