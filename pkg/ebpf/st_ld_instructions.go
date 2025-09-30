@@ -170,6 +170,26 @@ func LdMapByFd(dst pb.Reg, fd int) *pb.Instruction {
 	return newLoadImmOperation(pb.StLdSize_StLdSizeDW, dst, PseudoMapFD, UnusedField, int32(fd), pseudoIns)
 }
 
+func LdMapByIdx(dst pb.Reg, idx int) *pb.Instruction {
+	pseudoIns := &pb.Instruction{
+		Opcode: &pb.Instruction_MemOpcode{
+			MemOpcode: &pb.MemOpcode{
+				Mode:             0,
+				Size:             0,
+				InstructionClass: 0,
+			},
+		},
+		DstReg:    0,
+		SrcReg:    0,
+		Offset:    0,
+		Immediate: 0,
+		PseudoInstruction: &pb.Instruction_Empty{
+			Empty: &pb.Empty{},
+		},
+	}
+	return newLoadImmOperation(pb.StLdSize_StLdSizeDW, dst, PseudoMapIdx, UnusedField, int32(idx), pseudoIns)
+}
+
 func newAtomicInstruction(dst, src pb.Reg, size pb.StLdSize, offset int16, operation int32) *pb.Instruction {
 	class := pb.InsClass_InsClassStx
 

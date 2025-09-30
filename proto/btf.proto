@@ -18,6 +18,8 @@ syntax = "proto3";
 // https://docs.kernel.org/bpf/btf.html
 package btf;
 
+option go_package = "buzzer/proto/btf_go_proto";
+
 message Empty {}
 
 // List of Supported Types

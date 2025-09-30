@@ -30,8 +30,7 @@ extern "C" {
 // Actual implementation of load program. The split between ffi and
 // implementation is done so the impl code can be shared with other parts of the
 // codebase also written in C++.
-int load_ebpf_program(EncodedProgram program, size_t size,
-                      std::string &verifier_log, std::string &error);
+ValidationResult load_ebpf_program(EncodedProgram program, std::string &error);
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
@@ -62,5 +61,8 @@ bool execute_ebpf_program(int prog_fd, uint8_t *input, int input_length,
 // Serialized proto is of type ExecutionRequest.
 struct bpf_result ffi_execute_ebpf_program(void *serialized_proto,
                                            size_t length);
+
+// Helps clean up any setup map fd array for a program.
+void ffi_clean_fd_array(unsigned long long int addr, int size);
 }
 #endif  // EBPF_FUZZER_EBPF_FFI_EBPF_H_

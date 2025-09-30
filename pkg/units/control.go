@@ -134,8 +134,12 @@ func (cu *Control) runEbpf(prog *epb.Program) error {
 		Program:  encodedProg,
 		Btf:      prog.Btf,
 		Function: encodedFuncInfo,
+		Maps:     prog.Maps,
 	}
 	validationResult, err := cu.ffi.ValidateEbpfProgram(encodedProgram)
+	defer func() {
+		cu.ffi.CleanFdArray(validationResult.FdArrayAddr, len(prog.Maps))
+	}()
 	if err != nil {
 		fmt.Printf("Validation error: %v\n", err)
 		if !cu.strat.OnError(err) {
