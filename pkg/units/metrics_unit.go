@@ -35,11 +35,6 @@ type Metrics struct {
 	// the Metrics will collect detailed info (coverage, and verifier logs).
 	SamplingThreshold int
 
-	// KCovSize represents the size of the coverage sample that kcov will
-	// collect, the bigger the sample the slower collecting coverage
-	// will be (but the more precies).
-	KCovSize uint64
-
 	isKCovSupported bool
 
 	// Since Processing coverage is a slow operation, we put all the
@@ -95,28 +90,11 @@ func (mu *Metrics) validationResultProcessingRoutine() {
 	}
 }
 
-// ShouldGetCoverage has two purposes: record that a program is about
-// to be passed by the verifier and return if the metrics unit wants to
-// collect coverage information on it.
-func (mu *Metrics) ShouldGetCoverage() (bool, uint64) {
-	mu.metricsCollection.recordVerifiedProgram()
-	if !mu.isKCovSupported {
-		return false, 0
-	}
-
-	if !mu.shouldCollectDetailedInfo() {
-		return false, 0
-	}
-	return mu.isKCovSupported, mu.KCovSize
-}
-
-func (mu *Metrics) shouldCollectDetailedInfo() bool {
-	return mu.metricsCollection.getProgramsVerified()%mu.SamplingThreshold == 0
-}
 
 // RecordVerificationResults collects metrics from the provided
 // verification result proto.
 func (mu *Metrics) RecordVerificationResults(vr *fpb.ValidationResult) {
+	mu.metricsCollection.recordVerifiedProgram()
 	if vr.GetIsValid() {
 		mu.metricsCollection.recordValidProgram()
 	}
@@ -133,7 +111,7 @@ func (mu *Metrics) init() {
 }
 
 // NewMetricsUnit Creates a new Central Metrics Unit.
-func NewMetricsUnit(threshold int, kcovSize uint64, vmLinuxPath, sourceFilesPath, metricsServerAddr string, metricsServerPort uint16, cm *CoverageManager) *Metrics {
+func NewMetricsUnit(threshold int, vmLinuxPath, sourceFilesPath, metricsServerAddr string, metricsServerPort uint16, cm *CoverageManager) *Metrics {
 	mc := &MetricsCollection{
 		coverageManager:  cm,
 		verifierVerdicts: make(map[string]int),
@@ -146,7 +124,6 @@ func NewMetricsUnit(threshold int, kcovSize uint64, vmLinuxPath, sourceFilesPath
 	}
 	mu := &Metrics{
 		SamplingThreshold: threshold,
-		KCovSize:          kcovSize,
 		metricsCollection: mc,
 		metricsServer:     ms,
 	}

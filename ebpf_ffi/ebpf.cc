@@ -115,16 +115,8 @@ ValidationResult load_ebpf_program(EncodedProgram program, std::string &error) {
   return res;
 }
 
-struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
-                                        int coverage_enabled,
-                                        uint64_t coverage_size) {
+struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size) {
   std::string error_message;
-
-  struct coverage_data cover;
-  memset(&cover, 0, sizeof(struct coverage_data));
-  cover.fd = -1;
-  cover.coverage_size = coverage_size;
-  if (coverage_enabled) enable_coverage(&cover);
 
   std::string serialized_proto_string(
       reinterpret_cast<const char *>(serialized_proto), size);
@@ -132,23 +124,21 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
   if (!program.ParseFromString(serialized_proto_string)) {
     error_message = "Could not parse EncodedProgram proto";
   }
-  ValidationResult vres = load_ebpf_program(program, error_message);
-  if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
 
-  if (cover.fd != -1) {
-    vres.set_did_collect_coverage(true);
-    vres.set_coverage_size(cover.coverage_size);
-    vres.set_coverage_buffer(reinterpret_cast<uint64_t>(cover.coverage_buffer));
-  } else {
-    vres.set_did_collect_coverage(false);
+  bool coverage_enabled = enable_coverage();
+  ValidationResult vres = load_ebpf_program(program, error_message);
+  vres.set_did_collect_coverage(false);
+  if (coverage_enabled) {
+      get_coverage(&vres);
+      disable_coverage();
   }
 
+
+  vres.set_is_valid(true);
   if (vres.program_fd() < 0) {
     // Return why we failed to load the program.
     vres.set_bpf_error(error_message);
     vres.set_is_valid(false);
-  } else {
-    vres.set_is_valid(true);
   }
 
   return serialize_proto(vres);
