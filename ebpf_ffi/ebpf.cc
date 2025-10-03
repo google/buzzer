@@ -281,7 +281,7 @@ struct bpf_result ffi_execute_ebpf_program(void *serialized_proto,
 void ffi_clean_fd_array(unsigned long long int addr, int size) {
   int *fd_array = reinterpret_cast<int *>(addr);
   for (int i = 0; i < size; i++) {
-    close(fd_array[size]);
+    close(fd_array[i]);
   }
   free(fd_array);
 }
