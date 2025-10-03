@@ -17,7 +17,7 @@
 #ifndef EBPF_FUZZER_EBPF_FFI_CBPF_H_
 #define EBPF_FUZZER_EBPF_FFI_CBPF_H_
 
-#include "ffi.h"
+#include "ebpf_ffi/ffi.h"
 
 extern "C" {
 
@@ -29,9 +29,7 @@ bool load_cbpf_program(void *prog_buff, size_t size, std::string &error,
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
-struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
-                                        int coverage_enabled,
-                                        uint64_t coverage_size);
+struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size);
 
 bool execute_cbpf_program(int prog_fd, uint8_t *input, uint8_t *output,
                           int input_length, std::string &error_message);

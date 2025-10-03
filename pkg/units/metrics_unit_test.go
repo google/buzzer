@@ -40,15 +40,6 @@ func TestMetrics(t *testing.T) {
 		metricsCollection: metricsCollection,
 	}
 
-	isKCovSupported, kCovSize := metricsUnit.ShouldGetCoverage()
-	if !isKCovSupported {
-		t.Errorf("isKCovSupported = %v, want = true", isKCovSupported)
-	}
-
-	if kCovSize != expectedKcovSize {
-		t.Errorf("kCovSize = %d, want = %d", kCovSize, expectedKcovSize)
-	}
-
 	if metricsUnit.metricsCollection.programsVerified != 1 {
 		t.Errorf("metrics unit did not advance the quantity of programs verified")
 	}

@@ -15,10 +15,8 @@
 #include "ebpf_ffi/ffi.h"
 
 #include <arpa/inet.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
-#include <stdio.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
@@ -26,10 +24,10 @@
 #include <unistd.h>
 
 #include <string>
-#include <unordered_set>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/escaping.h"
+#include "ffi.h"
 #include "google/protobuf/message.h"
 #include "google/protobuf/repeated_field.h"
 #include "proto/ffi.pb.h"
@@ -46,79 +44,103 @@ using ebpf_fuzzer::ExecutionResult;
 using ebpf_fuzzer::MapElements;
 using ebpf_fuzzer::ValidationResult;
 
+struct coverage_data* kCoverageData = nullptr;
+
 // All the functions in this extern are FFIs intended to be invoked from go.
 extern "C" {
 
-bpf_result serialize_proto(const google::protobuf::Message &proto) {
-  std::string proto_encoded;
-  absl::Base64Escape(proto.SerializeAsString(), &proto_encoded);
+    bpf_result serialize_proto(const google::protobuf::Message &proto) {
+        std::string proto_encoded;
+        absl::Base64Escape(proto.SerializeAsString(), &proto_encoded);
 
-  // The memory for this string will be freed by the Go program.
-  char *serialized_proto =
-      reinterpret_cast<char *>(malloc(proto_encoded.size() + 1));
-  strncpy(serialized_proto, proto_encoded.c_str(), proto_encoded.size());
+        // The memory for this string will be freed by the Go program.
+        char *serialized_proto =
+                reinterpret_cast<char *>(malloc(proto_encoded.size() + 1));
+        strncpy(serialized_proto, proto_encoded.c_str(), proto_encoded.size());
 
-  struct bpf_result res;
-  res.serialized_proto = serialized_proto;
-  res.size = proto_encoded.size();
-  return res;
-}
-
-void enable_coverage(struct coverage_data *coverage_info) {
-  int fd = open("/sys/kernel/debug/kcov", O_RDWR);
-  if (fd == -1) return;
-  /* Setup trace mode and trace size. */
-  if (ioctl(fd, KCOV_INIT_TRACE, coverage_info->coverage_size)) return;
-  /* Mmap buffer shared between kernel- and user-space. */
-  uint64_t *cover =
-      (uint64_t *)mmap(nullptr, coverage_info->coverage_size * sizeof(uint64_t),
-                       PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-  if ((void *)cover == MAP_FAILED) return;
-  /* Enable coverage collection on the current thread. */
-  if (ioctl(fd, KCOV_ENABLE, KCOV_TRACE_PC)) return;
-  /* Reset coverage from the tail of the ioctl() call. */
-  __atomic_store_n(&cover[0], 0, __ATOMIC_RELAXED);
-  coverage_info->fd = fd;
-  coverage_info->coverage_buffer = cover;
-}
-
-void get_coverage_and_free_resources(struct coverage_data *cstruct,
-                                     ValidationResult *vres) {
-  if (cstruct->fd == -1) return;
-  uint64_t trace_size =
-      __atomic_load_n(&cstruct->coverage_buffer[0], __ATOMIC_RELAXED);
-
-  auto *coverage_addresses = vres->mutable_coverage_address();
-  absl::flat_hash_set<uint64_t> seen_address;
-  for (uint64_t i = 0; i < trace_size; i++) {
-    uint64_t addr = cstruct->coverage_buffer[i + 1];
-    if (seen_address.find(addr) == seen_address.end()) {
-      coverage_addresses->Add(cstruct->coverage_buffer[i + 1]);
-      seen_address.insert(addr);
+        struct bpf_result res;
+        res.serialized_proto = serialized_proto;
+        res.size = proto_encoded.size();
+        return res;
     }
-  }
 
-  ioctl(cstruct->fd, KCOV_DISABLE, 0);
-  close(cstruct->fd);
-  munmap(cstruct->coverage_buffer, cstruct->coverage_size * sizeof(uint64_t));
-}
+    void get_coverage(ValidationResult *vres) {
+        if (kCoverageData == nullptr || kCoverageData->fd == -1) return;
+        uint64_t trace_size = kCoverageData->coverage_buffer[0];
 
-bool execute_error(std::string &error_message, const char *strerr,
-                   int *sockets) {
-  if (sockets != nullptr) {
-    close(sockets[0]);
-    close(sockets[1]);
-  }
-  error_message = strerr;
-  return false;
-}
+        auto *coverage_addresses = vres->mutable_coverage_address();
+        absl::flat_hash_set<uint64_t> seen_address;
+        for (uint64_t i = 0; i < trace_size; i++) {
+            uint64_t addr = kCoverageData->coverage_buffer[i + 1];
+            if (seen_address.find(addr) == seen_address.end()) {
+                coverage_addresses->Add(addr);
+                seen_address.insert(addr);
+            }
+        }
+        vres->set_did_collect_coverage(true);
+        vres->set_coverage_size(trace_size);
+        return;
+    }
 
-struct bpf_result return_error(std::string error_message,
-                               ExecutionResult *result) {
-  result->set_did_succeed(false);
-  result->set_error_message(error_message);
-  return serialize_proto(*result);
-}
+    bool enable_coverage() {
+        if (!kCoverageData || kCoverageData->fd == -1) return false;
+        return ioctl(kCoverageData->fd, KCOV_ENABLE, KCOV_TRACE_PC) == 0;
+    }
 
-void ffi_close_fd(int prog_fd) { close(prog_fd); }
+    void disable_coverage() {
+        if (kCoverageData == nullptr || kCoverageData->fd == -1) return;
+        (void)ioctl(kCoverageData->fd, KCOV_DISABLE, 0);
+    }
+
+    int ffi_setup_coverage() {
+        if (!kCoverageData) {
+            kCoverageData = (struct coverage_data*)malloc(sizeof(struct coverage_data));
+            memset(kCoverageData, 0, sizeof(struct coverage_data));
+        }
+
+        int fd = open("/sys/kernel/debug/kcov", O_RDWR);
+        kCoverageData->fd = fd;
+        if (fd == -1) return -1;
+        /* Setup trace mode and trace size. */
+        if (ioctl(fd, KCOV_INIT_TRACE, KCOV_SIZE)) return -1;
+        /* Mmap buffer shared between kernel- and user-space. */
+        uint64_t *cover =
+                (uint64_t *)mmap(nullptr, KCOV_SIZE * sizeof(uint64_t),
+                                 PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+        if ((void *)cover == MAP_FAILED) return -1;
+        memset(cover, 0, KCOV_SIZE * sizeof(uint64_t));
+        
+        kCoverageData->fd = fd;
+        kCoverageData->coverage_buffer = cover;
+        return 0;
+    }
+
+    int ffi_cleanup_coverage() {
+        if (!kCoverageData) return 0;
+
+        close(kCoverageData->fd);
+        munmap(kCoverageData->coverage_buffer, KCOV_SIZE * sizeof(uint64_t));
+        free(kCoverageData);
+        kCoverageData = nullptr;
+        return 0;
+    }
+
+    bool execute_error(std::string &error_message, const char *strerr,
+                       int *sockets) {
+        if (sockets != nullptr) {
+            close(sockets[0]);
+            close(sockets[1]);
+        }
+        error_message = strerr;
+        return false;
+    }
+
+    struct bpf_result return_error(std::string error_message,
+                                   ExecutionResult *result) {
+        result->set_did_succeed(false);
+        result->set_error_message(error_message);
+        return serialize_proto(*result);
+    }
+
+    void ffi_close_fd(int prog_fd) { close(prog_fd); }
 }

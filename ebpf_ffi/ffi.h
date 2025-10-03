@@ -48,6 +48,9 @@
 #define KCOV_TRACE_PC 0
 #define KCOV_TRACE_CMP 1
 
+// 64mb for kcov coverage.
+#define KCOV_SIZE 1024 * 1024 * 64
+
 using ebpf_fuzzer::CbpfExecutionRequest;
 using ebpf_fuzzer::EncodedProgram;
 using ebpf_fuzzer::ExecutionRequest;
@@ -66,11 +69,6 @@ struct bpf_result {
 
 bpf_result serialize_proto(const google::protobuf::Message &proto);
 
-void enable_coverage(struct coverage_data *coverage_info);
-
-void get_coverage_and_free_resources(struct coverage_data *cstruct,
-                                     ValidationResult *vres);
-
 bool execute_error(std::string &error_message, const char *strerr,
                    int *sockets);
 
@@ -83,10 +81,23 @@ int ffi_create_bpf_map(size_t size);
 // Closes the given file descriptor, this is to free up resources.
 void ffi_close_fd(int fd);
 
+// Enable kcov coverage.
+int ffi_setup_coverage();
+
+// Disble kcov coverage.
+int ffi_cleanup_coverage();
+
+bool enable_coverage();
+void disable_coverage();
+void get_coverage(ValidationResult *vres);
+
 struct coverage_data {
   int fd;
   uint64_t coverage_size;
   uint64_t *coverage_buffer;
 };
+
+extern struct coverage_data* kCoverageData;
 }
+
 #endif  // EBPF_FUZZER_EBPF_FFI_FFI_H_

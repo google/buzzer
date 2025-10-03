@@ -86,6 +86,10 @@ func (cu *Control) IsReady() bool {
 
 // RunFuzzer kickstars the fuzzer in the mode that was specified at Init time.
 func (cu *Control) RunFuzzer() error {
+	cu.ffi.InitKcov()
+	defer func(){
+		cu.ffi.CleanupKcov()
+	}()
 	for !cu.strat.IsFuzzingDone() {
 		prog, err := cu.strat.GenerateProgram(cu.ffi)
 		if err != nil {

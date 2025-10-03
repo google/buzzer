@@ -21,9 +21,9 @@ package units
 //  char* serialized_proto;
 //  size_t size;
 //};
-//struct bpf_result ffi_load_cbpf_program(void* prog_buff, size_t size, int coverage_enabled, unsigned long coverage_size);
+//struct bpf_result ffi_load_cbpf_program(void* prog_buff, size_t size);
 //struct bpf_result ffi_execute_cbpf_program(void* serialized_proto, size_t length);
-//struct bpf_result ffi_load_ebpf_program(void* serialized_proto, size_t size, int coverage_enabled, unsigned long coverage_size);
+//struct bpf_result ffi_load_ebpf_program(void* serialized_proto, size_t size);
 //struct bpf_result ffi_execute_ebpf_program(void* serialized_proto, size_t length);
 //struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
 //struct bpf_result ffi_get_map_elements_fd_array(uint64_t fd_array_addr, uint32_t idx, uint64_t map_size);
@@ -31,6 +31,8 @@ package units
 //void ffi_close_fd(int fd);
 //int ffi_update_map_element(int map_fd, int key, uint64_t value);
 //void ffi_clean_fd_array(unsigned long long int addr, int size);
+//int ffi_setup_coverage();
+//int ffi_cleanup_coverage();
 import "C"
 
 import (
@@ -157,14 +159,8 @@ func (e *FFI) ValidateEbpfProgram(encodedProgram *fpb.EncodedProgram) (*fpb.Vali
 	if len(encodedProgram.Program) == 0 && encodedProgram != nil {
 		return nil, fmt.Errorf("cannot run empty program")
 	}
-	shouldCollect, coverageSize := e.MetricsUnit.ShouldGetCoverage()
-	cbool := 0
-	if shouldCollect {
-		cbool = 1
-	}
 	serializedProto, err := proto.Marshal(encodedProgram)
-	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)),
-		C.int(cbool), C.ulong(coverageSize))
+	bpfVerifyResult := C.ffi_load_ebpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
 	res, err := validationProtoFromStruct(&bpfVerifyResult)
 	if err != nil {
 		return nil, err
@@ -191,12 +187,7 @@ func (e *FFI) ValidateCbpfProgram(prog []cbpf.Filter) (*fpb.ValidationResult, er
 	if len(prog) == 0 {
 		return nil, fmt.Errorf("cannot run empty program")
 	}
-	shouldCollect, coverageSize := e.MetricsUnit.ShouldGetCoverage()
-	cbool := 0
-	if shouldCollect {
-		cbool = 1
-	}
-	bpfVerifyResult := C.ffi_load_cbpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)), C.int(cbool) /*coverage_size=*/, C.ulong(coverageSize))
+	bpfVerifyResult := C.ffi_load_cbpf_program(unsafe.Pointer(&prog[0]), C.ulong(len(prog)))
 	res, err := validationProtoFromStruct(&bpfVerifyResult)
 	if err != nil {
 		return nil, err
@@ -213,4 +204,16 @@ func (e *FFI) RunCbpfProgram(executionRequest *fpb.CbpfExecutionRequest) (*fpb.E
 	}
 	res := C.ffi_execute_cbpf_program(unsafe.Pointer(&serializedProto[0]), C.ulong(len(serializedProto)))
 	return executionProtoFromStruct(&res)
+}
+
+// InitKcov sets up all the required kcov structures.
+func (e *FFI) InitKcov() {
+	if C.ffi_setup_coverage() != 0 {
+		fmt.Println("could not setup coverage correctly")
+	}
+}
+
+// CleanupKcov destroys all the resources created for kcov.
+func (e *FFI) CleanupKcov() {
+	C.ffi_cleanup_coverage()
 }
