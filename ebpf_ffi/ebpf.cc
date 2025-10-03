@@ -90,7 +90,7 @@ ValidationResult load_ebpf_program(EncodedProgram program, std::string &error) {
   attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;
   attr.insns = (uint64_t)insn;
   attr.insn_cnt = ((program.program().length()) / (sizeof(struct bpf_insn)));
-  attr.license = (uint64_t)"GPL";
+  attr.license = (uint64_t) "GPL";
   attr.log_size = ebpf_ffi::kLogBuffSize;
   attr.log_buf = (uint64_t)log_buf;
   attr.log_level = 2;
