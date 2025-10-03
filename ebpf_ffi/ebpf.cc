@@ -90,7 +90,7 @@ ValidationResult load_ebpf_program(EncodedProgram program, std::string &error) {
   attr.prog_type = BPF_PROG_TYPE_SOCKET_FILTER;
   attr.insns = (uint64_t)insn;
   attr.insn_cnt = ((program.program().length()) / (sizeof(struct bpf_insn)));
-  attr.license = (uint64_t) "GPL";
+  attr.license = (uint64_t)"GPL";
   attr.log_size = ebpf_ffi::kLogBuffSize;
   attr.log_buf = (uint64_t)log_buf;
   attr.log_level = 2;
@@ -210,6 +210,19 @@ struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size) {
   auto proto_elements = res.mutable_elements();
   proto_elements->Add(elements.begin(), elements.end());
   return serialize_proto(res);
+}
+
+struct bpf_result ffi_get_map_elements_fd_array(uint64_t fd_array_addr,
+                                                uint32_t idx,
+                                                uint64_t map_size) {
+  MapElements res;
+  std::vector<uint64_t> elements;
+  std::string error_message;
+
+  int *fd_array = reinterpret_cast<int *>(fd_array_addr);
+  int map_fd = fd_array[idx];
+
+  return ffi_get_map_elements(map_fd, map_size);
 }
 
 bool execute_ebpf_program(int prog_fd, uint8_t *input, int input_length,

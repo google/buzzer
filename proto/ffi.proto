@@ -42,6 +42,7 @@ message ExecutionResult {
   bool did_succeed = 1;
   string error_message = 2;
   bytes output_data = 3;
+  uint64 fd_array = 4;
 }
 
 // Result from get_map_elements call, retrieves all the elements in a bpf map.

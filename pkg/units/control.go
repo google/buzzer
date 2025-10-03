@@ -158,7 +158,9 @@ func (cu *Control) runEbpf(prog *epb.Program) error {
 	}
 
 	exRes, err := cu.ffi.RunEbpfProgram(exReq)
-	cu.ffi.CloseFD(int(validationResult.ProgramFd))
+	defer func() {
+		cu.ffi.CloseFD(int(validationResult.ProgramFd))
+	}()
 	if err != nil {
 		fmt.Printf("RunProgram error: %v\n", err)
 		if !cu.strat.OnError(err) {
@@ -166,6 +168,8 @@ func (cu *Control) runEbpf(prog *epb.Program) error {
 		}
 		return nil
 	}
+
+	exRes.FdArray = validationResult.FdArrayAddr
 
 	ok := cu.strat.OnExecuteDone(cu.ffi, exRes)
 	if !ok {

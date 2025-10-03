@@ -33,7 +33,7 @@ func NewCoverageBasedStrategy() *CoverageBased {
 	// value as well as all stack locations from -8 to -512.
 	defaultProg, _ := InstructionSequence(
 		// Need to patch the fd on every run of prog generation.
-		LdMapByFd(R1, 0),
+		LdMapByIdx(R1, 0),
 		StW(R10, 0, -4),
 		Mov64(R2, R10),
 		Add64(R2, -4),
@@ -61,8 +61,13 @@ func NewCoverageBasedStrategy() *CoverageBased {
 		fingerprintHashTable: make(map[uint64]bool),
 		programCount:         0,
 		validProgramCount:    0,
-		mapFd:                -1,
-		defaultProg:          defaultProg,
+		bpfMap: &epb.EbpfMap{
+			Type:       epb.BpfMapType_ARRAY,
+			KeySize:    4,
+			ValueSize:  8,
+			MaxEntries: 2,
+		},
+		defaultProg: defaultProg,
 	}
 }
 
@@ -78,17 +83,17 @@ type CoverageBased struct {
 	programCount         int
 	validProgramCount    int
 	lastProgram          []*epb.Instruction
-	mapFd                int
+	bpfMap               *epb.EbpfMap
 	defaultProg          []*epb.Instruction
 }
 
-func mapPtrArithmeticFooter(randomReg epb.Reg, mapFd int) ([]*epb.Instruction, error) {
+func mapPtrArithmeticFooter(randomReg epb.Reg) ([]*epb.Instruction, error) {
 	return InstructionSequence(
 		// Select a random register and store its value in R8.
 		Mov64(R8, randomReg),
 
-		// Load a fd to the map.
-		LdMapByFd(R9, mapFd),
+		// Load a fd to the map. Should be stored in a fd array.
+		LdMapByIdx(R9, 0),
 
 		StW(R10, 0, -4),
 		Mov64(R2, R10),
@@ -215,18 +220,7 @@ func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 		return nil, err
 	}
 
-	// For the footer, write a control and test value to a map, control will
-	// not do ptr arithmetic, test will attempt to do some and see if the
-	// verifier thinks its safe. We will validate this assumption in onExecuteDone.
-	ffi.CloseFD(cv.mapFd)
-	cv.mapFd = ffi.CreateMapArray(1)
-	if cv.mapFd < 0 {
-		return nil, mapCreationFailed
-	}
-
-	mutatedProgram[0].Immediate = int32(cv.mapFd)
-
-	footer, err := mapPtrArithmeticFooter(RandomRegister(), cv.mapFd)
+	footer, err := mapPtrArithmeticFooter(RandomRegister())
 	if err != nil {
 		return nil, err
 	}
@@ -236,6 +230,7 @@ func (cv *CoverageBased) GenerateProgram(ffi *units.FFI) (*pb.Program, error) {
 				Functions: []*epb.Functions{
 					{Instructions: append(mutatedProgram, footer...)},
 				},
+				Maps: []*epb.EbpfMap{cv.bpfMap},
 			},
 		},
 	}
@@ -302,7 +297,16 @@ func (cv *CoverageBased) OnVerifyDone(ffi *units.FFI, verificationResult *fpb.Va
 // OnExecuteDone should validate if the program behaved like the
 // verifier expected, if that was not the case it should return false.
 func (cv *CoverageBased) OnExecuteDone(ffi *units.FFI, executionResult *fpb.ExecutionResult) bool {
-	mapEl, _ := ffi.GetMapElements(cv.mapFd, 1)
+	if executionResult.FdArray == 0 {
+		fmt.Println("Error: invalid fd array address (null)")
+		return false
+	}
+	mapEl, _ := ffi.GetMapElementsFdArray(executionResult.FdArray, 0, 1)
+	if len(mapEl.Elements) == 0 {
+		fmt.Println("error reading map elements: ")
+		fmt.Println(mapEl.ErrorMessage)
+		return false
+	}
 	valid := mapEl.Elements[0] == 0xCAFE
 	cv.isFinished = !valid
 	return valid
