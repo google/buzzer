@@ -19,6 +19,7 @@
 #include <linux/if_ether.h>
 #include <linux/kernel.h>
 #include <netpacket/packet.h>
+
 #include "ffi.h"
 
 bool load_cbpf_program(void *prog_buff, size_t size, std::string &error,
@@ -72,8 +73,8 @@ struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size) {
   bool coverage_enabled = enable_coverage();
   bool cbpf_loaded = load_cbpf_program(prog_buff, size, error_message, socks);
   if (coverage_enabled) {
-      disable_coverage();
-      get_coverage(&vres);
+    disable_coverage();
+    get_coverage(&vres);
   }
   if (!cbpf_loaded) {
     return validation_error(error_message, &vres);

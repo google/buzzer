@@ -37,6 +37,7 @@ func EncodeEBPF(serializedProgram unsafe.Pointer, serializedProgramSize C.int,
 		Program:  encodedProg,
 		Function: encodedfunc,
 		Btf:      program.Btf,
+		Maps:     program.Maps,
 	}
 	// Then do magic to return it to C++
 	serializedProto, err := proto.Marshal(result)

@@ -97,7 +97,7 @@ struct coverage_data {
   uint64_t *coverage_buffer;
 };
 
-extern struct coverage_data* kCoverageData;
+extern struct coverage_data *kCoverageData;
 }
 
 #endif  // EBPF_FUZZER_EBPF_FFI_FFI_H_
