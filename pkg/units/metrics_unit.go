@@ -90,7 +90,6 @@ func (mu *Metrics) validationResultProcessingRoutine() {
 	}
 }
 
-
 // RecordVerificationResults collects metrics from the provided
 // verification result proto.
 func (mu *Metrics) RecordVerificationResults(vr *fpb.ValidationResult) {

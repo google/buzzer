@@ -129,10 +129,9 @@ struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size) {
   ValidationResult vres = load_ebpf_program(program, error_message);
   vres.set_did_collect_coverage(false);
   if (coverage_enabled) {
-      get_coverage(&vres);
-      disable_coverage();
+    get_coverage(&vres);
+    disable_coverage();
   }
-
 
   vres.set_is_valid(true);
   if (vres.program_fd() < 0) {
