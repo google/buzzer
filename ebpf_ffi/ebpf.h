@@ -34,9 +34,7 @@ ValidationResult load_ebpf_program(EncodedProgram program, std::string &error);
 
 // Loads a bpf program specified by |prog_buff| with |size| and returns struct
 // with a serialized ValidationResult proto.
-struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size,
-                                        int coverage_enabled,
-                                        uint64_t coverage_size);
+struct bpf_result ffi_load_ebpf_program(void *serialized_proto, size_t size);
 
 bool get_map_elements(int map_fd, size_t map_size, std::vector<uint64_t> *res,
                       std::string &error);

@@ -20,6 +20,8 @@
 #include <linux/kernel.h>
 #include <netpacket/packet.h>
 
+#include "ffi.h"
+
 bool load_cbpf_program(void *prog_buff, size_t size, std::string &error,
                        int *socks) {
   if (socketpair(AF_UNIX, SOCK_DGRAM, 0, socks) < 0) {
@@ -62,38 +64,25 @@ struct bpf_result validation_error(std::string error_message,
   return serialize_proto(*vres);
 }
 
-struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size,
-                                        int coverage_enabled,
-                                        uint64_t coverage_size) {
+struct bpf_result ffi_load_cbpf_program(void *prog_buff, size_t size) {
   std::string error_message;
-
-  struct coverage_data cover;
-  memset(&cover, 0, sizeof(struct coverage_data));
-  cover.fd = -1;
-  cover.coverage_size = coverage_size;
-  if (coverage_enabled) enable_coverage(&cover);
 
   ValidationResult vres;
 
   int socks[2] = {-1, -1};
-  if (!load_cbpf_program(prog_buff, size, error_message, socks)) {
-    // Return why we failed to load the program.
-    if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
+  bool coverage_enabled = enable_coverage();
+  bool cbpf_loaded = load_cbpf_program(prog_buff, size, error_message, socks);
+  if (coverage_enabled) {
+    disable_coverage();
+    get_coverage(&vres);
+  }
+  if (!cbpf_loaded) {
     return validation_error(error_message, &vres);
   }
-
-  if (coverage_enabled) get_coverage_and_free_resources(&cover, &vres);
 
   // Start building the validation result proto.
   vres.set_socket_write(socks[0]);
   vres.set_socket_read(socks[1]);
-  if (cover.fd != -1) {
-    vres.set_did_collect_coverage(true);
-    vres.set_coverage_size(cover.coverage_size);
-    vres.set_coverage_buffer(reinterpret_cast<uint64_t>(cover.coverage_buffer));
-  } else {
-    vres.set_did_collect_coverage(false);
-  }
 
   if (socks[0] < 0) {
     // Return why we failed to load the program.

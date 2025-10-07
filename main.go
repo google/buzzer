@@ -27,13 +27,12 @@ import (
 
 // Flags that the binary can accept.
 var (
-	coverageBufferSize = flag.Uint64("coverage_buffer_size", 64<<20, "Size of the buffer passed to kcov to get coverage addresses, the higher the number, the slower coverage collection will be")
-	metricsThreshold   = flag.Int("metrics_threshold", 200, "Collect detailed metrics (coverage) every `metrics_threshold` validated programs")
-	strategyName       = flag.String("strategy", "playground", "Strategy to use for fuzzing")
-	vmLinuxPath        = flag.String("vmlinux_path", "/root/vmlinux", "Path to the linux image that will be passed to addr2line to get coverage info")
-	sourceFilesPath    = flag.String("src_path", "/root/sourceFiles", "The fuzzer will look for source files to visualize the coverage at this path")
-	metricsServerAddr  = flag.String("metrics_server_addr", "0.0.0.0", "Address that the metrics server will listen to at")
-	metricsServerPort  = flag.Uint("metrics_server_port", 8080, "Port that the metrics server will listen to at")
+	metricsThreshold  = flag.Int("metrics_threshold", 200, "Collect detailed metrics (coverage) every `metrics_threshold` validated programs")
+	strategyName      = flag.String("strategy", "playground", "Strategy to use for fuzzing")
+	vmLinuxPath       = flag.String("vmlinux_path", "/root/vmlinux", "Path to the linux image that will be passed to addr2line to get coverage info")
+	sourceFilesPath   = flag.String("src_path", "/root/sourceFiles", "The fuzzer will look for source files to visualize the coverage at this path")
+	metricsServerAddr = flag.String("metrics_server_addr", "0.0.0.0", "Address that the metrics server will listen to at")
+	metricsServerPort = flag.Uint("metrics_server_port", 8080, "Port that the metrics server will listen to at")
 )
 
 var (
@@ -79,7 +78,7 @@ func main() {
 	})
 
 	controlUnit := units.Control{}
-	metricsUnit := units.NewMetricsUnit(*metricsThreshold, *coverageBufferSize, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort), coverageManager)
+	metricsUnit := units.NewMetricsUnit(*metricsThreshold, *vmLinuxPath, *sourceFilesPath, *metricsServerAddr, uint16(*metricsServerPort), coverageManager)
 
 	if err := controlUnit.Init(&units.FFI{
 		MetricsUnit: metricsUnit,
