@@ -26,6 +26,7 @@ package units
 //struct bpf_result ffi_load_ebpf_program(void* serialized_proto, size_t size, int coverage_enabled, unsigned long coverage_size);
 //struct bpf_result ffi_execute_ebpf_program(void* serialized_proto, size_t length);
 //struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size);
+//struct bpf_result ffi_get_map_elements_fd_array(uint64_t fd_array_addr, uint32_t idx, uint64_t map_size);
 //int ffi_create_bpf_map(size_t size);
 //void ffi_close_fd(int fd);
 //int ffi_update_map_element(int map_fd, int key, uint64_t value);
@@ -124,6 +125,12 @@ func (e *FFI) CloseFD(fd int) {
 // GetMapElements fetches the map elements of the given fd.
 func (e *FFI) GetMapElements(fd int, mapSize uint64) (*fpb.MapElements, error) {
 	res := C.ffi_get_map_elements(C.int(fd), C.ulong(mapSize))
+	return mapElementsProtoFromStruct(&res)
+}
+
+// GetMapElements fetches the map elements of the given fd_array position.
+func (e *FFI) GetMapElementsFdArray(fd_array uint64, idx uint32, mapSize uint32) (*fpb.MapElements, error) {
+	res := C.ffi_get_map_elements_fd_array(C.ulong(fd_array), C.uint(idx), C.ulong(mapSize))
 	return mapElementsProtoFromStruct(&res)
 }
 

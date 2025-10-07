@@ -212,6 +212,19 @@ struct bpf_result ffi_get_map_elements(int map_fd, uint64_t map_size) {
   return serialize_proto(res);
 }
 
+struct bpf_result ffi_get_map_elements_fd_array(uint64_t fd_array_addr,
+                                                uint32_t idx,
+                                                uint64_t map_size) {
+  MapElements res;
+  std::vector<uint64_t> elements;
+  std::string error_message;
+
+  int *fd_array = reinterpret_cast<int *>(fd_array_addr);
+  int map_fd = fd_array[idx];
+
+  return ffi_get_map_elements(map_fd, map_size);
+}
+
 bool execute_ebpf_program(int prog_fd, uint8_t *input, int input_length,
                           std::string &error_message) {
   int socks[2] = {};
@@ -268,7 +281,7 @@ struct bpf_result ffi_execute_ebpf_program(void *serialized_proto,
 void ffi_clean_fd_array(unsigned long long int addr, int size) {
   int *fd_array = reinterpret_cast<int *>(addr);
   for (int i = 0; i < size; i++) {
-    close(fd_array[size]);
+    close(fd_array[i]);
   }
   free(fd_array);
 }
