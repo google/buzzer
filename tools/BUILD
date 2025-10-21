@@ -21,6 +21,24 @@ package(
 )
 
 go_binary(
+    name = "minimizer",
+    srcs = ["minimizer.go"],
+    gc_linkopts = [
+        "-linkmode=external",
+        "-extldflags=-static",
+    ],
+    static = "on",
+    deps = [
+        "//pkg/ebpf",
+        "//pkg/units",
+        "//proto:ebpf_go_proto",
+        "//proto:ffi_go_proto",
+        "@com_github_golang_protobuf//jsonpb",
+        "@com_github_golang_protobuf//proto",
+    ],
+)
+
+go_binary(
     name = "ffi",
     srcs = ["ffi.go"],
     out = "ffi.a",

@@ -165,7 +165,9 @@ func (e *FFI) ValidateEbpfProgram(encodedProgram *fpb.EncodedProgram) (*fpb.Vali
 	if err != nil {
 		return nil, err
 	}
-	e.MetricsUnit.RecordVerificationResults(res)
+	if e.MetricsUnit != nil {
+		e.MetricsUnit.RecordVerificationResults(res)
+	}
 	return res, nil
 }
 
