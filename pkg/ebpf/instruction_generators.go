@@ -17,6 +17,7 @@ package ebpf
 import (
 	"buzzer/pkg/rand"
 	pb "buzzer/proto/ebpf_go_proto"
+	protobuf "github.com/golang/protobuf/proto"
 )
 
 // GenerateRandomAluInstruction provides a random ALU operation with either
@@ -233,4 +234,13 @@ func generateRegAluInstruction(op pb.AluOperationCode, insClass pb.InsClass, dst
 	}
 
 	return newAluInstruction(op, insClass, dstReg, srcReg)
+}
+
+func DuplicateProgram(prog []*pb.Instruction) []*pb.Instruction {
+	ret := []*pb.Instruction{}
+	for _, ins := range prog {
+		insCp := protobuf.Clone(ins).(*pb.Instruction)
+		ret = append(ret, insCp)
+	}
+	return ret
 }

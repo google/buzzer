@@ -178,7 +178,6 @@ func (cu *Control) runEbpf(prog *epb.Program) error {
 	ok := cu.strat.OnExecuteDone(cu.ffi, exRes)
 	if !ok {
 		fmt.Println("Program produced unexpected results")
-		ebpf.GeneratePoc(prog)
 	}
 	return nil
 }
