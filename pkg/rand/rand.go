@@ -17,80 +17,91 @@
 // It also provides utilities for randomly making a choice.
 // Last but not least, it contains a wrapper struct with a randomness source associated with it
 // to ensure that each fuzzing instance generates unique inputs and has a unique seed.
+
 package rand
 
 import (
+	crypto_rand "crypto/rand" // Aliased to avoid conflict
+	"encoding/binary"
 	"math/rand"
-	"time"
+	"sync"
 )
 
-var (
-	// Some potentially interesting integers - These represent maximum and minimum
-	// values for various integer sizes and values that tend to lead to overflow issues
-	specialInts = []uint64{
-		0, 1, 31, 32, 63, 64, 127, 128,
-		129, 255, 256, 257, 511, 512,
-		1023, 1024, 1025, 2047, 2048, 4095, 4096,
-		(1 << 15) - 1, (1 << 15), (1 << 15) + 1,
-		(1 << 16) - 1, (1 << 16), (1 << 16) + 1,
-		(1 << 31) - 1, (1 << 31), (1 << 31) + 1,
-		(1 << 32) - 1, (1 << 32), (1 << 32) + 1,
-		(1 << 63) - 1, (1 << 63), (1 << 63) + 1,
-		(1 << 64) - 1,
+// newSeed generates a cryptographically secure 64-bit seed.
+// It panics if it can't read from crypto/rand.
+func newSeed() int64 {
+	var b [8]byte
+	if _, err := crypto_rand.Read(b[:]); err != nil {
+		panic("cannot seed math/rand: " + err.Error())
 	}
-)
-
-// NumGen provides helper methods for generating random integers. Each instance has its own seed
-// to prevent concurrent VMs from generating the same inputs
-type NumGen struct {
-	r *rand.Rand
+	return int64(binary.BigEndian.Uint64(b[:]))
 }
 
-// NewRand generates a new random number generator
-func NewRand(randSource rand.Source) *NumGen {
-	return &NumGen{
-		r: rand.New(randSource),
+// BuzzerRNG wraps a math/rand.Rand generator and its mutex
+// to make it thread-safe.
+type BuzzerRNG struct {
+	r  *rand.Rand
+	mu sync.Mutex
+}
+
+// New returns a new, securely seeded, thread-safe BuzzerRNG.
+func New() *BuzzerRNG {
+	return &BuzzerRNG{
+		r: rand.New(rand.NewSource(newSeed())),
 	}
 }
 
-var SharedRNG = NewRand(rand.NewSource(time.Now().Unix()))
+// SharedRNG is the default, package-level singleton generator.
+// It is an instance of BuzzerRNG and is safe for concurrent use.
+var SharedRNG = New()
 
-// RandRange returns a random 64-bit integer in the range of begin..end
-func (g *NumGen) RandRange(begin, end uint64) uint64 {
-	return begin + uint64(g.r.Intn(int(end-begin+1)))
+// RandInt returns a non-negative pseudo-random int.
+func (br *BuzzerRNG) RandInt() int {
+	br.mu.Lock()
+	defer br.mu.Unlock()
+	return br.r.Int()
 }
 
-// OneOf returns true 1 out of n times
-func (g *NumGen) OneOf(n int) bool {
-	return g.r.Intn(n) == 0
+// RandRange returns a non-negative pseudo-random number in [min, max).
+func (br *BuzzerRNG) RandRange(min, max uint64) uint64 {
+	br.mu.Lock()
+	defer br.mu.Unlock()
+	return uint64(br.r.Intn(int(max-min+1))) + min
 }
 
-// NOutOf returns true n out of outOf times.
-func (g *NumGen) NOutOf(n, outOf int) bool {
-	if n <= 0 || n >= outOf {
-		panic("bad probability")
+// RandBytes returns a byte slice of the given size populated with pseudo-random
+// data.
+func (br *BuzzerRNG) RandBytes(size int) []byte {
+	b := make([]byte, size)
+	br.mu.Lock()
+	defer br.mu.Unlock()
+	if _, err := br.r.Read(b); err != nil {
+		// This should never fail
+		panic(err)
 	}
-	v := g.r.Intn(outOf)
-	return v < n
+	return b
 }
 
-// RandInt is the preferred method for generating a random integer. It is biased towards
-// 'special' numbers such as 256, 4096, 1 << 31, 1 << 63 etc.
-func (g *NumGen) RandInt() uint64 {
-	v := uint64(g.r.Int63())
+// RandString returns a string of the given size populated with pseudo-random
+// data.
+func (br *BuzzerRNG) RandString(size int) string {
+	return string(br.RandBytes(size))
+}
 
-	// All of these proababilities are subject to tuning and can be changed at any time for experiments
-	switch {
-	case g.NOutOf(3, 10):
-		v = specialInts[g.r.Intn(len(specialInts))]
-	case g.NOutOf(1, 10):
-		v %= 256
-	case g.NOutOf(1, 10):
-		v %= 64 << 10
-	case g.NOutOf(1, 10):
-		v %= 1 << 31
-	case g.NOutOf(1, 10):
-		v = uint64(-int64(v))
+// RandBool returns a random boolean.
+func (br *BuzzerRNG) RandBool() bool {
+	br.mu.Lock()
+	defer br.mu.Unlock()
+	return br.r.Intn(2) == 1
+}
+
+// OneOf returns a random element from the given slice.
+// It panics if the slice is empty.
+func OneOf[T any](choices []T) T {
+	if len(choices) == 0 {
+		panic("OneOf called with empty slice")
 	}
-	return v
+	// Get a random index from the thread-safe SharedRNG
+	idx := SharedRNG.RandRange(0, uint64(len(choices)))
+	return choices[idx]
 }

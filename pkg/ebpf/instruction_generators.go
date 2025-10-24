@@ -60,7 +60,7 @@ func RandomJmpInstruction(maxOffset uint64) *pb.Instruction {
 	}
 
 	var insClass pb.InsClass
-	if rand.SharedRNG.OneOf(2) {
+	if rand.SharedRNG.RandBool() {
 		insClass = pb.InsClass_InsClassJmp32
 	} else {
 		insClass = pb.InsClass_InsClassJmp
@@ -68,7 +68,7 @@ func RandomJmpInstruction(maxOffset uint64) *pb.Instruction {
 
 	dstReg := RandomRegister()
 	offset := int16(rand.SharedRNG.RandRange(1, maxOffset))
-	if rand.SharedRNG.OneOf(2) {
+	if rand.SharedRNG.RandBool() {
 		src := int32(rand.SharedRNG.RandRange(0, 0xffffffff))
 		return newJmpInstruction(op, insClass, dstReg, src, offset)
 	} else {
@@ -166,7 +166,7 @@ func RandomStoreInstruction() *pb.Instruction {
 	offset := RandomOffset(size)
 
 	// Decide if we are doing a Store from a register or a constant.
-	if rand.SharedRNG.OneOf(2) {
+	if rand.SharedRNG.RandBool() {
 		// Constant
 		imm := int32(rand.SharedRNG.RandInt())
 		return newStoreOperation(size, R10, imm, offset)
