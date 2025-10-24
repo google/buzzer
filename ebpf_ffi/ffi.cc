@@ -122,7 +122,8 @@ int ffi_cleanup_coverage() {
   if (!kCoverageData) return 0;
 
   close(kCoverageData->fd);
-  munmap(kCoverageData->coverage_buffer, KCOV_SIZE * sizeof(uint64_t));
+  if (kCoverageData->coverage_buffer != nullptr)
+      munmap(kCoverageData->coverage_buffer, KCOV_SIZE * sizeof(uint64_t));
   free(kCoverageData);
   kCoverageData = nullptr;
   return 0;

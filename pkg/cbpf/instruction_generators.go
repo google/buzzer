@@ -54,7 +54,7 @@ func RandomJmpInstruction(maxOffset uint64) *pb.Instruction {
 	}
 
 	offset := int8(rand.SharedRNG.RandRange(1, maxOffset))
-	if rand.SharedRNG.OneOf(2) {
+	if rand.SharedRNG.RandBool()  {
 		src := int32(rand.SharedRNG.RandRange(0, 0xffffffff))
 		return newJmpInstruction(op, 0, int32(offset), src)
 	} else {
